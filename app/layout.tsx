@@ -8,8 +8,8 @@ const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
 const amiri = Amiri({ weight: ["400", "700"], subsets: ["arabic"], variable: "--font-amiri" });
 
 export const metadata: Metadata = {
-  title: "Brosur Ahad Pagi",
-  description: "Arsip Digital Brosur Ahad Pagi (1995-2022)",
+  title: "Brosur MTA Digital | Arsip Kajian Ahad Pagi (Non-Official)",
+  description: "Dedikasi untuk mempermudah peserta kajian mengakses, mencari, dan membaca arsip Brosur Ahad Pagi MTA secara instan dan komprehensif.",
 };
 
 export default function RootLayout({

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, FolderArchive, ArrowRight, Download, FileText } from "lucide-react";
+import { Book, Library, AlertCircle } from "lucide-react";
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/server';
 
@@ -12,105 +12,133 @@ export default async function Home() {
     .select('*')
     .order('created_at', { ascending: true });
 
-  // Mengambil daftar file mentah dari Supabase Storage (chm-uploads)
-  const { data: storageFiles } = await supabase.storage.from('chm-uploads').list();
-  const publicFiles = storageFiles?.filter(f => f.name !== '.emptyFolderPlaceholder' && !f.name.startsWith('assets/')) || [];
-
   return (
-    <div className="min-h-screen bg-[#fafafa] dark:bg-[#0a0a0a] text-zinc-900 dark:text-zinc-100 flex flex-col">
-      <header className="p-6 md:p-8 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-white/50 dark:bg-black/50 backdrop-blur-xl sticky top-0 z-10">
-        <div className="flex items-center gap-2">
-          <div className="w-10 h-10 bg-accent rounded-xl flex items-center justify-center shadow-lg shadow-accent/20">
-            <FolderArchive className="text-white" size={20} />
+    <div className="min-h-screen bg-[#fafafa] dark:bg-[#0a0a0a] text-zinc-900 dark:text-zinc-100 flex flex-col font-sans">
+      
+      {/* HEADER */}
+      <header className="p-6 md:px-12 md:py-8 flex items-center justify-center border-b border-black/5 dark:border-white/5 bg-white/50 dark:bg-black/50 backdrop-blur-xl sticky top-0 z-10">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 bg-accent rounded-2xl flex items-center justify-center shadow-lg shadow-accent/20">
+            <Library className="text-white" size={24} />
           </div>
-          <span className="font-extrabold text-xl tracking-tight">Koleksi Digital</span>
+          <span className="font-extrabold text-2xl tracking-tight">Koleksi Digital</span>
         </div>
-        <Link href="/login" className="text-sm font-bold text-zinc-500 hover:text-accent transition-colors">
-          Admin Login
-        </Link>
       </header>
 
-      <main className="flex-1 p-8 md:p-12 max-w-6xl mx-auto w-full">
-        <div className="mb-10 text-center md:text-left">
-          <h1 className="text-3xl md:text-4xl font-extrabold mb-3">Perpustakaan Digital</h1>
-          <p className="text-zinc-500 max-w-2xl mx-auto md:mx-0">
-            Silakan pilih kategori koleksi arsip yang ingin Anda baca di bawah ini.
-          </p>
+      <main className="flex-1 p-6 md:p-12 max-w-7xl mx-auto w-full flex flex-col items-center">
+        
+        {/* HERO NARRATIVE / DISCLAIMER */}
+        <div className="w-full max-w-4xl mx-auto mb-16 text-center">
+          <h1 className="text-4xl md:text-6xl font-black mb-6 tracking-tight">
+            Perpustakaan <span className="text-accent">Brosur MTA</span>
+          </h1>
+          
+          <div className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-3xl p-6 md:p-8 shadow-2xl shadow-black/5 relative overflow-hidden">
+            {/* Dekorasi Latar */}
+            <div className="absolute -top-10 -right-10 w-40 h-40 bg-accent/5 rounded-full blur-3xl"></div>
+            <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-blue-500/5 rounded-full blur-3xl"></div>
+            
+            <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 text-left">
+              <div className="w-16 h-16 shrink-0 bg-amber-500/10 text-amber-500 rounded-2xl flex items-center justify-center">
+                <AlertCircle size={32} />
+              </div>
+              <div>
+                <h3 className="text-xl font-extrabold mb-2">Informasi Penting (Non-Official)</h3>
+                <p className="text-zinc-500 text-sm md:text-base leading-relaxed">
+                  Ini adalah halaman arsip <strong>Non-Official</strong> (tidak resmi) yang dibangun sebagai bentuk dedikasi untuk mempermudah peserta kajian mengakses materi. 
+                  Jika terdapat banyak kesalahan teks (karena proses konversi otomatis), mohon langsung hubungi admin di <strong className="text-accent">brosurmta@gmail.com</strong> agar segera dibenahi. <em>Jazaakumullah khairan.</em>
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          {/* Card untuk setiap Folder yang terdaftar di Database */}
-          {folders && folders.length > 0 ? (
-            folders.map((folder) => (
-              <Link 
-                key={folder.id} 
-                href={`/koleksi/${folder.slug}`} 
-                className="group relative bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-3xl p-6 shadow-sm hover:shadow-xl hover:shadow-accent/5 hover:border-accent/30 transition-all duration-300 flex flex-col h-full overflow-hidden"
-              >
-                <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">
-                  <BookOpen size={100} />
-                </div>
-                
-                <div className="w-14 h-14 bg-accent/10 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-accent transition-colors">
-                  <BookOpen size={28} className="text-accent group-hover:text-white transition-colors" />
-                </div>
-                
-                <h2 className="text-2xl font-bold mb-2">{folder.name}</h2>
-                <p className="text-zinc-500 text-sm mb-8 flex-1">
-                  {folder.description || 'Kumpulan arsip digital.'}
-                </p>
-                
-                <div className="flex items-center text-accent font-bold text-sm gap-2 mt-auto">
-                  Buka Koleksi <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                </div>
-              </Link>
-            ))
-          ) : (
-            <div className="col-span-full bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-3xl p-6 shadow-sm flex flex-col items-center justify-center text-center h-64 text-zinc-500">
-              <FolderArchive size={32} className="mb-4 opacity-50" />
-              <p>Belum ada Master Koleksi. Silakan buat melalui Admin Area.</p>
-            </div>
-          )}
-        </div>
-        
-        {/* List of raw files uploaded to Supabase Storage */}
-        {publicFiles.length > 0 && (
-          <>
-            <h2 className="text-2xl font-bold mb-6 mt-16 border-t border-black/5 dark:border-white/5 pt-10">Arsip Mentah (Belum Diekstrak)</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {publicFiles.map((file) => {
-                const { data } = supabase.storage.from('chm-uploads').getPublicUrl(file.name);
+        {/* RAK BUKU (GRID) */}
+        <div className="w-full">
+          <div className="flex items-center gap-3 mb-10 border-b border-black/5 dark:border-white/5 pb-4">
+            <Book size={24} className="text-accent" />
+            <h2 className="text-2xl font-bold tracking-tight">Rak Koleksi</h2>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-10 pb-20">
+            {folders && folders.length > 0 ? (
+              folders.map((folder, index) => {
+                // Generate warna buku berbeda-beda (secara deterministik berdasarkan urutan)
+                const bookColors = [
+                  'from-emerald-700 to-emerald-900', // Hijau tua elegan
+                  'from-blue-700 to-blue-900',       // Biru
+                  'from-slate-700 to-slate-900',     // Hitam/Abu
+                  'from-amber-700 to-amber-900',     // Cokelat emas
+                  'from-indigo-700 to-indigo-900'    // Nila tua
+                ];
+                const colorClass = bookColors[index % bookColors.length];
                 
                 return (
-                  <a 
-                    key={file.id} 
-                    href={data.publicUrl}
-                    download
-                    target="_blank"
-                    rel="noreferrer"
-                    className="group bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 hover:shadow-md hover:border-blue-500/30 transition-all duration-300 flex flex-col h-full"
+                  <Link 
+                    key={folder.id} 
+                    href={`/koleksi/${folder.slug}`} 
+                    className="group relative flex justify-center perspective-[1000px] h-[300px] md:h-[350px]"
                   >
-                    <div className="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-blue-500 transition-colors">
-                      <FileText size={24} className="text-blue-500 group-hover:text-white transition-colors" />
+                    {/* Shadow Buku (di bawah) */}
+                    <div className="absolute -bottom-4 w-[80%] h-6 bg-black/20 dark:bg-black/50 blur-lg rounded-[100%] group-hover:blur-xl transition-all duration-300"></div>
+                    
+                    {/* Container Buku Utama (Animasi Angkat 3D) */}
+                    <div className="relative w-full h-full transform transition-all duration-500 ease-out [transform-style:preserve-3d] group-hover:-translate-y-4 group-hover:[transform:rotateY(-10deg)]">
+                      
+                      {/* Tulang Buku (Spine) - Sisi Kiri */}
+                      <div className={`absolute left-0 top-0 w-6 h-full bg-gradient-to-b ${colorClass} origin-right transform [transform:rotateY(90deg)] brightness-75 rounded-l-md border-y border-l border-white/10 shadow-[inset_-2px_0_5px_rgba(0,0,0,0.5)]`}>
+                        {/* Aksen Tali Pita / Garis di Tulang Buku */}
+                        <div className="absolute top-8 w-full h-1 bg-black/20"></div>
+                        <div className="absolute top-10 w-full h-1 bg-black/20"></div>
+                        <div className="absolute bottom-8 w-full h-1 bg-black/20"></div>
+                      </div>
+
+                      {/* Sampul Buku (Cover Depan) */}
+                      <div className={`absolute left-0 top-0 w-full h-full bg-gradient-to-br ${colorClass} rounded-r-xl border border-white/10 shadow-2xl overflow-hidden flex flex-col p-6`}>
+                        
+                        {/* Tekstur Cover (Garis lipatan tulang buku di sebelah kiri) */}
+                        <div className="absolute left-0 top-0 w-4 h-full bg-gradient-to-r from-black/40 to-transparent"></div>
+                        <div className="absolute left-3 top-0 w-px h-full bg-white/10"></div>
+                        
+                        {/* Ornamen / Dekorasi Emas di Cover */}
+                        <div className="flex-1 border border-white/20 rounded-lg p-4 flex flex-col items-center justify-center text-center relative z-10 backdrop-blur-sm bg-black/10">
+                          
+                          <Book size={40} className="text-white/80 mb-4 drop-shadow-md" />
+                          
+                          <h3 className="text-white font-black text-xl md:text-2xl leading-tight mb-2 drop-shadow-md" style={{ fontFamily: "var(--font-amiri), serif" }}>
+                            {folder.name}
+                          </h3>
+                          
+                          <div className="w-12 h-px bg-white/30 my-4 mx-auto"></div>
+                          
+                          <p className="text-white/70 text-xs md:text-sm font-medium line-clamp-3">
+                            {folder.description || 'Kumpulan arsip digital Brosur MTA.'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Halaman Kertas (Sisi Kanan - Ketebalan Buku) */}
+                      <div className="absolute right-0 top-2 w-4 h-[calc(100%-16px)] bg-[#fdfaf6] origin-left transform [transform:rotateY(90deg)] border-y border-r border-black/10 rounded-r-sm overflow-hidden flex flex-col justify-evenly">
+                         {/* Garis-garis tipis untuk efek tumpukan kertas */}
+                         {[...Array(20)].map((_, i) => (
+                           <div key={i} className="w-full h-[1px] bg-black/5"></div>
+                         ))}
+                      </div>
+
                     </div>
-                    
-                    <h3 className="font-bold text-lg mb-2 truncate" title={file.name}>{file.name}</h3>
-                    
-                    <p className="text-zinc-500 text-sm mb-6 flex-1">
-                      Arsip mentah yang diunggah pada {file.created_at ? new Date(file.created_at).toLocaleDateString('id-ID') : 'Tanggal Tidak Diketahui'}. 
-                      Ukuran: {file.metadata?.size ? (file.metadata.size / 1024 / 1024).toFixed(2) : '0'} MB.
-                    </p>
-                    
-                    <div className="flex items-center text-blue-500 font-bold text-sm gap-2 mt-auto">
-                      Unduh File <Download size={16} className="group-hover:-translate-y-1 transition-transform" />
-                    </div>
-                  </a>
+                  </Link>
                 );
-              })}
-            </div>
-          </>
-        )}
+              })
+            ) : (
+              <div className="col-span-full bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-3xl p-12 shadow-sm flex flex-col items-center justify-center text-center h-64 text-zinc-500">
+                <Library size={48} className="mb-4 opacity-30" />
+                <p className="text-lg">Rak masih kosong. Silakan muat koleksi dari dashboard admin.</p>
+              </div>
+            )}
+          </div>
+        </div>
       </main>
     </div>
   );
 }
+

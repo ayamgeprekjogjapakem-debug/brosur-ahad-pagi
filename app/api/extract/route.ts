@@ -149,13 +149,14 @@ export async function POST(request: NextRequest) {
       });
       
       const finalHtml = $.html();
+      const cleanText = $.text().replace(/\s+/g, ' ').trim();
       
       const fileNameOnly = item.entryName.split('/').pop() || item.entryName;
       const baseName = fileNameOnly.replace(/\.html?$/i, '');
       const { id, tahun, judul, slug } = parseFilename(baseName);
 
       const { error: upsertError } = await supabase.from('brosur').upsert(
-        { id, tahun, judul, slug, konten: finalHtml },
+        { id, tahun, judul, slug, konten: finalHtml, teks_bersih: cleanText },
         { onConflict: 'id' }
       );
 

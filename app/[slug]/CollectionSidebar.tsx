@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, ChevronRight, ChevronDown, Menu, X, ArrowLeft, PanelLeftClose, PanelLeftOpen, Loader2 } from 'lucide-react';
+import { Search, ChevronRight, ChevronDown, Menu, X, ArrowLeft, PanelLeftClose, PanelLeftOpen, Loader2, Home } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
@@ -13,14 +13,20 @@ interface CollectionSidebarProps {
   folderId: string;
 }
 
+// Cache global untuk menyimpan hasil pencarian agar saat pindah brosur tidak perlu loading ulang
+const searchCache = new Map<string, any[]>();
+
 export default function CollectionSidebar({ brosurList, activeSlug, folderSlug, folderId }: CollectionSidebarProps) {
   const searchParams = useSearchParams();
   const initialQ = searchParams.get('q') || '';
   
   const [inputValue, setInputValue] = useState(initialQ);
   const [searchQuery, setSearchQuery] = useState(initialQ);
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
+  
+  // Jika query sudah ada di cache, langsung gunakan hasil cache tanpa loading
+  const [searchResults, setSearchResults] = useState<any[]>(searchCache.get(initialQ) || []);
+  const [isSearching, setIsSearching] = useState(!searchCache.has(initialQ) && initialQ !== '');
+  
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [expandedYears, setExpandedYears] = useState<Record<string, boolean>>({});
 
@@ -43,11 +49,19 @@ export default function CollectionSidebar({ brosurList, activeSlug, folderSlug, 
       return;
     }
 
+    // Jika sudah ada di cache, gunakan langsung tanpa loading
+    if (searchCache.has(searchQuery)) {
+      setSearchResults(searchCache.get(searchQuery)!);
+      setIsSearching(false);
+      return;
+    }
+
     const performSearch = async () => {
       setIsSearching(true);
       try {
         const res = await fetch(`/api/search-koleksi?q=${encodeURIComponent(searchQuery)}&folder_id=${folderId}`);
         const data = await res.json();
+        searchCache.set(searchQuery, data.results || []);
         setSearchResults(data.results || []);
       } catch (err) {
         console.error(err);
@@ -121,12 +135,13 @@ export default function CollectionSidebar({ brosurList, activeSlug, folderSlug, 
         </button>
       )}
 
-      <AnimatePresence>
+      <AnimatePresence initial={false}>
         {isSidebarOpen && (
           <motion.aside 
             initial={{ x: -350, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -350, opacity: 0 }}
+            transition={{ duration: 0.2 }}
             className="w-full md:w-80 lg:w-[350px] border-r border-black/5 dark:border-white/5 flex flex-col h-[100dvh] absolute lg:relative flex-shrink-0 z-40 bg-[#fafafa] dark:bg-[#0a0a0a]"
           >
             {/* Header Sidebar */}
@@ -135,15 +150,9 @@ export default function CollectionSidebar({ brosurList, activeSlug, folderSlug, 
                 <h2 className="font-extrabold text-xs uppercase tracking-widest text-zinc-500">Daftar Isi Koleksi</h2>
               </div>
               <div className="flex items-center gap-2">
-                {folderSlug ? (
-                  <Link href={`/koleksi/${folderSlug}`} className="p-2 bg-black/5 dark:bg-white/5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors" title="Kembali ke Koleksi">
-                    <ArrowLeft size={16} />
-                  </Link>
-                ) : (
-                  <Link href="/" className="p-2 bg-black/5 dark:bg-white/5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors" title="Kembali ke Beranda">
-                    <ArrowLeft size={16} />
-                  </Link>
-                )}
+                <Link href="/" className="p-2 bg-black/5 dark:bg-white/5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-accent flex items-center justify-center" title="Kembali ke Beranda">
+                  <Home size={16} />
+                </Link>
                 <button className="hidden lg:flex p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-zinc-500" onClick={() => setIsSidebarOpen(false)}>
                   <PanelLeftClose size={18} />
                 </button>
@@ -187,69 +196,94 @@ export default function CollectionSidebar({ brosurList, activeSlug, folderSlug, 
               </div>
             )}
 
-            {/* List Brosur by Year */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-4">
-              {Object.entries(groupedByYear).sort(([a], [b]) => Number(b) - Number(a)).map(([year, brosurs]) => {
-                const isExpanded = !!expandedYears[year];
-                return (
-                  <div key={year} className="space-y-1">
-                    <button 
-                      onClick={() => toggleYear(year)}
-                      className="w-full flex items-center justify-between text-xs font-bold text-zinc-500 uppercase tracking-widest py-2 px-2 hover:text-accent transition-colors"
-                    >
-                      Tahun {year}
-                      {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                    </button>
-                    
-                    <AnimatePresence>
-                      {isExpanded && (
-                        <motion.div 
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          className="overflow-hidden space-y-1"
-                        >
-                          {(brosurs as any[]).map((b: any) => {
-                            const isActive = b.slug === activeSlug;
-                            return (
-                              <Link
-                                key={b.slug}
-                                href={`/${b.slug}${searchQuery ? `?q=${encodeURIComponent(searchQuery)}` : ''}`}
-                                onClick={() => window.innerWidth < 1024 && setIsSidebarOpen(false)}
-                                className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex flex-col group relative border ${
-                                  isActive 
-                                    ? 'bg-accent border-accent text-white shadow-lg shadow-accent/20' 
-                                    : 'bg-transparent border-transparent hover:border-black/5 dark:hover:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 text-zinc-700 dark:text-zinc-300'
-                                }`}
-                              >
-                                <div className="flex items-center justify-between w-full">
-                                  <span className={`text-sm font-bold leading-snug ${isActive ? 'text-white' : 'group-hover:text-accent transition-colors'}`}>
-                                    {b.judul}
-                                  </span>
-                                </div>
-                                {b.snippet && (
-                                  <p className={`text-xs mt-1.5 line-clamp-2 leading-relaxed ${isActive ? 'text-white/80' : 'text-zinc-500'}`}>
-                                    <span dangerouslySetInnerHTML={{ 
-                                      __html: b.snippet.replace(new RegExp(searchQuery, 'gi'), (match: string) => `<strong>${match}</strong>`)
-                                    }} />
-                                  </p>
-                                )}
-                              </Link>
-                            )
-                          })}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                );
-              })}
-              
-              {displayList.length === 0 && (
-                <div className="text-center text-zinc-500 text-sm mt-10">
-                  Brosur tidak ditemukan.
+            {/* List Brosur by Year atau Loading Skeleton */}
+            {isSearching ? (
+              <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-6">
+                <div className="text-center flex flex-col items-center justify-center space-y-3 mt-4">
+                  <Loader2 className="animate-spin text-accent" size={24} />
+                  <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest animate-pulse">
+                    Membongkar arsip brosur...
+                  </p>
                 </div>
-              )}
-            </div>
+                
+                {/* Efek Skeleton (Tulang Kosong) */}
+                <div className="space-y-3 mt-6">
+                  {[1, 2, 3, 4, 5, 6].map(i => (
+                    <div key={i} className="animate-pulse flex flex-col p-4 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">
+                      <div className="h-4 bg-black/10 dark:bg-white/10 rounded w-3/4 mb-3"></div>
+                      <div className="h-3 bg-black/10 dark:bg-white/10 rounded w-full mb-1.5"></div>
+                      <div className="h-3 bg-black/10 dark:bg-white/10 rounded w-5/6"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-4">
+                {Object.entries(groupedByYear).sort(([a], [b]) => Number(b) - Number(a)).map(([year, brosurs]) => {
+                  const isExpanded = !!expandedYears[year];
+                  return (
+                    <div key={year} className="space-y-1">
+                      <button 
+                        onClick={() => toggleYear(year)}
+                        className="w-full flex items-center justify-between text-xs font-bold text-zinc-500 uppercase tracking-widest py-2 px-2 hover:text-accent transition-colors"
+                      >
+                        Tahun {year}
+                        {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                      </button>
+                      
+                      <AnimatePresence>
+                        {isExpanded && (
+                          <motion.div 
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden space-y-1"
+                          >
+                            {(brosurs as any[]).map((b: any) => {
+                              const isActive = b.slug === activeSlug;
+                              return (
+                                <Link
+                                  key={b.slug}
+                                  href={`/${b.slug}${searchQuery ? `?q=${encodeURIComponent(searchQuery)}` : ''}`}
+                                  onClick={() => window.innerWidth < 1024 && setIsSidebarOpen(false)}
+                                  className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex flex-col group relative border ${
+                                    isActive 
+                                      ? 'bg-accent border-accent text-white shadow-lg shadow-accent/20' 
+                                      : 'bg-transparent border-transparent hover:border-black/5 dark:hover:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 text-zinc-700 dark:text-zinc-300'
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between w-full">
+                                    <span className={`text-sm font-bold leading-snug ${isActive ? 'text-white' : 'group-hover:text-accent transition-colors'}`}>
+                                      {b.judul}
+                                    </span>
+                                  </div>
+                                  {b.snippet && (
+                                    <p className={`text-xs mt-1.5 line-clamp-2 leading-relaxed ${isActive ? 'text-white/80' : 'text-zinc-500'}`}>
+                                      <span dangerouslySetInnerHTML={{ 
+                                        __html: b.snippet.replace(
+                                          new RegExp(searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), 
+                                          (match: string) => `<strong>${match}</strong>`
+                                        )
+                                      }} />
+                                    </p>
+                                  )}
+                                </Link>
+                              )
+                            })}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })}
+                
+                {displayList.length === 0 && (
+                  <div className="text-center text-zinc-500 text-sm mt-10">
+                    Brosur tidak ditemukan.
+                  </div>
+                )}
+              </div>
+            )}
           </motion.aside>
         )}
       </AnimatePresence>

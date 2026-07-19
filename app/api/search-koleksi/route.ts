@@ -1,6 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
-import * as cheerio from 'cheerio';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -13,23 +12,19 @@ export async function GET(request: NextRequest) {
 
   const supabase = await createClient();
 
-  // Normalisasi query (hapus tanda baca agar aman)
-  // Catatan: Jangan hapus karakter non-latin sepenuhnya agar bahasa Arab tetap bisa dicari.
-  // Gunakan \s+ untuk spasi, dan biarkan sisanya.
   const normalizedQ = q.replace(/\s+/g, ' ').trim();
   const qWords = normalizedQ.split(' ').filter(Boolean);
 
   let queryBuilder = supabase
     .from('brosur')
-    .select('judul, slug, tahun, konten')
+    .select('judul, slug, tahun, teks_bersih, konten')
     .order('tahun', { ascending: false });
 
-  // Optimasi: Jika ada kata, gunakan kata pertama untuk memfilter awal di database agar lebih ringan
+  // Optimasi: Gunakan kata pertama untuk filter kasar di DB (cek di judul atau teks_bersih)
   if (qWords.length > 0) {
-    queryBuilder = queryBuilder.ilike('konten', `%${qWords[0]}%`);
+    queryBuilder = queryBuilder.or(`judul.ilike.%${qWords[0]}%,teks_bersih.ilike.%${qWords[0]}%,konten.ilike.%${qWords[0]}%`);
   }
 
-  // Ambil data
   const { data, error } = await queryBuilder;
 
   if (error || !data) {
@@ -43,40 +38,33 @@ export async function GET(request: NextRequest) {
     let matched = false;
     let snippet = '';
     
-    // Cek kecocokan di judul
     if (item.judul.toLowerCase().includes(q)) {
       matched = true;
     }
     
-    let plainText = '';
-    let plainTextLower = '';
+    // Gunakan teks_bersih jika sudah dimigrasi, jika belum fallback ke cheerio (dinamis import agar tidak selalu di-load)
+    let plainText = item.teks_bersih || '';
+    if (!plainText && item.konten) {
+       const cheerio = await import('cheerio');
+       const $ = cheerio.load(item.konten);
+       plainText = $.text().replace(/\s+/g, ' ').trim();
+    }
+    
+    let plainTextLower = plainText.toLowerCase();
 
-    // Cek kecocokan di konten
-    if (item.konten) {
-      const $ = cheerio.load(item.konten);
-      plainText = $.text().replace(/\s+/g, ' ');
-      plainTextLower = plainText.toLowerCase().replace(/\s+/g, ' ');
-      
-      // Jika frasa panjang cocok sama persis (setelah dihilangkan tag HTML)
+    if (plainText) {
       if (normalizedQ && plainTextLower.includes(normalizedQ)) {
         matched = true;
-      } 
-      // Atau jika setiap kata dalam query ada di dalam teks
-      else if (qWords.length > 0 && qWords.every(w => plainTextLower.includes(w))) {
+      } else if (qWords.length > 0 && qWords.every(w => plainTextLower.includes(w))) {
         matched = true;
       }
     }
     
     if (matched) {
-      // Buat snippet jika ada teks
       if (plainText) {
-        // Cari posisi kata pertama untuk snippet pada teks asli (belum dinormalisasi)
-        const textForSnippetLower = plainText.toLowerCase();
-        let matchIdx = textForSnippetLower.indexOf(q);
-        
-        // Jika pencarian panjang tidak persis sama karena tanda baca, cari kata pertama saja
+        let matchIdx = plainTextLower.indexOf(q);
         if (matchIdx === -1 && qWords.length > 0) {
-           matchIdx = textForSnippetLower.indexOf(qWords[0]);
+           matchIdx = plainTextLower.indexOf(qWords[0]);
         }
         
         if (matchIdx !== -1) {
@@ -84,7 +72,6 @@ export async function GET(request: NextRequest) {
           const endIdx = Math.min(plainText.length, matchIdx + q.length + 100);
           snippet = (startIdx > 0 ? '... ' : '') + plainText.substring(startIdx, endIdx) + (endIdx < plainText.length ? ' ...' : '');
         } else {
-          // Fallback snippet
           snippet = plainText.substring(0, 150) + '...';
         }
       }
