@@ -261,8 +261,8 @@ export default function CollectionSidebar({ brosurList, activeSlug, folderSlug, 
                                     <p className={`text-xs mt-1.5 line-clamp-2 leading-relaxed ${isActive ? 'text-white/80' : 'text-zinc-500'}`}>
                                       <span dangerouslySetInnerHTML={{ 
                                         __html: b.snippet.replace(
-                                          new RegExp(searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), 
-                                          (match: string) => `<strong>${match}</strong>`
+                                          new RegExp(searchQuery.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&'), 'gi'), 
+                                          (match: string) => `<mark class="bg-yellow-300 dark:bg-yellow-500/80 text-black px-1 rounded-sm">${match}</mark>`
                                         )
                                       }} />
                                     </p>

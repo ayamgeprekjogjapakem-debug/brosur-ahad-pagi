@@ -101,14 +101,14 @@ export default function DashboardPage() {
           animate={{ opacity: 1, y: 0 }}
         >
           <header className="mb-10">
-            <h1 className="text-3xl font-extrabold mb-2">Upload File CHM</h1>
-            <p className="text-zinc-500">Unggah file arsip brosur untuk memproses dan menambahkannya ke dalam database.</p>
+            <h1 className="text-3xl font-extrabold mb-2 tracking-tight text-zinc-900 dark:text-zinc-100">Upload File CHM</h1>
+            <p className="text-zinc-500 font-medium max-w-xl">Unggah file arsip brosur berformat CHM atau ZIP untuk memproses dan menambahkannya ke dalam database secara otomatis.</p>
           </header>
 
-          <div className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-3xl p-8 shadow-sm relative overflow-hidden">
+          <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-2xl border border-black/[0.04] dark:border-white/[0.04] rounded-[32px] p-8 md:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
             
             {/* Drag & Drop Area */}
-            <div className="border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl p-10 flex flex-col items-center justify-center text-center hover:border-accent hover:bg-accent/5 transition-colors group relative">
+            <div className="border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-3xl p-12 flex flex-col items-center justify-center text-center hover:border-accent hover:bg-accent/5 transition-all duration-300 group relative">
               <input 
                 type="file" 
                 accept=".chm,.zip"
@@ -116,16 +116,16 @@ export default function DashboardPage() {
                 disabled={isUploading}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed" 
               />
-              <div className="w-16 h-16 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-4 group-hover:bg-accent group-hover:text-white transition-colors">
-                <Upload size={28} className="text-zinc-400 group-hover:text-white" />
+              <div className="w-20 h-20 bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl flex items-center justify-center mb-5 group-hover:bg-accent group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-accent/30 transition-all duration-300">
+                <Upload size={32} className="text-zinc-400 group-hover:text-white transition-colors" />
               </div>
-              <h3 className="font-bold text-lg mb-1">Pilih atau letakkan file di sini</h3>
-              <p className="text-sm text-zinc-500">Mendukung file berformat .chm atau .zip</p>
+              <h3 className="font-extrabold text-xl mb-1.5 text-zinc-900 dark:text-zinc-100">Pilih atau letakkan file di sini</h3>
+              <p className="text-sm font-medium text-zinc-500">Mendukung file berformat .chm atau .zip</p>
             </div>
 
             {/* Selected File Details */}
             {selectedFile && (
-              <div className="mt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-700 gap-4">
+              <div className="mt-8 flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl border border-black/[0.04] dark:border-white/[0.04] gap-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-accent/20 rounded-lg">
                     <FileText className="text-accent" size={24} />

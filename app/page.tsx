@@ -2,6 +2,8 @@ import React from 'react';
 import { Book, Library, AlertCircle } from "lucide-react";
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/server';
+import GlobalSearch from './components/GlobalSearch';
+import Footer from './components/Footer';
 
 export default async function Home() {
   const supabase = await createClient();
@@ -33,24 +35,23 @@ export default async function Home() {
             Perpustakaan <span className="text-accent">Brosur MTA</span>
           </h1>
           
-          <div className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-3xl p-6 md:p-8 shadow-2xl shadow-black/5 relative overflow-hidden">
-            {/* Dekorasi Latar */}
-            <div className="absolute -top-10 -right-10 w-40 h-40 bg-accent/5 rounded-full blur-3xl"></div>
-            <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-blue-500/5 rounded-full blur-3xl"></div>
-            
+          <div className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-2xl p-6 md:p-8 shadow-sm relative overflow-hidden mb-8">
             <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 text-left">
-              <div className="w-16 h-16 shrink-0 bg-amber-500/10 text-amber-500 rounded-2xl flex items-center justify-center">
-                <AlertCircle size={32} />
+              <div className="w-14 h-14 shrink-0 bg-amber-500/10 text-amber-500 rounded-xl flex items-center justify-center">
+                <AlertCircle size={28} />
               </div>
               <div>
-                <h3 className="text-xl font-extrabold mb-2">Informasi Penting (Non-Official)</h3>
-                <p className="text-zinc-500 text-sm md:text-base leading-relaxed">
+                <h3 className="text-lg font-extrabold mb-1">Informasi Penting (Non-Official)</h3>
+                <p className="text-zinc-500 text-sm leading-relaxed">
                   Ini adalah halaman arsip <strong>Non-Official</strong> (tidak resmi) yang dibangun sebagai bentuk dedikasi untuk mempermudah peserta kajian mengakses materi. 
                   Jika terdapat banyak kesalahan teks (karena proses konversi otomatis), mohon langsung hubungi admin di <strong className="text-accent">brosurmta@gmail.com</strong> agar segera dibenahi. <em>Jazaakumullah khairan.</em>
                 </p>
               </div>
             </div>
           </div>
+
+          {/* GLOBAL SEARCH */}
+          <GlobalSearch />
         </div>
 
         {/* RAK BUKU (GRID) */}
@@ -138,6 +139,8 @@ export default async function Home() {
           </div>
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 }

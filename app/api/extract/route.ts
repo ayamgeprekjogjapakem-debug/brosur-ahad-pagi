@@ -32,6 +32,37 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(arrayBuffer);
     console.log(`📦 Mengunduh ${fileName} dari Storage. Ukuran: ${buffer.length} bytes`);
 
+    // 3.5 Buat atau cari Master Koleksi (Folder) otomatis
+    const folderName = fileName.replace(/\.(chm|zip)$/i, '');
+    let folderId = null;
+
+    const { data: existingFolder } = await supabase
+      .from('folders')
+      .select('id')
+      .eq('name', folderName)
+      .single();
+
+    if (existingFolder) {
+      folderId = existingFolder.id;
+    } else {
+      const folderSlug = folderName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+      const { data: newFolder, error: folderError } = await supabase
+        .from('folders')
+        .insert({ 
+          name: folderName, 
+          slug: folderSlug,
+          description: `Diimpor otomatis dari arsip ${fileName}` 
+        })
+        .select('id')
+        .single();
+      
+      if (!folderError && newFolder) {
+        folderId = newFolder.id;
+      } else if (folderError) {
+        console.error('Gagal membuat folder otomatis:', folderError);
+      }
+    }
+
     let extractResults: any[] = [];
     let successCount = 0;
 
@@ -156,7 +187,7 @@ export async function POST(request: NextRequest) {
       const { id, tahun, judul, slug } = parseFilename(baseName);
 
       const { error: upsertError } = await supabase.from('brosur').upsert(
-        { id, tahun, judul, slug, konten: finalHtml, teks_bersih: cleanText },
+        { id, tahun, judul, slug, konten: finalHtml, teks_bersih: cleanText, folder_id: folderId },
         { onConflict: 'id' }
       );
 
@@ -253,19 +284,28 @@ function decodeHtmlBuffer(buffer: Buffer): string {
   }
 
   // Heuristic Fallback
-  const utf8Str = buffer.toString('utf8');
-  const brokenCharsCount = utf8Str.split('').length - 1;
-  
-  // Jika UTF-8 menghasilkan banyak karakter aneh, coba decoding dengan format Arabic/Windows
-  if (brokenCharsCount > 5) {
-    // Kita coba decode sebagai windows-1256 (yang paling umum untuk Arab/Indonesia lama)
-    const winStr = iconv.decode(buffer, 'win1256');
-    // Jika masih ada huruf aneh di win1256, kita coba iso-8859-6
-    if (winStr.includes('')) {
-      return iconv.decode(buffer, 'iso-8859-6');
+  const encodings = ['utf8', 'win1256', 'iso-8859-6'];
+  let bestStr = '';
+  let minBroken = Infinity;
+
+  for (const enc of encodings) {
+    let str = '';
+    if (enc === 'utf8') {
+      str = buffer.toString('utf8');
+    } else {
+      str = iconv.decode(buffer, enc);
     }
-    return winStr;
+    const brokenCount = (str.match(/\uFFFD/g) || []).length;
+    
+    if (brokenCount === 0) {
+      return str; // Perfect match
+    }
+    
+    if (brokenCount < minBroken) {
+      minBroken = brokenCount;
+      bestStr = str;
+    }
   }
   
-  return utf8Str;
+  return bestStr;
 }

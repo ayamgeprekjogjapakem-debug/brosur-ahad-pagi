@@ -1,8 +1,19 @@
-require('dotenv').config({ path: '.env.local' });
+// Membaca .env.local secara manual agar tidak bergantung pada dotenv
 const fs = require('fs');
 const path = require('path');
-const { createClient } = require('@supabase/supabase-js');
-
+const envPath = path.join(__dirname, '..', '.env.local');
+if (fs.existsSync(envPath)) {
+  const envConfig = fs.readFileSync(envPath, 'utf8');
+  envConfig.split('\n').forEach(line => {
+    const match = line.match(/^([^=]+)=(.*)$/);
+    if (match) {
+      const key = match[1].trim();
+      let value = match[2].trim();
+      if (value.startsWith('"') && value.endsWith('"')) value = value.slice(1, -1);
+      process.env[key] = value;
+    }
+  });
+}
 // Ambil kredensial dari .env.local
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -12,8 +23,6 @@ if (!supabaseUrl || !supabaseKey) {
   console.error("Pastikan Anda sudah menempelkan SUPABASE_SERVICE_ROLE_KEY di .env.local Anda.");
   process.exit(1);
 }
-
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function uploadData() {
   const brosurPath = path.join(__dirname, '..', 'data', 'brosur.json');
@@ -56,12 +65,20 @@ async function uploadData() {
       };
     });
 
-    const { error } = await supabase
-      .from('brosur')
-      .upsert(batch, { onConflict: 'id' }); // upsert menimpa jika id sudah ada
+    const response = await fetch(`${supabaseUrl}/rest/v1/brosur?on_conflict=id`, {
+      method: 'POST',
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify(batch)
+    });
 
-    if (error) {
-      console.error(`Error pada batch ${i} - ${i + BATCH_SIZE}:`, error.message);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Error pada batch ${i} - ${i + BATCH_SIZE}:`, errorText);
       errorCount += batch.length;
     } else {
       successCount += batch.length;

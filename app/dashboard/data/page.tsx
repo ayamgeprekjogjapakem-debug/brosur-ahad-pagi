@@ -11,40 +11,90 @@ export default function DataBrosurPage() {
   const [folders, setFolders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalBrosurs, setTotalBrosurs] = useState(0);
+  const itemsPerPage = 50;
   // State untuk Fitur Pindah Masal (Bulk Move)
   const [selectedBrosurs, setSelectedBrosurs] = useState<string[]>([]);
   const [bulkFolderId, setBulkFolderId] = useState<string>('');
   const [isUpdatingBulk, setIsUpdatingBulk] = useState(false);
+  const [isEmptyingTable, setIsEmptyingTable] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Sinkronisasi Tab dengan URL
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    if (tab === 'folder') {
+      setActiveTab('folder');
+    }
+  }, []);
+
+  const changeTab = (tab: 'brosur' | 'folder') => {
+    setActiveTab(tab);
+    setSelectedBrosurs([]);
+    window.history.pushState(null, '', `?tab=${tab}`);
+  };
   
   const supabase = createClient();
 
-  const fetchData = async () => {
+  // Debounce logic for search
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      setSearchTerm(search);
+      setCurrentPage(1); // Reset ke halaman pertama setiap pencarian baru
+    }, 500);
+    return () => clearTimeout(delayDebounceFn);
+  }, [search]);
+
+  const fetchBrosurs = async () => {
     setLoading(true);
-    
-    // Fetch Brosur
-    const { data: brosurData } = await supabase
+    let query = supabase
       .from('brosur')
-      .select('id, judul, tahun, slug, created_at, folder_id, folders(name)')
+      .select('id, judul, tahun, slug, created_at, folder_id, folders(name)', { count: 'exact' })
       .order('tahun', { ascending: false });
       
-    if (brosurData) setBrosurs(brosurData);
+    if (searchTerm) {
+      const searchNum = parseInt(searchTerm);
+      if (!isNaN(searchNum) && searchNum > 1900 && searchNum < 2100) {
+        query = query.or(`judul.ilike.%${searchTerm}%,tahun.eq.${searchNum}`);
+      } else {
+        query = query.ilike('judul', `%${searchTerm}%`);
+      }
+    }
     
-    // Fetch Folders
-    const { data: folderData } = await supabase
-      .from('folders')
-      .select('*')
-      .order('created_at', { ascending: false });
-      
-    if (folderData) setFolders(folderData);
+    const from = (currentPage - 1) * itemsPerPage;
+    const to = from + itemsPerPage - 1;
+    
+    const { data, count } = await query.range(from, to);
+    
+    if (data) setBrosurs(data);
+    if (count !== null) setTotalBrosurs(count);
     
     setLoading(false);
   };
 
+  const fetchFolders = async () => {
+    const { data } = await supabase
+      .from('folders')
+      .select('*')
+      .order('created_at', { ascending: false });
+      
+    if (data) setFolders(data);
+  };
+
   useEffect(() => {
-    fetchData();
+    fetchFolders();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'brosur') {
+      fetchBrosurs();
+    }
+  }, [currentPage, searchTerm, activeTab]);
 
   const handleDeleteBrosur = async (id: string, judul: string) => {
     if (!window.confirm(`Yakin ingin menghapus brosur "${judul}"?`)) return;
@@ -67,11 +117,6 @@ export default function DataBrosurPage() {
     setDeletingId(null);
   };
 
-  const filteredBrosurs = brosurs.filter(b => 
-    b.judul.toLowerCase().includes(search.toLowerCase()) || 
-    b.tahun.toString().includes(search)
-  );
-
   const filteredFolders = folders.filter(f => 
     f.name.toLowerCase().includes(search.toLowerCase()) || 
     (f.description && f.description.toLowerCase().includes(search.toLowerCase()))
@@ -80,7 +125,7 @@ export default function DataBrosurPage() {
   // Bulk Actions Handlers
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
-      setSelectedBrosurs(filteredBrosurs.map(b => b.id));
+      setSelectedBrosurs(brosurs.map(b => b.id));
     } else {
       setSelectedBrosurs([]);
     }
@@ -109,9 +154,52 @@ export default function DataBrosurPage() {
     } else {
       setSelectedBrosurs([]);
       setBulkFolderId('');
-      fetchData(); // Muat ulang data agar tampilan folder terbaru terlihat
+      fetchBrosurs(); // Muat ulang data
     }
     setIsUpdatingBulk(false);
+  };
+
+  const handleBulkDelete = async () => {
+    if (!window.confirm(`PERINGATAN: Yakin ingin menghapus ${selectedBrosurs.length} brosur secara permanen? Data yang dihapus tidak bisa dikembalikan.`)) return;
+    
+    setIsUpdatingBulk(true);
+    const { error } = await supabase
+      .from('brosur')
+      .delete()
+      .in('id', selectedBrosurs);
+
+    if (error) {
+      alert(`Gagal menghapus brosur: ${error.message}`);
+    } else {
+      setSelectedBrosurs([]);
+      fetchBrosurs();
+    }
+    setIsUpdatingBulk(false);
+  };
+
+  const handleEmptyTable = async () => {
+    if (!window.confirm(`PERINGATAN SANGAT BERBAHAYA!\n\nApakah Anda YAKIN ingin menghapus SEMUA DATA BROSUR (sebanyak ${totalBrosurs} baris) secara permanen dari database?\nData tidak dapat dikembalikan lagi setelah dihapus.`)) return;
+    
+    // Konfirmasi kedua
+    if (window.prompt(`Ketik "HAPUS SEMUA" untuk melanjutkan:`) !== 'HAPUS SEMUA') {
+      alert('Penghapusan dibatalkan karena teks konfirmasi salah.');
+      return;
+    }
+
+    setIsEmptyingTable(true);
+    // Menggunakan trik neq id 0 untuk menghapus semua data (bypassing the missing where clause error)
+    const { error } = await supabase
+      .from('brosur')
+      .delete()
+      .neq('id', '0');
+
+    if (error) {
+      alert(`Gagal mengosongkan tabel: ${error.message}`);
+    } else {
+      alert('Tabel berhasil dikosongkan!');
+      fetchBrosurs();
+    }
+    setIsEmptyingTable(false);
   };
 
   return (
@@ -144,13 +232,13 @@ export default function DataBrosurPage() {
       {/* Tabs */}
       <div className="flex items-center gap-2 mb-6 border-b border-black/5 dark:border-white/5 pb-2">
         <button 
-          onClick={() => { setActiveTab('brosur'); setSelectedBrosurs([]); }}
+          onClick={() => changeTab('brosur')}
           className={`flex items-center gap-2 px-6 py-3 rounded-t-xl font-bold transition-colors ${activeTab === 'brosur' ? 'bg-white dark:bg-zinc-900 border-t border-l border-r border-black/5 dark:border-white/5 text-accent' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-black/5 dark:hover:bg-white/5'}`}
         >
-          <FileText size={18} /> Brosur Terisi ({brosurs.length})
+          <FileText size={18} /> Brosur Terisi ({activeTab === 'brosur' ? totalBrosurs : '...'})
         </button>
         <button 
-          onClick={() => { setActiveTab('folder'); setSelectedBrosurs([]); }}
+          onClick={() => changeTab('folder')}
           className={`flex items-center gap-2 px-6 py-3 rounded-t-xl font-bold transition-colors ${activeTab === 'folder' ? 'bg-white dark:bg-zinc-900 border-t border-l border-r border-black/5 dark:border-white/5 text-blue-600' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-black/5 dark:hover:bg-white/5'}`}
         >
           <FolderArchive size={18} /> Master Koleksi ({folders.length})
@@ -159,15 +247,27 @@ export default function DataBrosurPage() {
 
       <div className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-3xl p-6 shadow-sm rounded-tl-none">
         
-        <div className="mb-6 relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
-          <input 
-            type="text" 
-            placeholder={activeTab === 'brosur' ? "Cari judul atau tahun brosur..." : "Cari nama koleksi..."}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 pl-12 pr-4 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
-          />
+        <div className="mb-6 flex flex-col md:flex-row items-center gap-4">
+          <div className="relative flex-1 w-full">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
+            <input 
+              type="text" 
+              placeholder={activeTab === 'brosur' ? "Cari judul atau tahun brosur..." : "Cari nama koleksi..."}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 pl-12 pr-4 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
+            />
+          </div>
+          
+          {activeTab === 'brosur' && totalBrosurs > 0 && (
+            <button 
+              onClick={handleEmptyTable}
+              disabled={isEmptyingTable}
+              className="w-full md:w-auto bg-red-500/10 text-red-600 dark:text-red-400 px-5 py-3 rounded-xl font-bold text-sm hover:bg-red-500 hover:text-white disabled:opacity-50 transition-colors shrink-0 flex items-center justify-center gap-2 border border-red-500/20"
+            >
+              {isEmptyingTable ? <Loader2 className="animate-spin" size={16} /> : <><Trash2 size={16} /> Hapus Semua Data</>}
+            </button>
+          )}
         </div>
 
         {/* Action Bar Muncul Jika Ada Brosur Terpilih */}
@@ -197,6 +297,14 @@ export default function DataBrosurPage() {
               >
                 {isUpdatingBulk ? <Loader2 className="animate-spin" size={16} /> : 'Terapkan'}
               </button>
+              
+              <button 
+                onClick={handleBulkDelete}
+                disabled={isUpdatingBulk}
+                className="bg-red-500/10 text-red-600 dark:text-red-400 px-4 py-2 rounded-lg font-bold text-sm hover:bg-red-500 hover:text-white disabled:opacity-50 transition-colors shrink-0 flex items-center gap-2"
+              >
+                {isUpdatingBulk ? <Loader2 className="animate-spin" size={16} /> : <><Trash2 size={16} /> Hapus Terpilih</>}
+              </button>
             </div>
           </div>
         )}
@@ -208,20 +316,21 @@ export default function DataBrosurPage() {
           </div>
         ) : activeTab === 'brosur' ? (
           /* TAB BROSUR */
-          filteredBrosurs.length === 0 ? (
+          brosurs.length === 0 ? (
             <div className="py-20 text-center text-zinc-500 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl">
               <p>Tidak ada brosur yang ditemukan.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
                 <thead>
                   <tr className="border-b border-black/5 dark:border-white/5 text-zinc-500 text-sm">
                     <th className="p-4 w-12">
                       <input 
                         type="checkbox" 
                         className="w-4 h-4 accent-accent cursor-pointer rounded"
-                        checked={filteredBrosurs.length > 0 && selectedBrosurs.length === filteredBrosurs.length}
+                        checked={brosurs.length > 0 && selectedBrosurs.length === brosurs.length}
                         onChange={handleSelectAll}
                       />
                     </th>
@@ -232,7 +341,7 @@ export default function DataBrosurPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredBrosurs.map((brosur) => (
+                  {brosurs.map((brosur) => (
                     <tr key={brosur.id} className={`border-b border-black/5 dark:border-white/5 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors ${selectedBrosurs.includes(brosur.id) ? 'bg-accent/5 dark:bg-accent/10' : ''}`}>
                       <td className="p-4">
                         <input 
@@ -279,6 +388,33 @@ export default function DataBrosurPage() {
                 </tbody>
               </table>
             </div>
+            
+            {/* PAGINATION CONTROLS */}
+            <div className="mt-6 flex flex-col md:flex-row items-center justify-between gap-4 border-t border-black/5 dark:border-white/5 pt-6">
+              <div className="text-sm text-zinc-500 font-medium">
+                Menampilkan <span className="font-bold text-zinc-900 dark:text-zinc-100">{brosurs.length > 0 ? ((currentPage - 1) * itemsPerPage) + 1 : 0}</span> - <span className="font-bold text-zinc-900 dark:text-zinc-100">{Math.min(currentPage * itemsPerPage, totalBrosurs)}</span> dari <span className="font-bold text-zinc-900 dark:text-zinc-100">{totalBrosurs}</span> brosur
+              </div>
+              <div className="flex items-center gap-2">
+                <button 
+                  disabled={currentPage === 1 || loading}
+                  onClick={() => setCurrentPage(prev => prev - 1)}
+                  className="px-4 py-2 border border-zinc-200 dark:border-zinc-800 rounded-xl disabled:opacity-50 hover:bg-black/5 dark:hover:bg-white/5 transition-colors font-medium text-sm"
+                >
+                  Sebelumnya
+                </button>
+                <div className="px-4 py-2 rounded-xl bg-accent/10 text-accent font-bold text-sm">
+                  {currentPage}
+                </div>
+                <button 
+                  disabled={currentPage * itemsPerPage >= totalBrosurs || loading}
+                  onClick={() => setCurrentPage(prev => prev + 1)}
+                  className="px-4 py-2 border border-zinc-200 dark:border-zinc-800 rounded-xl disabled:opacity-50 hover:bg-black/5 dark:hover:bg-white/5 transition-colors font-medium text-sm"
+                >
+                  Selanjutnya
+                </button>
+              </div>
+            </div>
+            </>
           )
         ) : (
           /* TAB FOLDER */

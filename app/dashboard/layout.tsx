@@ -46,7 +46,7 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-[#fafafa] dark:bg-[#0a0a0a] text-zinc-900 dark:text-zinc-100 flex flex-col md:flex-row">
+    <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#000000] text-zinc-900 dark:text-zinc-100 flex flex-col md:flex-row font-sans selection:bg-accent/30 selection:text-accent">
       <DashboardSidebar />
       <div className="flex-1 w-full overflow-x-hidden">
         {children}

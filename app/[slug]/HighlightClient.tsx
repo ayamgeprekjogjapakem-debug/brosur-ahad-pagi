@@ -133,7 +133,7 @@ export default function HighlightClient({ brosur }: { brosur: BrosurData }) {
         style={{
           '--base-font-size': `${latinFontSize}px`,
           '--arabic-font-size': `${arabicFontSize}px`,
-          '--arabic-font-family': arabicFontFamily === 'amiri' ? "var(--font-amiri), serif" : "'Traditional Arabic', serif",
+          '--arabic-font-family': arabicFontFamily === 'amiri' ? "var(--font-amiri), serif" : "var(--font-trad-arabic), 'Traditional Arabic', serif",
         } as React.CSSProperties}
         dangerouslySetInnerHTML={{ __html: brosur.konten }}
       />

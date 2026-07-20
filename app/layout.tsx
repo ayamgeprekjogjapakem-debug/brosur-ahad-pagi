@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import { Outfit, Amiri } from "next/font/google";
+import { Inter, Amiri, Noto_Naskh_Arabic } from "next/font/google";
 import "./globals.css";
 import { SettingsProvider } from "./SettingsContext";
 import AnalyticsTracker from "./AnalyticsTracker";
 
-const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const amiri = Amiri({ weight: ["400", "700"], subsets: ["arabic"], variable: "--font-amiri" });
+const notoNaskh = Noto_Naskh_Arabic({ weight: ["400", "700"], subsets: ["arabic"], variable: "--font-trad-arabic" });
 
 export const metadata: Metadata = {
   title: "Brosur MTA Digital | Arsip Kajian Ahad Pagi (Non-Official)",
@@ -20,10 +21,10 @@ export default function RootLayout({
   return (
     <html
       lang="id"
-      className={`${outfit.variable} h-full antialiased`}
+      className={`${inter.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className={`min-h-full flex flex-col font-sans bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 ${amiri.variable}`} suppressHydrationWarning>
+      <body className={`min-h-full flex flex-col font-sans bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 ${amiri.variable} ${notoNaskh.variable}`} suppressHydrationWarning>
         <AnalyticsTracker />
         <SettingsProvider>
           {children}

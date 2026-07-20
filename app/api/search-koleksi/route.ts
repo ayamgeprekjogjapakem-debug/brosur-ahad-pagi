@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
   const q = searchParams.get('q')?.toLowerCase() || '';
   const folderId = searchParams.get('folder_id');
 
-  if (!folderId || !q) {
+  if (!q) {
     return NextResponse.json({ results: [] });
   }
 
@@ -19,10 +19,22 @@ export async function GET(request: NextRequest) {
     .from('brosur')
     .select('judul, slug, tahun, teks_bersih, konten')
     .order('tahun', { ascending: false });
+    
+  if (folderId) {
+    queryBuilder = queryBuilder.eq('folder_id', folderId);
+  }
 
-  // Optimasi: Gunakan kata pertama untuk filter kasar di DB (cek di judul atau teks_bersih)
+  // Optimasi: Gunakan semua kata untuk filter di DB secara berantai, atau cocokkan persis jika ini kalimat
   if (qWords.length > 0) {
-    queryBuilder = queryBuilder.or(`judul.ilike.%${qWords[0]}%,teks_bersih.ilike.%${qWords[0]}%,konten.ilike.%${qWords[0]}%`);
+    if (qWords.length === 1) {
+      queryBuilder = queryBuilder.or(`judul.ilike.%${qWords[0]}%,teks_bersih.ilike.%${qWords[0]}%,konten.ilike.%${qWords[0]}%`);
+    } else {
+      // Jika lebih dari 1 kata (kalimat), wajib mengandung kata-kata tersebut
+      // Kita bisa menggunakan filter untuk setiap kata
+      qWords.forEach(word => {
+        queryBuilder = queryBuilder.or(`judul.ilike.%${word}%,teks_bersih.ilike.%${word}%,konten.ilike.%${word}%`);
+      });
+    }
   }
 
   const { data, error } = await queryBuilder;
@@ -56,6 +68,7 @@ export async function GET(request: NextRequest) {
       if (normalizedQ && plainTextLower.includes(normalizedQ)) {
         matched = true;
       } else if (qWords.length > 0 && qWords.every(w => plainTextLower.includes(w))) {
+        // Fallback: Jika tidak cocok persis sebagai kalimat, tapi semua kata ada di dalamnya
         matched = true;
       }
     }
