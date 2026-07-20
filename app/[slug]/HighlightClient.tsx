@@ -25,9 +25,38 @@ export default function HighlightClient({ brosur }: { brosur: BrosurData }) {
   const { latinFontSize, arabicFontSize, latinFontFamily, arabicFontFamily } = useSettings();
 
   useEffect(() => {
-    if (contentRef.current && query) {
-      const markInstance = new Mark(contentRef.current);
-      // Unmark any previous highlights
+    if (contentRef.current) {
+      // Pastikan semua teks Arab terpaut dengan membungkusnya secara dinamis
+      // menggunakan TreeWalker untuk mencari node teks saja agar aman dari tag HTML
+      const walk = document.createTreeWalker(contentRef.current, NodeFilter.SHOW_TEXT, null);
+      // regex deteksi apakah ada huruf arab
+      const arabicDetectRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\u061C]/;
+      // regex replace untuk membungkus huruf arab beserta spasi/tanda baca/angka di antaranya (tanpa huruf latin)
+      const arabicReplaceRegex = /([\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\u061C]+(?:[\s\W\d]{0,15}?[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\u061C]+)*)/g;
+      
+      let node;
+      const nodesToReplace = [];
+      while(node = walk.nextNode()) {
+        if(node.nodeValue && arabicDetectRegex.test(node.nodeValue)) {
+          const parent = node.parentElement;
+          // Hindari wrap ulang jika sudah di dalam container arabic
+          if (parent && !parent.closest('.arabic, [dir="rtl" i], [lang^="ar" i]')) {
+             nodesToReplace.push(node);
+          }
+        }
+      }
+
+      nodesToReplace.forEach(node => {
+        if (!node.nodeValue || !node.parentNode) return;
+        const span = document.createElement('span');
+        // Wrap arabic text with span.arabic
+        span.innerHTML = node.nodeValue.replace(arabicReplaceRegex, '<span class="arabic inline-block" dir="rtl">$1</span>');
+        node.parentNode.replaceChild(span, node);
+      });
+
+      if (query) {
+        const markInstance = new Mark(contentRef.current);
+        // Unmark any previous highlights
       markInstance.unmark({
         done: () => {
           // Mark the new query
@@ -46,6 +75,7 @@ export default function HighlightClient({ brosur }: { brosur: BrosurData }) {
           }, 300);
         }
       });
+      }
     }
   }, [query, brosur.konten]);
 
@@ -244,7 +274,7 @@ export default function HighlightClient({ brosur }: { brosur: BrosurData }) {
       </div>
       <article
         ref={contentRef}
-        className={`prose dark:prose-invert max-w-none prose-headings:font-bold prose-a:text-accent reader-content font-${latinFontFamily}`}
+        className={`prose dark:prose-invert max-w-none prose-headings:font-bold prose-a:text-accent reader-content ${latinFontFamily === 'serif' ? 'font-serif' : 'font-sans'}`}
         style={{
           '--base-font-size': `${latinFontSize}px`,
           '--arabic-font-size': `${arabicFontSize}px`,

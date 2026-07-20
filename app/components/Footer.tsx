@@ -1,11 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Heart, AlertCircle, CheckCircle2, MessageSquare, Loader2, Send, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AlertCircle, CheckCircle2, MessageSquare, Loader2, Send } from 'lucide-react';
 
 export default function Footer() {
-  const [showDonasi, setShowDonasi] = useState(false);
   const [showMasukan, setShowMasukan] = useState(false);
   const [isFeedbackEnabled, setIsFeedbackEnabled] = useState(true);
 
@@ -89,24 +87,9 @@ export default function Footer() {
 
         {/* Main Footer Links */}
         <div className="flex flex-wrap items-center justify-center gap-6 mb-8">
-          <button
-            onClick={() => {
-              setShowMasukan(false);
-              setShowDonasi(!showDonasi);
-            }}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-bold transition-all duration-300 ${showDonasi
-                ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20'
-                : 'bg-rose-50 text-rose-600 hover:bg-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:hover:bg-rose-500/20'
-              }`}
-          >
-            <Heart size={18} className={showDonasi ? 'animate-pulse' : ''} />
-            Donasi
-          </button>
-
           {isFeedbackEnabled ? (
             <button
               onClick={() => {
-                setShowDonasi(false);
                 setShowMasukan(!showMasukan);
               }}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-medium transition-all duration-300 ${showMasukan
@@ -187,61 +170,6 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Popup / Modal Donasi */}
-        <AnimatePresence>
-          {showDonasi && (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-              onClick={() => setShowDonasi(false)}
-            >
-              <motion.div 
-                initial={{ scale: 0.95, opacity: 0, y: 20 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.95, opacity: 0, y: 20 }}
-                onClick={(e) => e.stopPropagation()}
-                className="max-w-xl w-full bg-gradient-to-br from-rose-50 to-orange-50 dark:from-rose-950 dark:to-orange-950 p-8 rounded-3xl shadow-2xl relative border border-rose-200 dark:border-rose-900 overflow-hidden"
-              >
-                {/* Close Button */}
-                <button 
-                  onClick={() => setShowDonasi(false)}
-                  className="absolute top-4 right-4 p-2 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors z-20"
-                  title="Tutup"
-                >
-                  <X size={20} className="text-rose-900 dark:text-rose-200" />
-                </button>
-
-                <div className="absolute -top-4 -right-4 text-rose-500/10 dark:text-rose-500/5 pointer-events-none">
-                  <Heart size={160} />
-                </div>
-                
-                <h3 className="text-xl md:text-2xl font-black text-rose-900 dark:text-rose-400 mb-6 relative z-10" style={{ fontFamily: "var(--font-amiri), serif" }}>
-                  Terkait Donasi...
-                </h3>
-                
-                <div className="space-y-4 text-rose-900/80 dark:text-rose-200/90 leading-relaxed text-sm md:text-base relative z-10 text-left font-medium">
-                  <p>
-                    Tidak perlu menyisihkan harta Anda. Jika Anda merasa website arsip ini bermanfaat, <strong>cukup doakan kami</strong> di sela-sela waktu mustajab Anda.
-                  </p>
-                  <p>
-                    Semoga Allah ﷻ menerima upaya kecil yang penuh kekurangan ini, mencatatnya sebagai amal shalih yang kelak memberatkan timbangan kebaikan, serta senantiasa memberikan taufik dan kemudahan pada setiap urusan kita di dunia maupun akhirat.
-                  </p>
-                  
-                  <div className="h-px w-full bg-rose-200 dark:bg-rose-900/50 my-6"></div>
-                  
-                  <p className="flex items-start gap-3 text-rose-900 dark:text-rose-300 font-semibold bg-white/50 dark:bg-black/20 p-4 rounded-xl border border-rose-200/50 dark:border-rose-900/30">
-                    <CheckCircle2 size={24} className="shrink-0 mt-0.5 text-rose-600 dark:text-rose-500" />
-                    <span>
-                      Apabila Anda menemukan kesalahan (baik pada teks maupun sistem), mohon jangan segan untuk mengingatkan kami dengan cara yang ahsan dan sesuai sunnah.
-                    </span>
-                  </p>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
 
       {/* Sub-Footer (Bottom Bar) */}
