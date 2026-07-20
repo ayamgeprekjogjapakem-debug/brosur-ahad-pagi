@@ -64,3 +64,13 @@
   display: inline-block;
   direction: rtl;
 }
+
+@media print {
+  @page {
+    margin: 0; /* Menghilangkan URL dan Tanggal bawaan browser */
+  }
+  body {
+    padding: 2cm; /* Memberikan margin bersih untuk konten */
+    background-color: white !important;
+  }
+}

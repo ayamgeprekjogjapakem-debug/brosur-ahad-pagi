@@ -116,19 +116,29 @@ export default function CollectionSidebar({ brosurList, activeSlug, folderSlug, 
     <>
       {/* Mobile Toggle Button */}
       {!isSidebarOpen && (
-        <button 
-          onClick={() => setIsSidebarOpen(true)}
-          className="lg:hidden fixed bottom-6 right-6 z-50 p-4 rounded-full bg-accent text-white shadow-xl"
-        >
-          <Menu />
-        </button>
+        <div className="lg:hidden fixed bottom-6 right-6 z-50 flex flex-col gap-4 print:hidden">
+          <Link 
+            href="/"
+            className="p-4 rounded-full bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 shadow-xl border border-black/5 dark:border-white/5 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors"
+            title="Kembali ke Beranda"
+          >
+            <Home />
+          </Link>
+          <button 
+            onClick={() => setIsSidebarOpen(true)}
+            className="p-4 rounded-full bg-accent text-white shadow-xl hover:scale-105 active:scale-95 transition-transform"
+            title="Buka Daftar Isi"
+          >
+            <Menu />
+          </button>
+        </div>
       )}
 
       {/* Desktop Hidden Toggle Button */}
       {!isSidebarOpen && (
         <button 
           onClick={() => setIsSidebarOpen(true)}
-          className="hidden lg:flex fixed top-6 left-6 z-50 p-3 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors shadow-sm items-center gap-2"
+          className="hidden lg:flex fixed top-6 left-6 z-50 p-3 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors shadow-sm items-center gap-2 print:hidden"
           title="Buka Sidebar Koleksi"
         >
           <PanelLeftOpen size={20} />
@@ -142,7 +152,7 @@ export default function CollectionSidebar({ brosurList, activeSlug, folderSlug, 
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -350, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="w-full md:w-80 lg:w-[350px] border-r border-black/5 dark:border-white/5 flex flex-col h-[100dvh] absolute lg:relative flex-shrink-0 z-40 bg-[#fafafa] dark:bg-[#0a0a0a]"
+            className="w-full md:w-80 lg:w-[350px] border-r border-black/5 dark:border-white/5 flex flex-col h-[100dvh] absolute lg:relative flex-shrink-0 z-40 bg-[#fafafa] dark:bg-[#0a0a0a] print:hidden"
           >
             {/* Header Sidebar */}
             <div className="p-4 border-b border-black/5 dark:border-white/5 flex items-center justify-between sticky top-0 bg-[#fafafa]/80 dark:bg-[#0a0a0a]/80 backdrop-blur-md z-10">

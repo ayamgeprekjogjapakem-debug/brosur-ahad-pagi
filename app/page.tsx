@@ -70,7 +70,7 @@ export default async function Home() {
             <h2 className="text-2xl font-bold tracking-tight">Rak Koleksi</h2>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-10 pb-20">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8 pb-20">
             {folders && folders.length > 0 ? (
               folders.map((folder, index) => {
                 // Generate warna buku berbeda-beda (secara deterministik berdasarkan urutan)
@@ -87,41 +87,41 @@ export default async function Home() {
                   <Link 
                     key={folder.id} 
                     href={`/koleksi/${folder.slug}`} 
-                    className="group relative flex justify-center perspective-[1000px] h-[300px] md:h-[350px]"
+                    className="group relative flex justify-center w-full perspective-[1000px] h-[220px] sm:h-[280px] md:h-[340px]"
                   >
                     {/* Shadow Buku (di bawah) */}
-                    <div className="absolute -bottom-4 w-[80%] h-6 bg-black/20 dark:bg-black/50 blur-lg rounded-[100%] group-hover:blur-xl transition-all duration-300"></div>
+                    <div className="absolute -bottom-4 w-[80%] h-4 md:h-6 bg-black/20 dark:bg-black/50 blur-md md:blur-lg rounded-[100%] group-hover:blur-xl transition-all duration-300"></div>
                     
                     {/* Container Buku Utama (Animasi Angkat 3D) */}
-                    <div className="relative w-full h-full transform transition-all duration-500 ease-out [transform-style:preserve-3d] group-hover:-translate-y-4 group-hover:[transform:rotateY(-10deg)]">
+                    <div className="relative w-full h-full transform transition-all duration-500 ease-out [transform-style:preserve-3d] group-hover:-translate-y-2 md:group-hover:-translate-y-4 group-hover:[transform:rotateY(-10deg)]">
                       
                       {/* Tulang Buku (Spine) - Sisi Kiri */}
-                      <div className={`absolute left-0 top-0 w-6 h-full bg-gradient-to-b ${colorClass} origin-right transform [transform:rotateY(90deg)] brightness-75 rounded-l-md border-y border-l border-white/10 shadow-[inset_-2px_0_5px_rgba(0,0,0,0.5)]`}>
+                      <div className={`absolute left-0 top-0 w-4 md:w-6 h-full bg-gradient-to-b ${colorClass} origin-right transform [transform:rotateY(90deg)] brightness-75 rounded-l-md border-y border-l border-white/10 shadow-[inset_-2px_0_5px_rgba(0,0,0,0.5)]`}>
                         {/* Aksen Tali Pita / Garis di Tulang Buku */}
-                        <div className="absolute top-8 w-full h-1 bg-black/20"></div>
-                        <div className="absolute top-10 w-full h-1 bg-black/20"></div>
-                        <div className="absolute bottom-8 w-full h-1 bg-black/20"></div>
+                        <div className="absolute top-6 md:top-8 w-full h-0.5 md:h-1 bg-black/20"></div>
+                        <div className="absolute top-8 md:top-10 w-full h-0.5 md:h-1 bg-black/20"></div>
+                        <div className="absolute bottom-6 md:bottom-8 w-full h-0.5 md:h-1 bg-black/20"></div>
                       </div>
 
                       {/* Sampul Buku (Cover Depan) */}
-                      <div className={`absolute left-0 top-0 w-full h-full bg-gradient-to-br ${colorClass} rounded-r-xl border border-white/10 shadow-2xl overflow-hidden flex flex-col p-6`}>
+                      <div className={`absolute left-0 top-0 w-full h-full bg-gradient-to-br ${colorClass} rounded-r-xl border border-white/10 shadow-xl md:shadow-2xl overflow-hidden flex flex-col p-3 md:p-6`}>
                         
                         {/* Tekstur Cover (Garis lipatan tulang buku di sebelah kiri) */}
-                        <div className="absolute left-0 top-0 w-4 h-full bg-gradient-to-r from-black/40 to-transparent"></div>
-                        <div className="absolute left-3 top-0 w-px h-full bg-white/10"></div>
+                        <div className="absolute left-0 top-0 w-3 md:w-4 h-full bg-gradient-to-r from-black/40 to-transparent"></div>
+                        <div className="absolute left-2 md:left-3 top-0 w-px h-full bg-white/10"></div>
                         
                         {/* Ornamen / Dekorasi Emas di Cover */}
-                        <div className="flex-1 border border-white/20 rounded-lg p-4 flex flex-col items-center justify-center text-center relative z-10 backdrop-blur-sm bg-black/10">
+                        <div className="flex-1 border border-white/20 rounded-lg p-2 md:p-4 flex flex-col items-center justify-center text-center relative z-10 backdrop-blur-sm bg-black/10">
                           
-                          <Book size={40} className="text-white/80 mb-4 drop-shadow-md" />
+                          <Book className="text-white/80 w-8 h-8 md:w-10 md:h-10 mb-2 md:mb-4 drop-shadow-md" />
                           
-                          <h3 className="text-white font-black text-xl md:text-2xl leading-tight mb-2 drop-shadow-md" style={{ fontFamily: "var(--font-amiri), serif" }}>
+                          <h3 className="text-white font-black text-base sm:text-lg md:text-2xl leading-tight mb-1 md:mb-2 drop-shadow-md" style={{ fontFamily: "var(--font-amiri), serif" }}>
                             {folder.name}
                           </h3>
                           
-                          <div className="w-12 h-px bg-white/30 my-4 mx-auto"></div>
+                          <div className="w-8 md:w-12 h-px bg-white/30 my-2 md:my-4 mx-auto"></div>
                           
-                          <p className="text-white/70 text-xs md:text-sm font-medium line-clamp-3">
+                          <p className="text-white/70 text-[10px] sm:text-xs md:text-sm font-medium line-clamp-2 md:line-clamp-3 leading-snug px-1">
                             {folder.description || 'Kumpulan arsip digital Brosur MTA.'}
                           </p>
                         </div>

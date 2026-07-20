@@ -38,7 +38,8 @@ export async function GET(request: NextRequest) {
   let queryBuilder = supabase
     .from('brosur')
     .select('judul, slug, tahun, teks_bersih, konten')
-    .order('tahun', { ascending: false });
+    .order('tahun', { ascending: false })
+    .limit(50);
     
   if (folderId) {
     queryBuilder = queryBuilder.eq('folder_id', folderId);
