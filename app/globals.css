@@ -11,13 +11,13 @@
   :root {
     --background: 0 0% 100%;
     --foreground: 240 10% 3.9%;
-    --accent: 142 70.6% 45.3%; /* A beautiful Islamic Green */
+    --accent: 180 48% 33%; /* Ulil Albab Teal */
   }
 
   .dark {
     --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
-    --accent: 142 70.6% 45.3%;
+    --accent: 180 48% 33%;
   }
 }
 

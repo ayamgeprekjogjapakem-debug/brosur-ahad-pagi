@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { createClient } from '@/utils/supabase/server';
 import GlobalSearch from './components/GlobalSearch';
 import Footer from './components/Footer';
+import Image from 'next/image';
 
 export default async function Home() {
   const supabase = await createClient();
@@ -20,10 +21,15 @@ export default async function Home() {
       {/* HEADER */}
       <header className="p-6 md:px-12 md:py-8 flex items-center justify-center border-b border-black/5 dark:border-white/5 bg-white/50 dark:bg-black/50 backdrop-blur-xl sticky top-0 z-10">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-accent rounded-2xl flex items-center justify-center shadow-lg shadow-accent/20">
-            <Library className="text-white" size={24} />
+          <div className="w-12 h-12 relative flex items-center justify-center shrink-0">
+            <Image 
+              src="/logo.png" 
+              alt="Logo Ulil Albab" 
+              fill
+              className="object-contain drop-shadow-md"
+            />
           </div>
-          <span className="font-extrabold text-2xl tracking-tight">Koleksi Digital</span>
+          <span className="font-extrabold text-2xl tracking-tight">Ulil Albab</span>
         </div>
       </header>
 
@@ -31,9 +37,12 @@ export default async function Home() {
         
         {/* HERO NARRATIVE / DISCLAIMER */}
         <div className="w-full max-w-4xl mx-auto mb-16 text-center">
-          <h1 className="text-4xl md:text-6xl font-black mb-6 tracking-tight">
-            Perpustakaan <span className="text-accent">Brosur MTA</span>
+          <h1 className="text-4xl md:text-6xl font-black mb-4 tracking-tight">
+            Perpustakaan <span className="text-accent">Ulil Albab</span>
           </h1>
+          <p className="text-xl md:text-2xl text-zinc-600 dark:text-zinc-400 font-medium mb-8">
+            Koleksi Digital Arsip Brosur Ahad Pagi MTA
+          </p>
           
           <div className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-2xl p-6 md:p-8 shadow-sm relative overflow-hidden mb-8">
             <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 text-left">

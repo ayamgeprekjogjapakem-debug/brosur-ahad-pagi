@@ -1,6 +1,25 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 
+function normalizeArabic(text: string): string {
+  if (!text) return '';
+  return text
+    // Remove Arabic diacritics (Harakat)
+    .replace(/[\u0617-\u061A\u064B-\u0652]/g, '')
+    // Normalize Alif variations
+    .replace(/[أإآ]/g, 'ا')
+    // Normalize Ta Marbuta to Ha
+    .replace(/ة/g, 'ه')
+    // Normalize Ya to Alif Maksura (optional, depends on text, let's keep it safe)
+    .replace(/ي/g, 'ى');
+}
+
+function normalizePunctuation(text: string): string {
+  if (!text) return '';
+  // Replace all non-alphanumeric (except Arabic letters) with spaces, keeping numbers
+  return text.replace(/[^\w\s\u0600-\u06FF0-9]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const q = searchParams.get('q')?.toLowerCase() || '';
@@ -13,7 +32,8 @@ export async function GET(request: NextRequest) {
   const supabase = await createClient();
 
   const normalizedQ = q.replace(/\s+/g, ' ').trim();
-  const qWords = normalizedQ.split(' ').filter(Boolean);
+  // Pisahkan dengan spasi ATAU tanda baca
+  const qWords = normalizePunctuation(q).split(' ').filter(w => w.length > 1);
 
   let queryBuilder = supabase
     .from('brosur')
@@ -24,17 +44,18 @@ export async function GET(request: NextRequest) {
     queryBuilder = queryBuilder.eq('folder_id', folderId);
   }
 
-  // Optimasi: Gunakan semua kata untuk filter di DB secara berantai, atau cocokkan persis jika ini kalimat
+  // Optimasi: Jika kata kunci panjang, ambil 3 kata terpanjang untuk filter DB agar lebih longgar (TIDAK STRICT AND untuk SEMUA kata)
   if (qWords.length > 0) {
-    if (qWords.length === 1) {
-      queryBuilder = queryBuilder.or(`judul.ilike.%${qWords[0]}%,teks_bersih.ilike.%${qWords[0]}%,konten.ilike.%${qWords[0]}%`);
-    } else {
-      // Jika lebih dari 1 kata (kalimat), wajib mengandung kata-kata tersebut
-      // Kita bisa menggunakan filter untuk setiap kata
-      qWords.forEach(word => {
-        queryBuilder = queryBuilder.or(`judul.ilike.%${word}%,teks_bersih.ilike.%${word}%,konten.ilike.%${word}%`);
-      });
-    }
+    // Urutkan kata dari yang terpanjang ke terpendek
+    const sortedWords = [...qWords].sort((a, b) => b.length - a.length);
+    // Ambil maksimal 3 kata terpanjang
+    const topWords = sortedWords.slice(0, Math.min(3, sortedWords.length));
+    
+    topWords.forEach(word => {
+      // Hilangkan harakat untuk DB search (jika DB belum disiapkan, ini mungkin tidak match jika DB ada harakat)
+      // Tapi kita coba tetap masukkan karena lebih baik daripada query semua kata.
+      queryBuilder = queryBuilder.or(`judul.ilike.%${word}%,teks_bersih.ilike.%${word}%,konten.ilike.%${word}%`);
+    });
   }
 
   const { data, error } = await queryBuilder;
@@ -62,28 +83,56 @@ export async function GET(request: NextRequest) {
        plainText = $.text().replace(/\s+/g, ' ').trim();
     }
     
-    let plainTextLower = plainText.toLowerCase();
+    const plainTextLower = plainText.toLowerCase();
+    
+    // Normalisasi untuk JS matching
+    const normPlainText = normalizeArabic(normalizePunctuation(plainTextLower));
+    const normQuery = normalizeArabic(normalizePunctuation(q.toLowerCase()));
+    const normQWords = normQuery.split(' ').filter(w => w.length > 1);
 
     if (plainText) {
-      if (normalizedQ && plainTextLower.includes(normalizedQ)) {
+      if (normQuery && normPlainText.includes(normQuery)) {
         matched = true;
-      } else if (qWords.length > 0 && qWords.every(w => plainTextLower.includes(w))) {
-        // Fallback: Jika tidak cocok persis sebagai kalimat, tapi semua kata ada di dalamnya
-        matched = true;
+      } else if (normQWords.length > 0) {
+        // Fallback: Kalimat panjang sering salah ketik/harakat, jika 70% kata cocok, anggap match!
+        let matchCount = 0;
+        normQWords.forEach(w => {
+          if (normPlainText.includes(w)) matchCount++;
+        });
+        const matchRatio = matchCount / normQWords.length;
+        if (matchRatio >= 0.7) {
+          matched = true;
+        }
       }
     }
     
     if (matched) {
       if (plainText) {
-        let matchIdx = plainTextLower.indexOf(q);
-        if (matchIdx === -1 && qWords.length > 0) {
-           matchIdx = plainTextLower.indexOf(qWords[0]);
+        const snippets: string[] = [];
+        let currentIndex = 0;
+        let occurrences = 0;
+        
+        while (occurrences < 3) {
+          let matchIdx = plainTextLower.indexOf(q, currentIndex);
+          if (matchIdx === -1 && qWords.length > 0) {
+            matchIdx = plainTextLower.indexOf(qWords[0], currentIndex);
+          }
+          
+          if (matchIdx !== -1) {
+            const startIdx = Math.max(0, matchIdx - 50);
+            const endIdx = Math.min(plainText.length, matchIdx + q.length + 80);
+            let snip = (startIdx > 0 ? '... ' : '') + plainText.substring(startIdx, endIdx) + (endIdx < plainText.length ? ' ...' : '');
+            snippets.push(snip);
+            
+            currentIndex = endIdx;
+            occurrences++;
+          } else {
+            break;
+          }
         }
         
-        if (matchIdx !== -1) {
-          const startIdx = Math.max(0, matchIdx - 60);
-          const endIdx = Math.min(plainText.length, matchIdx + q.length + 100);
-          snippet = (startIdx > 0 ? '... ' : '') + plainText.substring(startIdx, endIdx) + (endIdx < plainText.length ? ' ...' : '');
+        if (snippets.length > 0) {
+          snippet = snippets.join(' ');
         } else {
           snippet = plainText.substring(0, 150) + '...';
         }

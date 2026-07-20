@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { BookOpen, Upload, LogOut, Loader2, Users, FileStack, Settings, UserCog, Database } from 'lucide-react';
+import { BookOpen, Upload, LogOut, Loader2, Users, FileStack, Settings, UserCog, Database, MessageSquare } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 
 export default function DashboardSidebar() {
@@ -30,6 +30,7 @@ export default function DashboardSidebar() {
     { name: 'Upload CHM', href: '/dashboard', icon: Upload },
     { name: 'Arsip Brosur', href: '/dashboard/arsip', icon: FileStack },
     { name: 'Data Brosur', href: '/dashboard/data', icon: Database },
+    { name: 'Kotak Masukan', href: '/dashboard/masukan', icon: MessageSquare },
     { name: 'Pengguna', href: '/dashboard/users', icon: UserCog },
     { name: 'Pengaturan', href: '/dashboard/settings', icon: Settings },
   ];
@@ -42,7 +43,7 @@ export default function DashboardSidebar() {
             <BookOpen className="text-white" size={20} />
           </div>
           <div className="flex flex-col">
-            <span className="font-extrabold text-[17px] tracking-tight text-zinc-900 dark:text-zinc-100">Brosur MTA</span>
+            <span className="font-extrabold text-[17px] tracking-tight text-zinc-900 dark:text-zinc-100">Ulil Albab</span>
             <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Admin</span>
           </div>
         </Link>

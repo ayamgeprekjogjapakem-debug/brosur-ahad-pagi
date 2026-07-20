@@ -7,6 +7,27 @@ import { Search, Loader2, ArrowLeft, BookOpen } from 'lucide-react';
 import GlobalSearch from '../components/GlobalSearch';
 import Footer from '../components/Footer';
 
+function HighlightedText({ text, highlight }: { text: string; highlight: string }) {
+  if (!highlight.trim()) return <>{text}</>;
+  
+  const words = highlight.split(/\s+/).filter(w => w.trim().length > 0);
+  if (words.length === 0) return <>{text}</>;
+  
+  const regex = new RegExp(`(${words.join('|')})`, 'gi');
+  const parts = text.split(regex);
+  
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (words.some(w => w.toLowerCase() === part.toLowerCase())) {
+          return <mark key={i} className="bg-yellow-200 dark:bg-yellow-900/50 text-black dark:text-yellow-100 px-1 rounded-sm">{part}</mark>;
+        }
+        return <span key={i}>{part}</span>;
+      })}
+    </>
+  );
+}
+
 export default function SearchPage() {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get('q') || '';
@@ -60,9 +81,12 @@ export default function SearchPage() {
 
         {/* Results */}
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-20 text-zinc-400">
-            <Loader2 className="animate-spin mb-4" size={40} />
-            <p className="font-medium">Mencari di seluruh koleksi database...</p>
+          <div className="flex flex-col items-center justify-center py-24">
+            <div className="relative flex items-center justify-center w-14 h-14 mb-6">
+              <div className="absolute w-full h-full border-[1.5px] border-teal-500/10 rounded-full"></div>
+              <div className="absolute w-full h-full border-[1.5px] border-transparent border-t-teal-500 rounded-full animate-spin" style={{ animationDuration: '1s', animationTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)' }}></div>
+            </div>
+            <p className="text-sm font-medium text-teal-600/70 tracking-widest uppercase animate-pulse">Mencari Data...</p>
           </div>
         ) : !initialQuery ? (
           <div className="text-center py-20 text-zinc-500">
@@ -87,7 +111,7 @@ export default function SearchPage() {
             
             {results.map((item, i) => (
               <Link 
-                href={`/${item.slug}`} 
+                href={`/${item.slug}?q=${encodeURIComponent(initialQuery)}`} 
                 key={i}
                 className="block bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 p-6 rounded-2xl hover:border-accent hover:shadow-lg hover:shadow-accent/5 transition-all group"
               >
@@ -104,7 +128,7 @@ export default function SearchPage() {
                     </div>
                     {item.snippet && (
                       <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed italic border-l-2 border-accent/30 pl-3">
-                        "{item.snippet}"
+                        "<HighlightedText text={item.snippet} highlight={initialQuery} />"
                       </p>
                     )}
                   </div>

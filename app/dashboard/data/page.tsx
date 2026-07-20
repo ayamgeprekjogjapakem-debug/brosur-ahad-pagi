@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Loader2, Plus, Edit2, Trash2, Search, Database, FolderArchive, FileText, CheckSquare } from 'lucide-react';
+import { Loader2, Plus, Edit2, Trash2, Search, Database, FolderArchive, FileText, CheckSquare, Settings } from 'lucide-react';
 import Link from 'next/link';
 
 export default function DataBrosurPage() {
@@ -23,6 +23,11 @@ export default function DataBrosurPage() {
   const [isUpdatingBulk, setIsUpdatingBulk] = useState(false);
   const [isEmptyingTable, setIsEmptyingTable] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // State untuk Generator Teks Bersih
+  const [isGeneratingTeks, setIsGeneratingTeks] = useState(false);
+  const [generateProgress, setGenerateProgress] = useState(0);
+  const [generateLabel, setGenerateLabel] = useState('');
 
   useEffect(() => {
     // Sinkronisasi Tab dengan URL
@@ -78,12 +83,15 @@ export default function DataBrosurPage() {
   };
 
   const fetchFolders = async () => {
-    const { data } = await supabase
-      .from('folders')
-      .select('*')
-      .order('created_at', { ascending: false });
-      
-    if (data) setFolders(data);
+    try {
+      const res = await fetch('/api/folders-stats');
+      const data = await res.json();
+      if (data.folders) {
+        setFolders(data.folders);
+      }
+    } catch (err) {
+      console.error('Failed to fetch folders with stats', err);
+    }
   };
 
   useEffect(() => {
@@ -202,6 +210,63 @@ export default function DataBrosurPage() {
     setIsEmptyingTable(false);
   };
 
+  const handleGenerateTeks = async (folderId: string, folderName: string) => {
+    try {
+      setIsGeneratingTeks(true);
+      setGenerateProgress(0);
+      setGenerateLabel(`Mengambil data brosur dari koleksi ${folderName}...`);
+
+      const resIds = await fetch(`/api/get-brosur-ids?folder_id=${folderId}`);
+      const dataIds = await resIds.json();
+
+      if (!resIds.ok) throw new Error(dataIds.error || 'Gagal mengambil ID brosur');
+
+      let ids = dataIds.ids;
+      
+      // Jika semua sudah di-generate, tanya apakah ingin mere-generate ulang
+      if (ids.length === 0) {
+        if (window.confirm('Semua brosur di koleksi ini sudah memiliki Teks Bersih. Apakah Anda ingin ME-REGENERATE ULANG semuanya dari awal? (Berguna jika ada pembaruan teks)')) {
+          const resForce = await fetch(`/api/get-brosur-ids?folder_id=${folderId}&force=true`);
+          const dataForce = await resForce.json();
+          ids = dataForce.ids;
+        } else {
+          setIsGeneratingTeks(false);
+          return;
+        }
+      }
+
+      setGenerateLabel(`Memproses ${ids.length} brosur...`);
+      const chunkSize = 10;
+      let processed = 0;
+
+      for (let i = 0; i < ids.length; i += chunkSize) {
+        const chunk = ids.slice(i, i + chunkSize);
+        
+        const resProcess = await fetch('/api/generate-teks-bersih', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids: chunk })
+        });
+        
+        if (!resProcess.ok) {
+          const errData = await resProcess.json();
+          console.error("Error chunk:", errData);
+          // Kita lanjutkan saja agar sisanya tetap terproses
+        }
+
+        processed += chunk.length;
+        setGenerateProgress(Math.min(100, Math.round((processed / ids.length) * 100)));
+      }
+
+      alert('Teks bersih berhasil di-generate secara keseluruhan!');
+      fetchFolders(); // Muat ulang statistik
+    } catch (err: any) {
+      alert(`Gagal generate teks bersih: ${err.message}`);
+    } finally {
+      setIsGeneratingTeks(false);
+    }
+  };
+
   return (
     <main className="p-8 md:p-12 w-full max-w-7xl mx-auto">
       <header className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -310,9 +375,12 @@ export default function DataBrosurPage() {
         )}
 
         {loading ? (
-          <div className="py-20 flex flex-col items-center justify-center text-zinc-500">
-            <Loader2 className="animate-spin mb-4 text-accent" size={32} />
-            <p>Memuat data...</p>
+          <div className="py-24 flex flex-col items-center justify-center text-zinc-500">
+            <div className="relative flex items-center justify-center w-14 h-14 mb-6">
+              <div className="absolute w-full h-full border-[1.5px] border-teal-500/10 rounded-full"></div>
+              <div className="absolute w-full h-full border-[1.5px] border-transparent border-t-teal-500 rounded-full animate-spin" style={{ animationDuration: '1s', animationTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)' }}></div>
+            </div>
+            <p className="text-sm font-medium text-teal-600/70 tracking-widest uppercase animate-pulse">Memuat Data...</p>
           </div>
         ) : activeTab === 'brosur' ? (
           /* TAB BROSUR */
@@ -452,15 +520,64 @@ export default function DataBrosurPage() {
                       </button>
                     </div>
                   </div>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400 line-clamp-2 flex-1">
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400 line-clamp-2 flex-1 mb-4">
                     {folder.description || <span className="italic opacity-50">Tidak ada deskripsi</span>}
                   </p>
+                  
+                  {folder.stats && (
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between text-xs font-bold mb-1">
+                        <span className="text-zinc-500">Status Teks Bersih</span>
+                        <span className={folder.stats.clean === folder.stats.total && folder.stats.total > 0 ? "text-emerald-500" : "text-amber-500"}>
+                          {folder.stats.clean} / {folder.stats.total}
+                        </span>
+                      </div>
+                      <div className="w-full bg-zinc-200 dark:bg-zinc-700 rounded-full h-1.5 overflow-hidden">
+                        <div 
+                          className={`h-full rounded-full transition-all ${folder.stats.clean === folder.stats.total && folder.stats.total > 0 ? "bg-emerald-500" : "bg-amber-500"}`}
+                          style={{ width: `${folder.stats.total > 0 ? (folder.stats.clean / folder.stats.total) * 100 : 0}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={() => handleGenerateTeks(folder.id, folder.name)}
+                    className={`w-full mt-auto py-2 font-bold rounded-xl transition-colors flex items-center justify-center gap-2 ${
+                      folder.stats?.clean === folder.stats?.total && folder.stats?.total > 0 
+                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500 hover:text-white'
+                        : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500 hover:text-white'
+                    }`}
+                  >
+                    <Settings size={16} /> 
+                    {folder.stats?.clean === folder.stats?.total && folder.stats?.total > 0 ? 'Regenerate Teks' : 'Generate Teks Bersih'}
+                  </button>
                 </div>
               ))}
             </div>
           )
         )}
       </div>
+
+      {/* FULL SCREEN LOADER GENERATOR TEKS */}
+      {isGeneratingTeks && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
+          <div className="bg-white dark:bg-zinc-900 p-10 rounded-3xl max-w-sm w-full text-center shadow-2xl flex flex-col items-center">
+            <Loader2 className="w-16 h-16 text-blue-500 animate-spin mb-6" />
+            <h2 className="text-2xl font-black mb-2">Memproses Teks</h2>
+            <p className="text-zinc-500 mb-6 font-medium leading-relaxed">
+              {generateLabel}
+            </p>
+            <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-4 mb-2 overflow-hidden border border-black/5 dark:border-white/5">
+              <div 
+                className="bg-blue-500 h-full rounded-full transition-all duration-300 ease-out"
+                style={{ width: `${generateProgress}%` }}
+              ></div>
+            </div>
+            <p className="font-bold text-blue-500">{generateProgress}% Selesai</p>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
