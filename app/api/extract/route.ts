@@ -5,7 +5,10 @@ import iconv from 'iconv-lite';
 
 export async function POST(request: NextRequest) {
   try {
-    const { fileName } = await request.json();
+    const body = await request.json();
+    const fileName = body.fileName;
+    const action = body.action || 'extract';
+    const selectedFiles: string[] = body.selectedFiles || [];
 
     if (!fileName || (!fileName.endsWith('.zip') && !fileName.endsWith('.chm'))) {
       return NextResponse.json({ error: 'File tidak valid atau bukan file .zip / .chm.' }, { status: 400 });
@@ -32,34 +35,36 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(arrayBuffer);
     console.log(`📦 Mengunduh ${fileName} dari Storage. Ukuran: ${buffer.length} bytes`);
 
-    // 3.5 Buat atau cari Master Koleksi (Folder) otomatis
+    // 3.5 Buat atau cari Master Koleksi (Folder) otomatis (Hanya jika action = extract)
     const folderName = fileName.replace(/\.(chm|zip)$/i, '');
     let folderId = null;
 
-    const { data: existingFolder } = await supabase
-      .from('folders')
-      .select('id')
-      .eq('name', folderName)
-      .single();
-
-    if (existingFolder) {
-      folderId = existingFolder.id;
-    } else {
-      const folderSlug = folderName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-      const { data: newFolder, error: folderError } = await supabase
+    if (action === 'extract') {
+      const { data: existingFolder } = await supabase
         .from('folders')
-        .insert({ 
-          name: folderName, 
-          slug: folderSlug,
-          description: `Diimpor otomatis dari arsip ${fileName}` 
-        })
         .select('id')
+        .eq('name', folderName)
         .single();
-      
-      if (!folderError && newFolder) {
-        folderId = newFolder.id;
-      } else if (folderError) {
-        console.error('Gagal membuat folder otomatis:', folderError);
+
+      if (existingFolder) {
+        folderId = existingFolder.id;
+      } else {
+        const folderSlug = folderName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+        const { data: newFolder, error: folderError } = await supabase
+          .from('folders')
+          .insert({ 
+            name: folderName, 
+            slug: folderSlug,
+            description: `Diimpor otomatis dari arsip ${fileName}` 
+          })
+          .select('id')
+          .single();
+        
+        if (!folderError && newFolder) {
+          folderId = newFolder.id;
+        } else if (folderError) {
+          console.error('Gagal membuat folder otomatis:', folderError);
+        }
       }
     }
 
@@ -85,6 +90,14 @@ export async function POST(request: NextRequest) {
       const AdmZip = (await import('adm-zip')).default;
       const zip = new AdmZip(buffer);
       const zipEntries = zip.getEntries();
+      
+      if (action === 'preview') {
+         const htmlFiles = zipEntries
+           .filter((entry: any) => !entry.isDirectory && (entry.entryName.toLowerCase().endsWith('.html') || entry.entryName.toLowerCase().endsWith('.htm')))
+           .map((entry: any) => entry.entryName);
+         return NextResponse.json({ success: true, files: htmlFiles });
+      }
+
       console.log(`📦 Ditemukan ${zipEntries.length} entries di dalam ZIP.`);
       
       for (const entry of zipEntries) {
@@ -96,6 +109,8 @@ export async function POST(request: NextRequest) {
         const isImage = imageExtensions.some(ext => lowerName.endsWith(ext));
 
         if (isHtml) {
+          if (selectedFiles.length > 0 && !selectedFiles.includes(entryName)) continue;
+
           console.log('🔍 ZIP Entry HTML:', entryName);
           const contentStr = decodeHtmlBuffer(entry.getData());
           pendingHtmls.push({ entryName, content: contentStr });
@@ -123,6 +138,18 @@ export async function POST(request: NextRequest) {
         const reader = chmReaderFromBuffer(uint8Buffer);
         const chmFile = await ChmFile.open(reader);
         
+        if (action === 'preview') {
+          const htmlFiles = [];
+          for await (const ui of chmFile.enumerate(31)) {
+             const lowerName = ui.path.toLowerCase();
+             if (lowerName.endsWith('.html') || lowerName.endsWith('.htm')) {
+                 htmlFiles.push(ui.path);
+             }
+          }
+          if (reader.close) await reader.close();
+          return NextResponse.json({ success: true, files: htmlFiles });
+        }
+
         console.log(`📦 Membuka file CHM...`);
         for await (const ui of chmFile.enumerate(31)) {
           const entryName = ui.path;
@@ -132,6 +159,8 @@ export async function POST(request: NextRequest) {
           const isImage = imageExtensions.some(ext => lowerName.endsWith(ext));
 
           if (isHtml) {
+            if (selectedFiles.length > 0 && !selectedFiles.includes(entryName)) continue;
+
             console.log('🔍 CHM Entry HTML:', entryName);
             const contentBytes = await chmFile.retrieve(ui);
             const contentStr = decodeHtmlBuffer(Buffer.from(contentBytes));

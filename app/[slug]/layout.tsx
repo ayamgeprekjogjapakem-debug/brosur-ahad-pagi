@@ -36,13 +36,30 @@ export default async function SlugLayout({
   let folderSlug = '';
   
   if (brosur && brosur.folder_id) {
-    const { data: list } = await supabase
-      .from('brosur')
-      .select('judul, slug, tahun')
-      .eq('folder_id', brosur.folder_id)
-      .order('tahun', { ascending: false })
-      .limit(10000);
-    if (list) brosurList = list;
+    // Fetch all brosur with pagination to bypass Supabase 1000 rows limit
+    let allBrosur: any[] = [];
+    let page = 0;
+    const pageSize = 1000;
+    
+    while (true) {
+      const { data: list } = await supabase
+        .from('brosur')
+        .select('judul, slug, tahun')
+        .eq('folder_id', brosur.folder_id)
+        .order('tahun', { ascending: false })
+        .range(page * pageSize, (page + 1) * pageSize - 1);
+        
+      if (list && list.length > 0) {
+        allBrosur = [...allBrosur, ...list];
+      }
+      
+      if (!list || list.length < pageSize) {
+        break;
+      }
+      page++;
+    }
+    
+    if (allBrosur.length > 0) brosurList = allBrosur;
     
     const { data: folder } = await supabase
       .from('folders')

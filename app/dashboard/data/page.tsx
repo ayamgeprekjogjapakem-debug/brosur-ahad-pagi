@@ -16,7 +16,8 @@ export default function DataBrosurPage() {
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [totalBrosurs, setTotalBrosurs] = useState(0);
-  const itemsPerPage = 50;
+  const [itemsPerPage, setItemsPerPage] = useState(50);
+  const [filterFolder, setFilterFolder] = useState<string>('');
   // State untuk Fitur Pindah Masal (Bulk Move)
   const [selectedBrosurs, setSelectedBrosurs] = useState<string[]>([]);
   const [bulkFolderId, setBulkFolderId] = useState<string>('');
@@ -24,8 +25,9 @@ export default function DataBrosurPage() {
   const [isEmptyingTable, setIsEmptyingTable] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  // State untuk Generator Teks Bersih
+  // State untuk Generator Teks Bersih & Standarisasi
   const [isGeneratingTeks, setIsGeneratingTeks] = useState(false);
+  const [isStandardizing, setIsStandardizing] = useState(false);
   const [generateProgress, setGenerateProgress] = useState(0);
   const [generateLabel, setGenerateLabel] = useState('');
 
@@ -71,6 +73,14 @@ export default function DataBrosurPage() {
       }
     }
     
+    if (filterFolder) {
+      if (filterFolder === 'none') {
+        query = query.is('folder_id', null);
+      } else {
+        query = query.eq('folder_id', filterFolder);
+      }
+    }
+    
     const from = (currentPage - 1) * itemsPerPage;
     const to = from + itemsPerPage - 1;
     
@@ -102,7 +112,7 @@ export default function DataBrosurPage() {
     if (activeTab === 'brosur') {
       fetchBrosurs();
     }
-  }, [currentPage, searchTerm, activeTab]);
+  }, [currentPage, itemsPerPage, searchTerm, filterFolder, activeTab]);
 
   const handleDeleteBrosur = async (id: string, judul: string) => {
     if (!window.confirm(`Yakin ingin menghapus brosur "${judul}"?`)) return;
@@ -185,27 +195,47 @@ export default function DataBrosurPage() {
     setIsUpdatingBulk(false);
   };
 
-  const handleEmptyTable = async () => {
-    if (!window.confirm(`PERINGATAN SANGAT BERBAHAYA!\n\nApakah Anda YAKIN ingin menghapus SEMUA DATA BROSUR (sebanyak ${totalBrosurs} baris) secara permanen dari database?\nData tidak dapat dikembalikan lagi setelah dihapus.`)) return;
+  const handleDeleteFiltered = async () => {
+    let confirmMsg = '';
+    let promptMsg = '';
     
-    // Konfirmasi kedua
-    if (window.prompt(`Ketik "HAPUS SEMUA" untuk melanjutkan:`) !== 'HAPUS SEMUA') {
+    if (filterFolder && filterFolder !== 'none') {
+      const selectedFolder = folders.find(f => f.id === filterFolder);
+      confirmMsg = `PERINGATAN: Yakin ingin menghapus SEMUA brosur dalam koleksi "${selectedFolder?.name || 'terpilih'}"?`;
+      promptMsg = 'HAPUS KOLEKSI';
+    } else if (filterFolder === 'none') {
+      confirmMsg = `PERINGATAN: Yakin ingin menghapus SEMUA brosur yang TIDAK MEMILIKI KOLEKSI?`;
+      promptMsg = 'HAPUS TANPA KOLEKSI';
+    } else {
+      confirmMsg = `PERINGATAN SANGAT BERBAHAYA!\n\nApakah Anda YAKIN ingin menghapus SEMUA DATA BROSUR (sebanyak ${totalBrosurs} baris) secara permanen dari database?\nData tidak dapat dikembalikan lagi setelah dihapus.`;
+      promptMsg = 'HAPUS SEMUA';
+    }
+
+    if (!window.confirm(confirmMsg)) return;
+    if (window.prompt(`Ketik "${promptMsg}" untuk melanjutkan:`) !== promptMsg) {
       alert('Penghapusan dibatalkan karena teks konfirmasi salah.');
       return;
     }
 
     setIsEmptyingTable(true);
-    // Menggunakan trik neq id 0 untuk menghapus semua data (bypassing the missing where clause error)
-    const { error } = await supabase
-      .from('brosur')
-      .delete()
-      .neq('id', '0');
+    let query = supabase.from('brosur').delete();
+    
+    if (filterFolder && filterFolder !== 'none') {
+      query = query.eq('folder_id', filterFolder);
+    } else if (filterFolder === 'none') {
+      query = query.is('folder_id', null);
+    } else {
+      query = query.neq('id', '0');
+    }
+
+    const { error } = await query;
 
     if (error) {
-      alert(`Gagal mengosongkan tabel: ${error.message}`);
+      alert(`Gagal menghapus: ${error.message}`);
     } else {
-      alert('Tabel berhasil dikosongkan!');
+      alert('Penghapusan berhasil!');
       fetchBrosurs();
+      fetchFolders();
     }
     setIsEmptyingTable(false);
   };
@@ -267,6 +297,62 @@ export default function DataBrosurPage() {
     }
   };
 
+  const handleStandardizeArabic = async (folderId: string, folderName: string) => {
+    try {
+      setIsStandardizing(true);
+      setGenerateProgress(0);
+      setGenerateLabel(`Mengambil data brosur dari koleksi ${folderName} untuk distandarisasi...`);
+
+      // Kita ambil semua ID dalam folder menggunakan endpoint get-brosur-ids dengan force=true
+      const resIds = await fetch(`/api/get-brosur-ids?folder_id=${folderId}&force=true`);
+      const dataIds = await resIds.json();
+
+      if (!resIds.ok) throw new Error(dataIds.error || 'Gagal mengambil ID brosur');
+
+      const ids = dataIds.ids;
+      
+      if (ids.length === 0) {
+          alert('Tidak ada brosur dalam koleksi ini.');
+          setIsStandardizing(false);
+          return;
+      }
+      
+      if (!window.confirm(`Yakin ingin menstandarisasi font Arabic (menghapus format font MS Word) untuk ${ids.length} brosur di koleksi ini?`)) {
+          setIsStandardizing(false);
+          return;
+      }
+
+      setGenerateLabel(`Menstandarisasi ${ids.length} brosur...`);
+      const chunkSize = 10;
+      let processed = 0;
+
+      for (let i = 0; i < ids.length; i += chunkSize) {
+        const chunk = ids.slice(i, i + chunkSize);
+        
+        const resProcess = await fetch('/api/standardize-arabic', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids: chunk })
+        });
+        
+        if (!resProcess.ok) {
+          const errData = await resProcess.json();
+          console.error("Error chunk:", errData);
+        }
+
+        processed += chunk.length;
+        setGenerateProgress(Math.min(100, Math.round((processed / ids.length) * 100)));
+      }
+
+      alert('Standarisasi Arabic berhasil dilakukan!');
+      fetchBrosurs(); // Muat ulang data
+    } catch (err: any) {
+      alert(`Gagal standarisasi: ${err.message}`);
+    } finally {
+      setIsStandardizing(false);
+    }
+  };
+
   return (
     <main className="p-8 md:p-12 w-full max-w-7xl mx-auto">
       <header className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -324,13 +410,46 @@ export default function DataBrosurPage() {
             />
           </div>
           
+          {activeTab === 'brosur' && (
+            <>
+              <select
+                value={filterFolder}
+                onChange={(e) => {
+                  setFilterFolder(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full md:w-auto bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 px-4 focus:outline-none focus:border-accent transition-all text-sm"
+              >
+                <option value="">Semua Koleksi</option>
+                <option value="none">Tanpa Koleksi</option>
+                {folders.map(f => (
+                  <option key={f.id} value={f.id}>{f.name}</option>
+                ))}
+              </select>
+              
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="w-full md:w-auto bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 px-4 focus:outline-none focus:border-accent transition-all text-sm"
+              >
+                <option value={10}>10 per hal</option>
+                <option value={20}>20 per hal</option>
+                <option value={50}>50 per hal</option>
+                <option value={100}>100 per hal</option>
+              </select>
+            </>
+          )}
+          
           {activeTab === 'brosur' && totalBrosurs > 0 && (
             <button 
-              onClick={handleEmptyTable}
+              onClick={handleDeleteFiltered}
               disabled={isEmptyingTable}
               className="w-full md:w-auto bg-red-500/10 text-red-600 dark:text-red-400 px-5 py-3 rounded-xl font-bold text-sm hover:bg-red-500 hover:text-white disabled:opacity-50 transition-colors shrink-0 flex items-center justify-center gap-2 border border-red-500/20"
             >
-              {isEmptyingTable ? <Loader2 className="animate-spin" size={16} /> : <><Trash2 size={16} /> Hapus Semua Data</>}
+              {isEmptyingTable ? <Loader2 className="animate-spin" size={16} /> : <><Trash2 size={16} /> {filterFolder ? (filterFolder === 'none' ? 'Hapus Tanpa Koleksi' : 'Hapus Koleksi') : 'Hapus Semua'}</>}
             </button>
           )}
         </div>
@@ -541,17 +660,26 @@ export default function DataBrosurPage() {
                     </div>
                   )}
 
-                  <button
-                    onClick={() => handleGenerateTeks(folder.id, folder.name)}
-                    className={`w-full mt-auto py-2 font-bold rounded-xl transition-colors flex items-center justify-center gap-2 ${
-                      folder.stats?.clean === folder.stats?.total && folder.stats?.total > 0 
-                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500 hover:text-white'
-                        : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500 hover:text-white'
-                    }`}
-                  >
-                    <Settings size={16} /> 
-                    {folder.stats?.clean === folder.stats?.total && folder.stats?.total > 0 ? 'Regenerate Teks' : 'Generate Teks Bersih'}
-                  </button>
+                  <div className="mt-auto flex flex-col gap-2">
+                    <button
+                      onClick={() => handleGenerateTeks(folder.id, folder.name)}
+                      className={`w-full py-2 font-bold rounded-xl transition-colors flex items-center justify-center gap-2 text-sm ${
+                        folder.stats?.clean === folder.stats?.total && folder.stats?.total > 0 
+                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500 hover:text-white'
+                          : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500 hover:text-white'
+                      }`}
+                    >
+                      <Settings size={16} /> 
+                      {folder.stats?.clean === folder.stats?.total && folder.stats?.total > 0 ? 'Regenerate Teks' : 'Generate Teks Bersih'}
+                    </button>
+                    
+                    <button
+                      onClick={() => handleStandardizeArabic(folder.id, folder.name)}
+                      className="w-full py-2 font-bold rounded-xl transition-colors flex items-center justify-center gap-2 text-sm bg-purple-500/10 text-purple-600 dark:text-purple-400 hover:bg-purple-500 hover:text-white"
+                    >
+                      <Settings size={16} /> Standarisasi Arabic
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -559,8 +687,8 @@ export default function DataBrosurPage() {
         )}
       </div>
 
-      {/* FULL SCREEN LOADER GENERATOR TEKS */}
-      {isGeneratingTeks && (
+      {/* FULL SCREEN LOADER GENERATOR TEKS & STANDARISASI */}
+      {(isGeneratingTeks || isStandardizing) && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
           <div className="bg-white dark:bg-zinc-900 p-10 rounded-3xl max-w-sm w-full text-center shadow-2xl flex flex-col items-center">
             <Loader2 className="w-16 h-16 text-blue-500 animate-spin mb-6" />

@@ -46,7 +46,7 @@
 }
 
 /* Custom Reader Typographic Styles */
-.reader-content, .reader-content p, .reader-content li, .reader-content span:not([dir="rtl"]):not(.arabic) {
+.reader-content, .reader-content p, .reader-content li, .reader-content span:not([dir="rtl"]):not(.arabic):not([lang^="ar" i]):not([style*="Arabic" i]) {
   font-size: var(--base-font-size, 18px) !important;
   line-height: 1.6 !important;
 }

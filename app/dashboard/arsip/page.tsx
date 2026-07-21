@@ -16,6 +16,14 @@ export default function ArsipPage() {
   const [isExtracting, setIsExtracting] = useState<string | null>(null);
   const [extractProgress, setExtractProgress] = useState(0);
 
+  // States for Selective Extraction Modal
+  const [isPreviewing, setIsPreviewing] = useState(false);
+  const [isExtractModalOpen, setIsExtractModalOpen] = useState(false);
+  const [previewFiles, setPreviewFiles] = useState<string[]>([]);
+  const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+  const [currentArchiveName, setCurrentArchiveName] = useState<string>('');
+  const [collapsedFolders, setCollapsedFolders] = useState<Record<string, boolean>>({});
+
   // Fake Progress Bar Simulation
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -49,20 +57,59 @@ export default function ArsipPage() {
     fetchFiles();
   }, []);
 
-  const handleExtract = async (fileName: string) => {
+  const handlePreview = async (fileName: string) => {
     if (!fileName.endsWith('.zip') && !fileName.endsWith('.chm')) {
       alert('Hanya file berformat .zip atau .chm yang dapat diekstrak ke Database.');
       return;
     }
     
-    if (!confirm(`Apakah Anda yakin ingin membongkar isi file "${fileName}" dan menyimpannya ke Database secara otomatis?`)) return;
+    setIsPreviewing(true);
+    setCurrentArchiveName(fileName);
+    setPreviewFiles([]);
+    setSelectedFiles([]);
+    setCollapsedFolders({});
     
-    setIsExtracting(fileName);
     try {
       const res = await fetch('/api/extract', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileName })
+        body: JSON.stringify({ fileName, action: 'preview' })
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Terjadi kesalahan saat preview.');
+      
+      setPreviewFiles(data.files || []);
+      // Default: centang semua file HTML yang ditemukan
+      setSelectedFiles(data.files || []);
+      setIsExtractModalOpen(true);
+    } catch (err: any) {
+      alert(`Gagal mengambil preview file: ${err.message}`);
+    } finally {
+      setIsPreviewing(false);
+    }
+  };
+
+  const handleProcessExtract = async () => {
+    if (selectedFiles.length === 0) {
+      alert('Pilih setidaknya satu file untuk diekstrak.');
+      return;
+    }
+
+    if (!confirm(`Apakah Anda yakin ingin mengekstrak ${selectedFiles.length} file terpilih ke Database?`)) return;
+    
+    setIsExtractModalOpen(false);
+    setIsExtracting(currentArchiveName);
+    
+    try {
+      const res = await fetch('/api/extract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          fileName: currentArchiveName, 
+          action: 'extract',
+          selectedFiles: selectedFiles 
+        })
       });
       
       const data = await res.json();
@@ -76,6 +123,47 @@ export default function ArsipPage() {
     } finally {
       setIsExtracting(null);
     }
+  };
+
+  const handleToggleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedFiles(previewFiles);
+    } else {
+      setSelectedFiles([]);
+    }
+  };
+
+  const handleToggleFolder = (folderFiles: string[], checked: boolean) => {
+    if (checked) {
+      setSelectedFiles(prev => Array.from(new Set([...prev, ...folderFiles])));
+    } else {
+      setSelectedFiles(prev => prev.filter(f => !folderFiles.includes(f)));
+    }
+  };
+
+  const handleToggleFile = (file: string, checked: boolean) => {
+    if (checked) {
+      setSelectedFiles(prev => [...prev, file]);
+    } else {
+      setSelectedFiles(prev => prev.filter(f => f !== file));
+    }
+  };
+
+  // Group files by directory
+  const groupedFiles = previewFiles.reduce((acc, file) => {
+    const parts = file.split('/');
+    const folder = parts.length > 1 ? parts.slice(0, -1).join('/') : '/ (Root)';
+    if (!acc[folder]) acc[folder] = [];
+    acc[folder].push(file);
+    return acc;
+  }, {} as Record<string, string[]>);
+
+  const handleCollapseAll = (collapse: boolean) => {
+    const newState: Record<string, boolean> = {};
+    Object.keys(groupedFiles).forEach(folder => {
+      newState[folder] = collapse;
+    });
+    setCollapsedFolders(newState);
   };
 
   const handleRename = async (oldName: string) => {
@@ -168,12 +256,12 @@ export default function ArsipPage() {
                     <td className="p-4 text-right flex items-center justify-end gap-2">
                       {(file.name.endsWith('.zip') || file.name.endsWith('.chm')) && (
                         <button 
-                          onClick={() => handleExtract(file.name)}
-                          disabled={isExtracting === file.name || isRenaming === file.name}
+                          onClick={() => handlePreview(file.name)}
+                          disabled={isExtracting === file.name || isRenaming === file.name || isPreviewing}
                           className="px-3 py-2 bg-accent/10 text-accent hover:bg-accent hover:text-white rounded-lg transition-colors flex items-center justify-center font-bold text-xs disabled:opacity-50"
-                          title="Ekstrak & Masukkan ke Database"
+                          title="Pilih dan Ekstrak ke Database"
                         >
-                          {isExtracting === file.name ? <Loader2 className="animate-spin" size={16} /> : 'Ekstrak to Database'}
+                          {(isExtracting === file.name || (isPreviewing && currentArchiveName === file.name)) ? <Loader2 className="animate-spin" size={16} /> : 'Ekstrak to Database'}
                         </button>
                       )}
                       <button 
@@ -210,6 +298,134 @@ export default function ArsipPage() {
           </div>
         )}
       </div>
+
+      {/* Selective Extraction Modal */}
+      {isExtractModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-3xl shadow-xl w-full max-w-3xl flex flex-col max-h-[85vh] overflow-hidden animate-in fade-in zoom-in-95">
+            <div className="p-6 border-b border-black/5 dark:border-white/5 flex justify-between items-center bg-zinc-50 dark:bg-zinc-800/50">
+              <div>
+                <h3 className="text-xl font-bold">Pilih File untuk Diekstrak</h3>
+                <p className="text-sm text-zinc-500 mt-1">
+                  Arsip: <span className="font-semibold text-zinc-900 dark:text-zinc-100">{currentArchiveName}</span>
+                </p>
+              </div>
+              <div className="bg-accent/10 text-accent px-3 py-1.5 rounded-lg text-sm font-bold">
+                {selectedFiles.length} / {previewFiles.length} Dipilih
+              </div>
+            </div>
+            
+            <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
+              <div className="mb-4 pb-4 border-b border-black/5 dark:border-white/5 flex flex-wrap gap-2">
+                <button 
+                  onClick={() => handleToggleSelectAll(true)}
+                  className="px-4 py-2 text-sm font-bold bg-accent/10 text-accent hover:bg-accent hover:text-white rounded-lg transition-colors flex-1 min-w-[140px]"
+                >
+                  Centang Semua
+                </button>
+                <button 
+                  onClick={() => handleToggleSelectAll(false)}
+                  className="px-4 py-2 text-sm font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg transition-colors flex-1 min-w-[140px]"
+                >
+                  Bersihkan Centang
+                </button>
+                <button 
+                  onClick={() => handleCollapseAll(true)}
+                  className="px-4 py-2 text-sm font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500 hover:text-white rounded-lg transition-colors flex-1 min-w-[140px]"
+                >
+                  Tutup Semua Folder
+                </button>
+                <button 
+                  onClick={() => handleCollapseAll(false)}
+                  className="px-4 py-2 text-sm font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500 hover:text-white rounded-lg transition-colors flex-1 min-w-[140px]"
+                >
+                  Buka Semua Folder
+                </button>
+              </div>
+              
+              <div className="flex flex-col gap-6">
+                {Object.entries(groupedFiles).map(([folder, folderFiles]) => {
+                  const isAllFolderSelected = folderFiles.every(f => selectedFiles.includes(f));
+                  const isSomeFolderSelected = folderFiles.some(f => selectedFiles.includes(f)) && !isAllFolderSelected;
+                  const isCollapsed = collapsedFolders[folder] || false;
+                  
+                  return (
+                    <div key={folder} className="border border-black/5 dark:border-white/5 rounded-2xl overflow-hidden">
+                      <div className="bg-black/5 dark:bg-white/5 px-4 py-3 flex items-center justify-between">
+                        <label className="flex items-center gap-3 cursor-pointer">
+                          <input 
+                            type="checkbox"
+                            className="w-5 h-5 accent-accent shrink-0"
+                            checked={isAllFolderSelected}
+                            ref={(input) => { if (input) input.indeterminate = isSomeFolderSelected; }}
+                            onChange={(e) => handleToggleFolder(folderFiles, e.target.checked)}
+                          />
+                          <span className="font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-2 select-none">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path></svg>
+                            {folder}
+                          </span>
+                        </label>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs font-bold text-zinc-500 bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md">
+                            {folderFiles.length} file
+                          </span>
+                          <button 
+                            onClick={() => setCollapsedFolders(prev => ({ ...prev, [folder]: !isCollapsed }))}
+                            className="p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded transition-colors text-zinc-500"
+                            title={isCollapsed ? "Tampilkan File" : "Sembunyikan File"}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${isCollapsed ? '' : 'rotate-180'}`}><polyline points="6 9 12 15 18 9"></polyline></svg>
+                          </button>
+                        </div>
+                      </div>
+                      
+                      {!isCollapsed && (
+                        <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-2 bg-white dark:bg-zinc-900/50">
+                          {folderFiles.map((file, idx) => (
+                            <label key={idx} className="flex items-start gap-3 cursor-pointer p-2.5 border border-black/5 dark:border-white/5 hover:border-accent/50 hover:bg-accent/5 rounded-xl transition-all">
+                              <input 
+                                type="checkbox"
+                                className="w-5 h-5 accent-accent mt-0.5 shrink-0"
+                                checked={selectedFiles.includes(file)}
+                                onChange={(e) => handleToggleFile(file, e.target.checked)}
+                              />
+                              <span className="text-sm font-medium break-all line-clamp-2 text-zinc-700 dark:text-zinc-300">
+                                {file.split('/').pop()}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              
+              {previewFiles.length === 0 && (
+                <div className="text-center p-8 text-zinc-500">
+                  Tidak ditemukan file HTML/HTM di dalam arsip ini.
+                </div>
+              )}
+            </div>
+            
+            <div className="p-6 border-t border-black/5 dark:border-white/5 flex justify-end gap-3 bg-zinc-50 dark:bg-zinc-800/50">
+              <button
+                onClick={() => setIsExtractModalOpen(false)}
+                className="px-6 py-2.5 rounded-xl font-bold text-zinc-600 hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-700 transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleProcessExtract}
+                disabled={selectedFiles.length === 0}
+                className="px-6 py-2.5 rounded-xl font-bold bg-accent text-white hover:bg-accent/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg shadow-accent/20"
+              >
+                Proses Ekstrak
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Fullscreen Extraction Loader / Overlay */}
       {isExtracting && (
