@@ -22,6 +22,26 @@ export async function POST(request: Request) {
       ipAddress = body.client_ip || ipAddress;
     }
 
+    // Extract Location
+    let city = request.headers.get('x-vercel-ip-city');
+    let region = request.headers.get('x-vercel-ip-country-region');
+    let country = request.headers.get('x-vercel-ip-country');
+    let location = 'Unknown';
+
+    if (city && region) {
+      location = `${city}, ${region}, ${country}`;
+    } else if (ipAddress !== '::1' && ipAddress !== '127.0.0.1' && ipAddress !== 'unknown') {
+      try {
+        const geoRes = await fetch(`http://ip-api.com/json/${ipAddress}`);
+        const geoData = await geoRes.json();
+        if (geoData.status === 'success') {
+          location = `${geoData.city}, ${geoData.regionName}, ${geoData.country}`;
+        }
+      } catch (e) {
+        console.error("=> [API] Failed to fetch geo data", e);
+      }
+    }
+
     // 1. Check if IP is blocked
     const { data: blockedIp } = await supabase
       .from('blocked_ips')
@@ -34,7 +54,8 @@ export async function POST(request: Request) {
       await supabase.from('access_logs').insert({
         ip_address: ipAddress,
         app_version: appVersion,
-        device_info: `${deviceInfo} (BLOCKED)`
+        device_info: `${deviceInfo} (BLOCKED)`,
+        location: location
       });
 
       return NextResponse.json({
@@ -48,7 +69,8 @@ export async function POST(request: Request) {
     const { error: insertError } = await supabase.from('access_logs').insert({
       ip_address: ipAddress,
       app_version: appVersion,
-      device_info: deviceInfo
+      device_info: deviceInfo,
+      location: location
     });
 
     if (insertError) {
@@ -73,13 +95,18 @@ export async function POST(request: Request) {
         }, { status: 503 });
       }
 
-      // Basic version check (assuming semver e.g., "1.0.0")
-      // For a robust check, you might want to split by "." and compare integers
-      const minVersion = settings.min_app_version || '1.0.0';
-      if (appVersion !== 'unknown' && isVersionLower(appVersion, minVersion)) {
+      // Whitelist version check using allowed_versions table
+      const { data: allowedVersionsData } = await supabase
+        .from('allowed_versions')
+        .select('version')
+        .eq('is_active', true);
+        
+      const allowedVersions = allowedVersionsData ? allowedVersionsData.map((v: any) => v.version) : [];
+      
+      if (appVersion !== 'unknown' && appVersion !== 'Web' && !allowedVersions.includes(appVersion)) {
         return NextResponse.json({
           allowed: false,
-          reason: `Versi aplikasi Anda terlalu lama. Harap update ke versi minimal ${minVersion}.`,
+          reason: `Versi aplikasi Anda tidak didukung. Versi yang diizinkan: ${allowedVersions.join(', ')}. Harap update aplikasi Anda.`,
           requires_update: true
         }, { status: 426 }); // 426 Upgrade Required
       }
@@ -98,18 +125,4 @@ export async function POST(request: Request) {
       error: 'Terjadi kesalahan pada server' 
     }, { status: 500 });
   }
-}
-
-// Simple semver compare function: returns true if v1 < v2
-function isVersionLower(v1: string, v2: string) {
-  const v1parts = v1.split('.').map(Number);
-  const v2parts = v2.split('.').map(Number);
-  
-  for (let i = 0; i < Math.max(v1parts.length, v2parts.length); ++i) {
-    const v1part = v1parts[i] || 0;
-    const v2part = v2parts[i] || 0;
-    if (v1part < v2part) return true;
-    if (v1part > v2part) return false;
-  }
-  return false;
 }

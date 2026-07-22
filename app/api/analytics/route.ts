@@ -1,49 +1,53 @@
 import { NextResponse, NextRequest } from 'next/server';
-import fs from 'fs';
-import path from 'path';
-
-export async function GET() {
-  try {
-    const dataPath = path.join(process.cwd(), 'data', 'analytics.json');
-    if (!fs.existsSync(dataPath)) {
-      return NextResponse.json({ uniqueVisitors: 0 });
-    }
-
-    const data = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
-    return NextResponse.json({ uniqueVisitors: data.visitors?.length || 0 });
-  } catch (error) {
-    return NextResponse.json({ uniqueVisitors: 0 });
-  }
-}
+import { createClient } from '@/utils/supabase/server';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { deviceId } = body;
+    const { deviceId, userAgent } = body;
 
-    if (!deviceId) {
-      return NextResponse.json({ error: 'Device ID required' }, { status: 400 });
+    const supabase = await createClient();
+
+    // Extract IP address
+    const forwardedFor = request.headers.get('x-forwarded-for');
+    const realIp = request.headers.get('x-real-ip');
+    let ipAddress = forwardedFor ? forwardedFor.split(',')[0].trim() : (realIp || 'unknown');
+
+    if (ipAddress === '::1' || ipAddress === '127.0.0.1' || ipAddress === 'unknown') {
+      ipAddress = '127.0.0.1'; // local dev fallback
     }
 
-    const dataDir = path.join(process.cwd(), 'data');
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
+    // Extract Location
+    let city = request.headers.get('x-vercel-ip-city');
+    let region = request.headers.get('x-vercel-ip-country-region');
+    let country = request.headers.get('x-vercel-ip-country');
+    let location = 'Unknown';
+
+    if (city && region) {
+      location = `${city}, ${region}, ${country}`;
+    } else if (ipAddress !== '127.0.0.1' && ipAddress !== 'unknown') {
+      try {
+        const geoRes = await fetch(`http://ip-api.com/json/${ipAddress}`);
+        const geoData = await geoRes.json();
+        if (geoData.status === 'success') {
+          location = `${geoData.city}, ${geoData.regionName}, ${geoData.country}`;
+        }
+      } catch (e) {
+        console.error("=> [API] Failed to fetch geo data", e);
+      }
     }
 
-    const dataPath = path.join(dataDir, 'analytics.json');
-    
-    let data = { visitors: [] as string[] };
-    if (fs.existsSync(dataPath)) {
-      data = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
-    }
+    await supabase.from('access_logs').insert({
+      ip_address: ipAddress,
+      app_version: 'Web',
+      device_info: userAgent || 'Web Browser',
+      location: location
+    });
 
-    if (!data.visitors.includes(deviceId)) {
-      data.visitors.push(deviceId);
-      fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
-    }
-
-    return NextResponse.json({ success: true, uniqueVisitors: data.visitors.length });
+    return NextResponse.json({ success: true });
   } catch (error) {
+    console.error('Analytics Error:', error);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }
+
