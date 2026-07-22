@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { BookOpen, Upload, LogOut, Loader2, Users, FileStack, Settings, UserCog, Database, MessageSquare } from 'lucide-react';
+import { BookOpen, Upload, LogOut, Loader2, Users, FileStack, Settings, UserCog, Database, MessageSquare, Activity, ShieldBan } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 
 export default function DashboardSidebar() {
@@ -32,7 +32,10 @@ export default function DashboardSidebar() {
     { name: 'Data Brosur', href: '/dashboard/data', icon: Database },
     { name: 'Kotak Masukan', href: '/dashboard/masukan', icon: MessageSquare },
     { name: 'Pengguna', href: '/dashboard/users', icon: UserCog },
-    { name: 'Pengaturan', href: '/dashboard/settings', icon: Settings },
+    { name: 'App Control', href: '/dashboard/app-settings', icon: Settings },
+    { name: 'Log Akses', href: '/dashboard/access-logs', icon: Activity },
+    { name: 'Blacklist IP', href: '/dashboard/blocked-ips', icon: ShieldBan },
+    { name: 'Pengaturan Web', href: '/dashboard/settings', icon: Settings },
   ];
 
   return (
