@@ -34,8 +34,11 @@ ALTER TABLE public.access_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.blocked_ips ENABLE ROW LEVEL SECURITY;
 
 -- Allow public read for app_settings
+DROP POLICY IF EXISTS "Allow public read app_settings" ON public.app_settings;
 CREATE POLICY "Allow public read app_settings" ON public.app_settings FOR SELECT USING (true);
 -- Allow public insert for access_logs (from edge functions/server)
+DROP POLICY IF EXISTS "Allow anon insert access_logs" ON public.access_logs;
 CREATE POLICY "Allow anon insert access_logs" ON public.access_logs FOR INSERT WITH CHECK (true);
 -- Allow public read for blocked_ips (so API can check)
+DROP POLICY IF EXISTS "Allow public read blocked_ips" ON public.blocked_ips;
 CREATE POLICY "Allow public read blocked_ips" ON public.blocked_ips FOR SELECT USING (true);

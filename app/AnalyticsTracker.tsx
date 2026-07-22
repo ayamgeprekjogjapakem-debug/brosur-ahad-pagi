@@ -14,13 +14,15 @@ export default function AnalyticsTracker() {
         localStorage.setItem('device_id', deviceId);
       }
 
+      const userAgent = window.navigator.userAgent;
+
       // Kirim ID ke server untuk dicatat
       fetch('/api/analytics', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ deviceId }),
+        body: JSON.stringify({ deviceId, userAgent }),
       }).catch(err => {
         // Abaikan error jaringan
       });
