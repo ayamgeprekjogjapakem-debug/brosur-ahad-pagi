@@ -35,31 +35,11 @@ export async function GET(request: NextRequest) {
   // Pisahkan dengan spasi ATAU tanda baca
   const qWords = normalizePunctuation(q).split(' ').filter(w => w.length > 1);
 
-  let queryBuilder = supabase
-    .from('brosur')
-    .select('judul, slug, tahun, teks_bersih, konten')
-    .order('tahun', { ascending: false })
-    .limit(50);
-    
-  if (folderId) {
-    queryBuilder = queryBuilder.eq('folder_id', folderId);
-  }
-
-  // Optimasi: Jika kata kunci panjang, ambil 3 kata terpanjang untuk filter DB agar lebih longgar (TIDAK STRICT AND untuk SEMUA kata)
-  if (qWords.length > 0) {
-    // Urutkan kata dari yang terpanjang ke terpendek
-    const sortedWords = [...qWords].sort((a, b) => b.length - a.length);
-    // Ambil maksimal 3 kata terpanjang
-    const topWords = sortedWords.slice(0, Math.min(3, sortedWords.length));
-    
-    topWords.forEach(word => {
-      // Hilangkan harakat untuk DB search (jika DB belum disiapkan, ini mungkin tidak match jika DB ada harakat)
-      // Tapi kita coba tetap masukkan karena lebih baik daripada query semua kata.
-      queryBuilder = queryBuilder.or(`judul.ilike.%${word}%,teks_bersih.ilike.%${word}%,konten.ilike.%${word}%`);
-    });
-  }
-
-  const { data, error } = await queryBuilder;
+  // Gunakan Full-Text Search (FTS) PostgreSQL dengan urutan relevansi (ts_rank)
+  const { data, error } = await supabase.rpc('search_brosur_ranked', {
+    search_query: q,
+    filter_folder_id: folderId || null
+  });
 
   if (error || !data) {
     console.error('Search error:', error);
