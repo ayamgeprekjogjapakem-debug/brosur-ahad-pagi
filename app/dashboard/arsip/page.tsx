@@ -1,7 +1,10 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { FileStack, Trash2, Download, Loader2, Edit2 } from 'lucide-react';
+import { 
+  FileStack, Trash2, Download, Loader2, Edit2,
+  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight 
+} from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 
@@ -10,6 +13,8 @@ export default function ArsipPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [isRenaming, setIsRenaming] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const supabase = createClient();
   const router = useRouter();
 
@@ -57,9 +62,20 @@ export default function ArsipPage() {
     fetchFiles();
   }, []);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [files.length, pageSize]);
+
+  // Pagination kalkulasi
+  const totalItems = files.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, totalItems);
+  const paginatedFiles = files.slice(startIndex, endIndex);
+
   const handlePreview = async (fileName: string) => {
-    if (!fileName.endsWith('.zip') && !fileName.endsWith('.chm')) {
-      alert('Hanya file berformat .zip atau .chm yang dapat diekstrak ke Database.');
+    if (!fileName.endsWith('.zip') && !fileName.endsWith('.chm') && !fileName.endsWith('.pdf')) {
+      alert('Hanya file berformat .zip, .chm, atau .pdf yang dapat diekstrak ke Database.');
       return;
     }
     
@@ -167,11 +183,11 @@ export default function ArsipPage() {
   };
 
   const handleRename = async (oldName: string) => {
-    const newName = prompt('Masukkan nama file baru (termasuk ekstensi .chm atau .zip):', oldName);
+    const newName = prompt('Masukkan nama file baru (termasuk ekstensi .chm, .zip, atau .pdf):', oldName);
     if (!newName || newName === oldName) return;
 
-    if (!newName.endsWith('.chm') && !newName.endsWith('.zip')) {
-      alert('Ekstensi file harus tetap .chm atau .zip');
+    if (!newName.endsWith('.chm') && !newName.endsWith('.zip') && !newName.endsWith('.pdf')) {
+      alert('Ekstensi file harus tetap .chm, .zip, atau .pdf');
       return;
     }
 
@@ -248,20 +264,29 @@ export default function ArsipPage() {
                 </tr>
               </thead>
               <tbody>
-                {files.map((file) => (
+                {paginatedFiles.map((file) => (
                   <tr key={file.id} className="border-b border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                     <td className="p-4 font-medium">{file.name}</td>
                     <td className="p-4 text-zinc-500 text-sm">{(file.metadata?.size / 1024 / 1024).toFixed(2)} MB</td>
                     <td className="p-4 text-zinc-500 text-sm">{new Date(file.created_at).toLocaleString('id-ID')}</td>
                     <td className="p-4 text-right flex items-center justify-end gap-2">
-                      {(file.name.endsWith('.zip') || file.name.endsWith('.chm')) && (
+                      {(file.name.endsWith('.zip') || file.name.endsWith('.chm') || file.name.endsWith('.pdf')) && (
                         <button 
                           onClick={() => handlePreview(file.name)}
                           disabled={isExtracting === file.name || isRenaming === file.name || isPreviewing}
                           className="px-3 py-2 bg-accent/10 text-accent hover:bg-accent hover:text-white rounded-lg transition-colors flex items-center justify-center font-bold text-xs disabled:opacity-50"
-                          title="Pilih dan Ekstrak ke Database"
+                          title="Pilih dan Ekstrak langsung ke Database sebagai HTML"
                         >
                           {(isExtracting === file.name || (isPreviewing && currentArchiveName === file.name)) ? <Loader2 className="animate-spin" size={16} /> : 'Ekstrak to Database'}
+                        </button>
+                      )}
+                      {file.name.endsWith('.pdf') && (
+                        <button 
+                          onClick={() => router.push(`/dashboard/data/create?pdf=${encodeURIComponent(file.name)}`)}
+                          className="px-3 py-2 bg-purple-500/10 text-purple-600 dark:text-purple-400 hover:bg-purple-500 hover:text-white rounded-lg transition-colors flex items-center justify-center font-bold text-xs"
+                          title="Edit / Lengkapi Teks PDF di Form"
+                        >
+                          Lengkapi Data
                         </button>
                       )}
                       <button 
@@ -295,6 +320,74 @@ export default function ArsipPage() {
                 ))}
               </tbody>
             </table>
+
+            {/* Footer Pagination Bar */}
+            {!isLoading && totalItems > 0 && (
+              <div className="p-4 bg-zinc-50 dark:bg-zinc-950/80 border-t border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3 text-xs md:text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                  <div className="flex items-center gap-2">
+                    <span>Tampilkan:</span>
+                    <select
+                      value={pageSize}
+                      onChange={(e) => setPageSize(Number(e.target.value))}
+                      className="bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 rounded-xl px-3 py-1.5 text-xs md:text-sm font-bold focus:outline-none focus:ring-2 focus:ring-accent/50"
+                    >
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                    </select>
+                    <span>baris</span>
+                  </div>
+                  <span className="text-zinc-400">|</span>
+                  <span>
+                    Menampilkan <strong className="text-zinc-900 dark:text-zinc-100">{startIndex + 1}</strong> -{' '}
+                    <strong className="text-zinc-900 dark:text-zinc-100">{endIndex}</strong> dari{' '}
+                    <strong className="text-zinc-900 dark:text-zinc-100">{totalItems}</strong> file
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                    title="Halaman Pertama"
+                    className="p-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronsLeft size={16} />
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    title="Halaman Sebelumnya"
+                    className="p-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+
+                  <div className="px-3 py-1.5 text-xs md:text-sm font-bold bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl">
+                    {currentPage} / {totalPages}
+                  </div>
+
+                  <button
+                    onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    title="Halaman Selanjutnya"
+                    className="p-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                    title="Halaman Terakhir"
+                    className="p-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronsRight size={16} />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

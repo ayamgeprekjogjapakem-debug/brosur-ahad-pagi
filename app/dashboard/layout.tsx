@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
 import DashboardSidebar from './components/DashboardSidebar';
+import DashboardHeader from './components/DashboardHeader';
 
 export default async function DashboardLayout({
   children,
@@ -22,7 +23,7 @@ export default async function DashboardLayout({
     .eq('id', user.id)
     .single();
 
-  if (!profile || profile.role !== 'admin' || !profile.is_active) {
+  if (!profile || !profile.is_active || (profile.role !== 'admin' && profile.role !== 'user')) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-[#fafafa] dark:bg-[#0a0a0a] text-center text-zinc-900 dark:text-zinc-100">
         <div className="bg-white dark:bg-zinc-900 p-10 rounded-3xl border border-black/5 dark:border-white/5 shadow-2xl max-w-md">
@@ -48,9 +49,13 @@ export default async function DashboardLayout({
   return (
     <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#000000] text-zinc-900 dark:text-zinc-100 flex flex-col md:flex-row font-sans selection:bg-accent/30 selection:text-accent">
       <DashboardSidebar />
-      <div className="flex-1 w-full overflow-x-hidden">
-        {children}
+      <div className="flex-1 w-full overflow-x-hidden flex flex-col min-h-screen">
+        <DashboardHeader email={user.email} role={profile.role} />
+        <main className="flex-1">
+          {children}
+        </main>
       </div>
     </div>
   );
 }
+

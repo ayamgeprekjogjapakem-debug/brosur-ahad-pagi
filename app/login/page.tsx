@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { BookOpen, Lock, Mail, ArrowRight, Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -15,6 +15,26 @@ export default function LoginPage() {
   const [error, setError] = useState('');
 
   const supabase = createClient();
+
+  useEffect(() => {
+    const checkActiveSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        router.replace('/dashboard');
+      }
+    };
+    checkActiveSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        router.replace('/dashboard');
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [router, supabase]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -4,7 +4,10 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { format, startOfToday, endOfToday, startOfYesterday, endOfYesterday, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { Activity, ShieldBan, ChevronRight, User, Globe, Smartphone } from 'lucide-react';
+import { 
+  Activity, ShieldBan, ChevronRight, User, Globe, Smartphone, 
+  ChevronLeft, ChevronsLeft, ChevronsRight 
+} from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import React from 'react';
@@ -14,6 +17,9 @@ export default function AccessLogsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [dateFilter, setDateFilter] = useState('today');
   const [activeTab, setActiveTab] = useState<'app' | 'web'>('app');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
   const supabase = createClient();
   const router = useRouter();
 
@@ -21,13 +27,17 @@ export default function AccessLogsPage() {
     fetchLogs();
   }, [dateFilter, activeTab]);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [dateFilter, activeTab, pageSize]);
+
   const fetchLogs = async () => {
     setIsLoading(true);
     let query = supabase
       .from('access_logs')
       .select('*')
       .order('created_at', { ascending: false })
-      .limit(100);
+      .limit(5000); // Batas maksimal yang cukup besar untuk semua filter waktu
 
     if (dateFilter !== 'all') {
       let start, end;
@@ -65,8 +75,6 @@ export default function AccessLogsPage() {
     setIsLoading(false);
   };
 
-  // Removed global isLoading check to allow UI to render first
-
   type GroupedLog = { ip: string; location: string; count: number; logs: any[] };
 
   const groupedLogs = logs.reduce((acc, log) => {
@@ -87,6 +95,13 @@ export default function AccessLogsPage() {
   }, {} as Record<string, GroupedLog>);
   
   const groupedArray = (Object.values(groupedLogs) as GroupedLog[]).sort((a, b) => b.count - a.count);
+
+  // Pagination kalkulasi
+  const totalItems = groupedArray.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, totalItems);
+  const paginatedArray = groupedArray.slice(startIndex, endIndex);
 
   return (
     <div className="p-8">
@@ -123,7 +138,7 @@ export default function AccessLogsPage() {
           <select 
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value)}
-            className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white px-4 py-2.5 rounded-xl text-sm outline-none focus:border-accent"
+            className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white px-4 py-2.5 rounded-xl text-sm outline-none focus:border-accent font-medium"
           >
             <option value="today">Hari Ini</option>
             <option value="yesterday">Kemarin</option>
@@ -140,8 +155,8 @@ export default function AccessLogsPage() {
         </div>
       </div>
       
-      <div className="bg-white dark:bg-zinc-900 rounded-3xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-sm">
-        <div className="overflow-x-auto">
+      <div className="bg-white dark:bg-zinc-900 rounded-3xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col">
+        <div className="overflow-x-auto flex-1">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-zinc-50 dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800">
@@ -155,7 +170,7 @@ export default function AccessLogsPage() {
               {groupedArray.length === 0 && !isLoading ? (
                 <tr>
                   <td colSpan={4} className="p-8 text-center text-zinc-500">
-                    Belum ada data akses terekam.
+                    Belum ada data akses terekam untuk periode ini.
                   </td>
                 </tr>
               ) : isLoading ? (
@@ -165,7 +180,7 @@ export default function AccessLogsPage() {
                   </td>
                 </tr>
               ) : (
-                groupedArray.map((group) => (
+                paginatedArray.map((group) => (
                   <tr 
                     key={group.ip}
                     onClick={() => router.push(`/dashboard/access-logs/${group.ip}`)}
@@ -199,6 +214,74 @@ export default function AccessLogsPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Footer Pagination Bar */}
+        {!isLoading && totalItems > 0 && (
+          <div className="p-4 bg-zinc-50 dark:bg-zinc-950/80 border-t border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3 text-xs md:text-sm font-medium text-zinc-600 dark:text-zinc-400">
+              <div className="flex items-center gap-2">
+                <span>Tampilkan:</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => setPageSize(Number(e.target.value))}
+                  className="bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 rounded-xl px-3 py-1.5 text-xs md:text-sm font-bold focus:outline-none focus:ring-2 focus:ring-accent/50"
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+                <span>baris</span>
+              </div>
+              <span className="text-zinc-400">|</span>
+              <span>
+                Menampilkan <strong className="text-zinc-900 dark:text-zinc-100">{startIndex + 1}</strong> -{' '}
+                <strong className="text-zinc-900 dark:text-zinc-100">{endIndex}</strong> dari{' '}
+                <strong className="text-zinc-900 dark:text-zinc-100">{totalItems}</strong> IP
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setCurrentPage(1)}
+                disabled={currentPage === 1}
+                title="Halaman Pertama"
+                className="p-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronsLeft size={16} />
+              </button>
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                title="Halaman Sebelumnya"
+                className="p-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronLeft size={16} />
+              </button>
+
+              <div className="px-3 py-1.5 text-xs md:text-sm font-bold bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl">
+                {currentPage} / {totalPages}
+              </div>
+
+              <button
+                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                title="Halaman Selanjutnya"
+                className="p-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronRight size={16} />
+              </button>
+              <button
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={currentPage === totalPages}
+                title="Halaman Terakhir"
+                className="p-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronsRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

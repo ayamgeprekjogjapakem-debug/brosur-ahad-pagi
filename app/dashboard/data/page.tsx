@@ -18,6 +18,9 @@ export default function DataBrosurPage() {
   const [totalBrosurs, setTotalBrosurs] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(50);
   const [filterFolder, setFilterFolder] = useState<string>('');
+  const [filterTahun, setFilterTahun] = useState<string>('');
+  const [sortBy, setSortBy] = useState<string>('tahun_desc');
+  const [availableYears, setAvailableYears] = useState<number[]>([]);
   // State untuk Fitur Pindah Masal (Bulk Move)
   const [selectedBrosurs, setSelectedBrosurs] = useState<string[]>([]);
   const [bulkFolderId, setBulkFolderId] = useState<string>('');
@@ -61,8 +64,17 @@ export default function DataBrosurPage() {
     setLoading(true);
     let query = supabase
       .from('brosur')
-      .select('id, judul, tahun, slug, created_at, folder_id, folders(name)', { count: 'exact' })
-      .order('tahun', { ascending: false });
+      .select('id, judul, tahun, slug, created_at, folder_id, folders(name)', { count: 'exact' });
+      
+    if (sortBy === 'tahun_desc') {
+      query = query.order('tahun', { ascending: false }).order('judul', { ascending: true });
+    } else if (sortBy === 'tahun_asc') {
+      query = query.order('tahun', { ascending: true }).order('judul', { ascending: true });
+    } else if (sortBy === 'judul_asc') {
+      query = query.order('judul', { ascending: true });
+    } else if (sortBy === 'judul_desc') {
+      query = query.order('judul', { ascending: false });
+    }
       
     if (searchTerm) {
       const searchNum = parseInt(searchTerm);
@@ -79,6 +91,10 @@ export default function DataBrosurPage() {
       } else {
         query = query.eq('folder_id', filterFolder);
       }
+    }
+
+    if (filterTahun) {
+      query = query.eq('tahun', filterTahun);
     }
     
     const from = (currentPage - 1) * itemsPerPage;
@@ -104,15 +120,24 @@ export default function DataBrosurPage() {
     }
   };
 
+  const fetchAvailableYears = async () => {
+    const { data } = await supabase.from('brosur').select('tahun').order('tahun', { ascending: false });
+    if (data) {
+      const years = Array.from(new Set(data.map(d => d.tahun).filter(Boolean)));
+      setAvailableYears(years as number[]);
+    }
+  };
+
   useEffect(() => {
     fetchFolders();
+    fetchAvailableYears();
   }, []);
 
   useEffect(() => {
     if (activeTab === 'brosur') {
       fetchBrosurs();
     }
-  }, [currentPage, itemsPerPage, searchTerm, filterFolder, activeTab]);
+  }, [currentPage, itemsPerPage, searchTerm, filterFolder, filterTahun, sortBy, activeTab]);
 
   const handleDeleteBrosur = async (id: string, judul: string) => {
     if (!window.confirm(`Yakin ingin menghapus brosur "${judul}"?`)) return;
@@ -425,6 +450,34 @@ export default function DataBrosurPage() {
                 {folders.map(f => (
                   <option key={f.id} value={f.id}>{f.name}</option>
                 ))}
+              </select>
+              
+              <select
+                value={filterTahun}
+                onChange={(e) => {
+                  setFilterTahun(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full md:w-auto bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 px-4 focus:outline-none focus:border-accent transition-all text-sm"
+              >
+                <option value="">Semua Tahun</option>
+                {availableYears.map(year => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+              
+              <select
+                value={sortBy}
+                onChange={(e) => {
+                  setSortBy(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full md:w-auto bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 px-4 focus:outline-none focus:border-accent transition-all text-sm"
+              >
+                <option value="tahun_desc">Tahun (Terbaru)</option>
+                <option value="tahun_asc">Tahun (Terlama)</option>
+                <option value="judul_asc">Abjad (A - Z)</option>
+                <option value="judul_desc">Abjad (Z - A)</option>
               </select>
               
               <select

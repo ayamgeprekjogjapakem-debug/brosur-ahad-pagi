@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import AdmZip from 'adm-zip';
 import iconv from 'iconv-lite';
+import { formatParagraphWithArabic } from '@/utils/arabic-normalizer';
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,8 +11,8 @@ export async function POST(request: NextRequest) {
     const action = body.action || 'extract';
     const selectedFiles: string[] = body.selectedFiles || [];
 
-    if (!fileName || (!fileName.endsWith('.zip') && !fileName.endsWith('.chm'))) {
-      return NextResponse.json({ error: 'File tidak valid atau bukan file .zip / .chm.' }, { status: 400 });
+    if (!fileName || (!fileName.endsWith('.zip') && !fileName.endsWith('.chm') && !fileName.endsWith('.pdf'))) {
+      return NextResponse.json({ error: 'File tidak valid atau bukan file .zip / .chm / .pdf.' }, { status: 400 });
     }
 
     const supabase = await createClient();
@@ -36,7 +37,7 @@ export async function POST(request: NextRequest) {
     console.log(`📦 Mengunduh ${fileName} dari Storage. Ukuran: ${buffer.length} bytes`);
 
     // 3.5 Buat atau cari Master Koleksi (Folder) otomatis (Hanya jika action = extract)
-    const folderName = fileName.replace(/\.(chm|zip)$/i, '');
+    const folderName = fileName.replace(/\.(chm|zip|pdf)$/i, '');
     let folderId = null;
 
     if (action === 'extract') {
@@ -188,6 +189,29 @@ export async function POST(request: NextRequest) {
       } catch (err: any) {
         console.error('CHM Extraction Error:', err);
         return NextResponse.json({ error: 'Gagal membongkar file CHM: ' + err.message }, { status: 500 });
+      }
+    } else if (fileName.endsWith('.pdf')) {
+      try {
+        const pdfParse = require('pdf-parse/lib/pdf-parse.js');
+        const parsed = await pdfParse(buffer);
+        const htmlEntryName = fileName.replace(/\.pdf$/i, '.html');
+
+        if (action === 'preview') {
+          return NextResponse.json({ success: true, files: [htmlEntryName] });
+        }
+
+        console.log(`📄 Mengekstrak teks dari PDF: ${fileName}`);
+        const paragraphs = parsed.text
+          .split('\n\n')
+          .map((p: string) => p.trim())
+          .filter((p: string) => p.length > 0)
+          .map((p: string) => formatParagraphWithArabic(p))
+          .join('\n');
+
+        pendingHtmls.push({ entryName: htmlEntryName, content: paragraphs });
+      } catch (err: any) {
+        console.error('PDF Extraction Error:', err);
+        return NextResponse.json({ error: 'Gagal membongkar file PDF: ' + err.message }, { status: 500 });
       }
     }
 

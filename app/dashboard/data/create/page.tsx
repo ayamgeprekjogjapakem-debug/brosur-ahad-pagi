@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { Loader2, ArrowLeft, Save, FolderArchive } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function CreateBrosurPage() {
+function CreateBrosurForm() {
   const [judul, setJudul] = useState('');
   const [tahun, setTahun] = useState(new Date().getFullYear().toString());
   const [slug, setSlug] = useState('');
@@ -19,6 +19,51 @@ export default function CreateBrosurPage() {
   
   const router = useRouter();
   const supabase = createClient();
+  
+  const searchParams = useSearchParams();
+  const pdfFile = searchParams?.get('pdf');
+
+  useEffect(() => {
+    if (pdfFile) {
+      const baseName = pdfFile.replace(/\.pdf$/i, '');
+      const yearMatch = baseName.match(/^(\d{4})/);
+      
+      let initialTahun = new Date().getFullYear().toString();
+      if (yearMatch) {
+        initialTahun = yearMatch[1];
+        setTahun(initialTahun);
+      }
+      
+      const parsedJudul = baseName.replace(/[-_]/g, ' ');
+      setJudul(parsedJudul);
+      
+      const cleanJudul = parsedJudul.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+      setSlug(`BAP-(Brosur-Ahad-Pagi)-${initialTahun}-${cleanJudul}`);
+      
+      const { data: publicUrlData } = supabase.storage.from('chm-uploads').getPublicUrl(pdfFile);
+      setKonten('Sedang memparsing teks dari PDF... Mohon tunggu.');
+      
+      const parsePdf = async () => {
+        try {
+          const res = await fetch('/api/parse-pdf', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fileName: pdfFile })
+          });
+          const data = await res.json();
+          if (res.ok && data.html) {
+             setKonten(data.html);
+          } else {
+             setKonten(`<p>Gagal memparsing teks PDF: ${data?.error || 'Kesalahan server'}</p>`);
+          }
+        } catch (e: any) {
+             setKonten(`<p>Error saat memparsing teks PDF: ${e?.message || 'Gagal terhubung ke server'}</p>`);
+        }
+      };
+      
+      parsePdf();
+    }
+  }, [pdfFile, supabase]);
 
   useEffect(() => {
     const fetchFolders = async () => {
@@ -172,5 +217,13 @@ export default function CreateBrosurPage() {
         </div>
       </form>
     </main>
+  );
+}
+
+export default function CreateBrosurPage() {
+  return (
+    <Suspense fallback={<div className="p-12 text-center text-zinc-500">Memuat...</div>}>
+      <CreateBrosurForm />
+    </Suspense>
   );
 }
