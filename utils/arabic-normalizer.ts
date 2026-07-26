@@ -106,19 +106,16 @@ export function normalizeMicrosoftArabic(text: string): string {
     if (isMicrosoftVisualDisjointedArabic(block)) {
       return cleanMicrosoftVisualArabic(block.replace(/\r?\n+/g, ' '));
     }
-    const LIGATURE_MAP: Record<string, string> = {
-      '\uFDF2': 'الله',
-      '\uFDFD': 'بسم الله الرحمن الرحيم',
-      '\uFDFA': 'صلى الله عليه وسلم',
-      '\uFDFB': 'جل جلاله',
-      'ﷲ': 'الله',
-      '﷽': 'بسم الله الرحمن الرحيم',
-      'ﷺ': 'صلى الله عليه وسلم',
-      'ﷹ': 'صلى الله عليه وسلم',
-      'ﷸ': 'صلى الله عليه وسلم',
-    };
+    const LIGATURES: [string, string][] = [
+      ['\uFDF2', 'الله'],
+      ['\uFDFD', 'بسم الله الرحمن الرحيم'],
+      ['\uFDFA', 'صلى الله عليه وسلم'],
+      ['\uFDFB', 'جل جلاله'],
+      ['ﷹ', 'صلى الله عليه وسلم'],
+      ['ﷸ', 'صلى الله عليه وسلم'],
+    ];
     let b = block;
-    for (const [lig, rep] of Object.entries(LIGATURE_MAP)) {
+    for (const [lig, rep] of LIGATURES) {
       b = b.split(lig).join(rep);
     }
     b = b.normalize('NFKC').normalize('NFC');
