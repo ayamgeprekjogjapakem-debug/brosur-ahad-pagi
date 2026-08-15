@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { 
   BookOpen, Upload, LogOut, Loader2, FileStack, Settings, 
   UserCog, Database, MessageSquare, Activity, ShieldBan,
-  ChevronLeft, ChevronRight 
+  ChevronLeft, ChevronRight, BookMarked, Sparkles
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 
@@ -49,6 +49,8 @@ export default function DashboardSidebar() {
         { name: 'Upload CHM', href: '/dashboard', icon: Upload },
         { name: 'Arsip Brosur', href: '/dashboard/arsip', icon: FileStack },
         { name: 'Data Brosur', href: '/dashboard/data', icon: Database },
+        { name: 'Generator Kajian AI', href: '/dashboard/ai-kajian', icon: Sparkles },
+        { name: 'Pengelompokan Hadist', href: '/dashboard/hadist', icon: BookMarked },
         { name: 'Kotak Masukan', href: '/dashboard/masukan', icon: MessageSquare },
       ],
     },
@@ -73,7 +75,7 @@ export default function DashboardSidebar() {
     <aside 
       className={`${
         isMinimized ? 'w-20' : 'w-64'
-      } bg-white/60 dark:bg-zinc-950/60 backdrop-blur-3xl border-r border-black/[0.04] dark:border-white/[0.04] hidden md:flex flex-col shrink-0 min-h-screen relative z-20 shadow-[4px_0_24px_rgba(0,0,0,0.01)] transition-all duration-300`}
+      } bg-white/85 dark:bg-zinc-900/85 backdrop-blur-3xl md:rounded-3xl border border-black/5 dark:border-white/10 hidden md:flex flex-col shrink-0 h-full relative z-20 shadow-sm transition-all duration-300 overflow-hidden`}
     >
       <div className={`p-6 flex items-center ${isMinimized ? 'justify-center' : 'justify-start'} border-b border-black/[0.04] dark:border-white/[0.04]`}>
         <Link href="/" className="flex items-center gap-3 group" title="Ke Beranda">
@@ -89,7 +91,7 @@ export default function DashboardSidebar() {
         </Link>
       </div>
       
-      <nav className="flex-1 px-3 py-4 space-y-4 overflow-y-auto">
+      <nav className="flex-1 px-3 py-4 space-y-4 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-zinc-700 scrollbar-track-transparent">
         {navGroups.map((group, groupIdx) => (
           <div key={group.label}>
             {!isMinimized ? (

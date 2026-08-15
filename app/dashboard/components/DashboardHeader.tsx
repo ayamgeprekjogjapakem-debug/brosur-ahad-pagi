@@ -57,6 +57,8 @@ export default function DashboardHeader({ email: initialEmail, role: initialRole
     if (path === '/dashboard') return 'Upload & Konversi CHM';
     if (path.startsWith('/dashboard/arsip')) return 'Arsip Brosur';
     if (path.startsWith('/dashboard/data')) return 'Database Brosur';
+    if (path.startsWith('/dashboard/ai-kajian')) return 'Generator Kajian AI';
+    if (path.startsWith('/dashboard/hadist')) return 'Pengelompokan Hadist & Dalil';
     if (path.startsWith('/dashboard/masukan')) return 'Kotak Masukan';
     if (path.startsWith('/dashboard/users')) return 'Akses Admin & User';
     if (path.startsWith('/dashboard/app-settings')) return 'App Control & Pemeliharaan';

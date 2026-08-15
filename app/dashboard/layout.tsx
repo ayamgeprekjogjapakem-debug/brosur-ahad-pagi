@@ -47,11 +47,11 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#000000] text-zinc-900 dark:text-zinc-100 flex flex-col md:flex-row font-sans selection:bg-accent/30 selection:text-accent">
+    <div className="h-screen max-h-screen overflow-hidden bg-[#eef0f3] dark:bg-[#070709] text-zinc-900 dark:text-zinc-100 flex flex-col md:flex-row font-sans selection:bg-accent/30 selection:text-accent p-0 md:p-3 gap-0 md:gap-3">
       <DashboardSidebar />
-      <div className="flex-1 w-full overflow-x-hidden flex flex-col min-h-screen">
+      <div className="flex-1 w-full h-full overflow-hidden flex flex-col min-w-0 md:rounded-3xl border-0 md:border md:border-black/5 md:dark:border-white/10 bg-white/75 dark:bg-zinc-900/75 backdrop-blur-xl shadow-sm relative">
         <DashboardHeader email={user.email} role={profile.role} />
-        <main className="flex-1">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 md:p-8">
           {children}
         </main>
       </div>

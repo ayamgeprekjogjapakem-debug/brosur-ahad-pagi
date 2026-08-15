@@ -96,7 +96,7 @@ export default function DashboardPage() {
 
   return (
     <>
-      <main className="p-8 md:p-12 w-full max-w-5xl mx-auto">
+      <div className="w-full max-w-5xl mx-auto">
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -168,7 +168,7 @@ export default function DashboardPage() {
             </div>
           </div>
         </motion.div>
-      </main>
+      </div>
 
       {/* Freeze Screen Overlay for Upload Progress */}
       {isUploading && (

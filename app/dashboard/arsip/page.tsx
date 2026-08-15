@@ -229,7 +229,7 @@ export default function ArsipPage() {
   };
 
   return (
-    <main className="p-8 md:p-12 w-full max-w-5xl mx-auto">
+    <div className="w-full max-w-5xl mx-auto">
       <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-extrabold mb-2 flex items-center gap-3">
@@ -558,6 +558,6 @@ export default function ArsipPage() {
           </div>
         </div>
       )}
-    </main>
+    </div>
   );
 }
