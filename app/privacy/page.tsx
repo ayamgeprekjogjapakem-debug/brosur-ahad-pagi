@@ -80,7 +80,7 @@ export default function PrivacyPolicy() {
             <h2 className="text-xl font-semibold mb-3 text-gray-900">7. Hubungi Kami</h2>
             <p>Jika Anda memiliki pertanyaan tentang Kebijakan Privasi ini, silakan hubungi kami:</p>
             <ul className="list-disc pl-5 mt-2">
-              <li>Melalui email: [Alamat Email Anda]</li>
+              <li>Melalui email: brosurmta@gmail.com</li>
             </ul>
           </section>
         </div>
