@@ -4,6 +4,7 @@ import "./globals.css";
 import { SettingsProvider } from "./SettingsContext";
 import AnalyticsTracker from "./AnalyticsTracker";
 import ThemeToggle from "./components/ThemeToggle";
+import NetworkStatus from "./components/NetworkStatus";
 import { cookies } from "next/headers";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -34,6 +35,7 @@ export default async function RootLayout({
       <body className={`min-h-full print:min-h-0 print:h-auto flex flex-col font-sans bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 ${amiri.variable} ${notoNaskh.variable}`} suppressHydrationWarning>
         <AnalyticsTracker />
         <ThemeToggle />
+        <NetworkStatus />
         <SettingsProvider>
           {children}
         </SettingsProvider>

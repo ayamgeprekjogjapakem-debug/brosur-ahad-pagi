@@ -3,8 +3,33 @@ CREATE TABLE IF NOT EXISTS public.app_settings (
     id SERIAL PRIMARY KEY,
     min_app_version TEXT NOT NULL DEFAULT '1.0.0',
     is_maintenance BOOLEAN NOT NULL DEFAULT false,
+    ai_enabled BOOLEAN NOT NULL DEFAULT false,
+    openrouter_token TEXT,
+    chat_model TEXT NOT NULL DEFAULT 'openai/gpt-3.5-turbo',
+    material_model TEXT NOT NULL DEFAULT 'google/gemini-pro',
+    system_prompt TEXT NOT NULL DEFAULT 'Setiap jawaban hilangkan markdown seperti **, *, ##, dan #. Gunakan kapital besar untuk judul. Sertakan sumber materi/brosur MTA di bagian bawah jawaban.',
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Tambahkan kolom jika tabel sudah ada (untuk update)
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='app_settings' AND column_name='ai_enabled') THEN 
+        ALTER TABLE public.app_settings ADD COLUMN ai_enabled BOOLEAN NOT NULL DEFAULT false; 
+    END IF; 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='app_settings' AND column_name='openrouter_token') THEN 
+        ALTER TABLE public.app_settings ADD COLUMN openrouter_token TEXT; 
+    END IF; 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='app_settings' AND column_name='chat_model') THEN 
+        ALTER TABLE public.app_settings ADD COLUMN chat_model TEXT NOT NULL DEFAULT 'openai/gpt-3.5-turbo'; 
+    END IF; 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='app_settings' AND column_name='material_model') THEN 
+        ALTER TABLE public.app_settings ADD COLUMN material_model TEXT NOT NULL DEFAULT 'google/gemini-pro'; 
+    END IF; 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='app_settings' AND column_name='system_prompt') THEN 
+        ALTER TABLE public.app_settings ADD COLUMN system_prompt TEXT NOT NULL DEFAULT 'Setiap jawaban hilangkan markdown seperti **, *, ##, dan #. Gunakan kapital besar untuk judul. Sertakan sumber materi/brosur MTA di bagian bawah jawaban.'; 
+    END IF; 
+END $$;
 
 -- Insert nilai default jika belum ada
 INSERT INTO public.app_settings (id, min_app_version, is_maintenance)
@@ -86,3 +111,32 @@ CREATE POLICY "Allow public read access_logs" ON public.access_logs FOR SELECT U
 -- Allow public read for blocked_ips (so API can check)
 DROP POLICY IF EXISTS "Allow public read blocked_ips" ON public.blocked_ips;
 CREATE POLICY "Allow public read blocked_ips" ON public.blocked_ips FOR SELECT USING (true);
+
+-- 4. Tabel access_codes
+CREATE TABLE IF NOT EXISTS public.access_codes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    code TEXT NOT NULL UNIQUE,
+    description TEXT,
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    has_ai_access BOOLEAN NOT NULL DEFAULT false,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Tambahkan kolom jika tabel sudah ada (untuk update)
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='access_codes' AND column_name='has_ai_access') THEN 
+        ALTER TABLE public.access_codes ADD COLUMN has_ai_access BOOLEAN NOT NULL DEFAULT false; 
+    END IF; 
+END $$;
+
+-- Enable RLS untuk access_codes
+ALTER TABLE public.access_codes ENABLE ROW LEVEL SECURITY;
+
+-- Allow public read (untuk dicek dari app mobile)
+DROP POLICY IF EXISTS "Allow public read access_codes" ON public.access_codes;
+CREATE POLICY "Allow public read access_codes" ON public.access_codes FOR SELECT USING (true);
+
+-- Allow public modify (untuk admin dashboard)
+DROP POLICY IF EXISTS "Allow public modify access_codes" ON public.access_codes;
+CREATE POLICY "Allow public modify access_codes" ON public.access_codes FOR ALL USING (true) WITH CHECK (true);

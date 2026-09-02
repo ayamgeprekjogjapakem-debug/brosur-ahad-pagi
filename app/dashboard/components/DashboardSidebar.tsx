@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { 
   BookOpen, Upload, LogOut, Loader2, FileStack, Settings, 
   UserCog, Database, MessageSquare, Activity, ShieldBan,
-  ChevronLeft, ChevronRight, BookMarked, Sparkles
+  ChevronLeft, ChevronRight, BookMarked, Sparkles, Key, Bot
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 
@@ -57,6 +57,7 @@ export default function DashboardSidebar() {
     {
       label: 'MANAJEMEN AKSES',
       items: [
+        { name: 'Kode Akses', href: '/dashboard/access-codes', icon: Key },
         { name: 'Akses Admin & User', href: '/dashboard/users', icon: UserCog },
         { name: 'Log Akses', href: '/dashboard/access-logs', icon: Activity },
         { name: 'Blacklist IP', href: '/dashboard/blocked-ips', icon: ShieldBan },
@@ -67,6 +68,7 @@ export default function DashboardSidebar() {
       items: [
         { name: 'App Control', href: '/dashboard/app-settings', icon: Settings },
         { name: 'Pengaturan Web', href: '/dashboard/settings', icon: Settings },
+        { name: 'Pengaturan AI', href: '/dashboard/ai-settings', icon: Bot },
       ],
     },
   ];
