@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
 import DashboardSidebar from './components/DashboardSidebar';
 import DashboardHeader from './components/DashboardHeader';
+import AiChatWidget from '../components/AiChatWidget';
 
 export default async function DashboardLayout({
   children,
@@ -46,6 +47,13 @@ export default async function DashboardLayout({
     );
   }
 
+  // Fetch AI Settings
+  const { data: aiSettings } = await supabase
+    .from('app_settings')
+    .select('ai_enabled')
+    .eq('id', 1)
+    .single();
+
   return (
     <div className="h-screen max-h-screen overflow-hidden bg-[#eef0f3] dark:bg-[#070709] text-zinc-900 dark:text-zinc-100 flex flex-col md:flex-row font-sans selection:bg-accent/30 selection:text-accent p-0 md:p-3 gap-0 md:gap-3">
       <DashboardSidebar />
@@ -55,6 +63,7 @@ export default async function DashboardLayout({
           {children}
         </main>
       </div>
+      {aiSettings?.ai_enabled && <AiChatWidget />}
     </div>
   );
 }
