@@ -5,7 +5,7 @@ export async function POST(request: Request) {
   try {
     const supabase = await createClient();
     const body = await request.json();
-    const { messages, localContext } = body;
+    const { messages, localContext, model } = body;
 
     if (!messages || messages.length === 0) {
       return NextResponse.json({ error: 'Pesan tidak boleh kosong.' }, { status: 400 });
@@ -28,7 +28,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'API Key AI belum dikonfigurasi.' }, { status: 500 });
     }
     
-    const selectedModel = settings.chat_model || 'google/gemini-2.5-flash';
+    // Gunakan model dari body request (dari Flutter) jika ada, jika tidak gunakan dari settings DB
+    const selectedModel = model || settings.chat_model || 'google/gemini-2.5-flash';
 
     // 1. Fetch AI Rules (Memory)
     const { data: rawRules } = await supabase
@@ -96,7 +97,12 @@ export async function POST(request: Request) {
 
     if (!searchError && searchResults && searchResults.length > 0) {
       contextText = searchResults.slice(0, 5).map((b: any) => {
-        const text = b.teks_bersih || b.konten?.replace(/<[^>]+>/g, '') || '';
+        // Prioritaskan konten (HTML stripped) agar teks Arab (jika ada) tidak hilang,
+        // karena teks_bersih seringkali difilter/strip arabic text untuk pencarian.
+        const rawHtml = b.konten || '';
+        const strippedHtml = rawHtml.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+        const text = strippedHtml || b.teks_bersih || '';
+        
         retrievedDocs.push({ judul: b.judul_brosur, tahun: b.tahun });
         return `[Brosur: ${b.judul_brosur} (Tahun ${b.tahun})]\n${text.substring(0, 15000)}`;
       }).join('\n\n');
@@ -121,11 +127,12 @@ ATURAN UTAMA (ANTI-INFERENSI & SUMBER):
 FORMAT & STRUKTUR JAWABAN:
 1. PEMBUKA WAJIB: Selalu mulai jawaban dengan kalimat: "Saudaraku, Guru Daerah yang dirahmati Allah."
 2. GAYA BAHASA: Lembut, santun, rendah hati, ringkas, tidak menggurui. Pertahankan istilah Arab/Agama.
-3. SUSUNAN: (1) Sapaan, (2) Jawaban Inti, (3) Penjelasan Brosur, (4) Dalil (Teks Arab, Arti, Sumber), (5) Kesimpulan.
-4. JIKA DATA KOSONG / TIDAK CUKUP: Jawab persis seperti ini: "Mohon maaf, tidak ada informasi tentang itu di database kami atau brosur belum diunggah." Lalu, TAWARKAN pencarian lanjutan yang relevan. (Contoh: "Jika berkenan, saya dapat menelusuri lebih khusus dengan kata kunci X, Y, Z").
-5. PERTANYAAN DI LUAR RANAH AGAMA: Jawab: "Mohon maaf, Pertanyaan anda diluar ranah kami."
-6. IDENTITAS REFERENSI: Di akhir jawaban, HANYA jika Anda berhasil mengutip brosur, tampilkan Judul, Nomor, dan Tanggal Brosur. Jika Anda menjawab "Mohon maaf data tidak ada", JANGAN cantumkan identitas brosur.
-7. PENGECEKAN AKHIR: Jangan pernah menampilkan artefak teknis (seperti JSON, token, dll). Periksa typo.
+3. SUSUNAN: (1) Sapaan, (2) Jawaban Inti, (3) Penjelasan Brosur, (4) Dalil (PENTING: Wajib tulis ulang Teks Arab Asli dari brosur, Arti, dan Sumber), (5) Kesimpulan.
+4. FORMAT TEKS ARAB: Pastikan selalu memberikan jarak/baris kosong (Enter) SEBELUM dan SESUDAH menuliskan teks Arab. Jangan mencampur teks Arab dan Latin di baris yang sama.
+5. JIKA DATA KOSONG / TIDAK CUKUP: Jawab persis seperti ini: "Mohon maaf, tidak ada informasi tentang itu di database kami atau brosur belum diunggah." Lalu, TAWARKAN pencarian lanjutan yang relevan.
+6. PERTANYAAN DI LUAR RANAH AGAMA: Jawab: "Mohon maaf, Pertanyaan anda diluar ranah kami."
+7. IDENTITAS REFERENSI: Di akhir jawaban, HANYA jika Anda berhasil mengutip brosur, tampilkan Judul, Nomor, dan Tanggal Brosur.
+8. PENGECEKAN AKHIR: Jangan pernah menampilkan artefak teknis (seperti JSON, token, dll). Periksa typo.
 
 === KONTEKS BROSUR ===
 ${contextText || '(Konteks kosong. Ingat Aturan: Jangan Mengarang)'}
