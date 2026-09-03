@@ -9,9 +9,9 @@ import remarkGfm from 'remark-gfm';
 export default function AiSettingsPage() {
   const [aiEnabled, setAiEnabled] = useState(false);
   const [openrouterToken, setOpenrouterToken] = useState('');
-  const [chatModel, setChatModel] = useState('openai/gpt-3.5-turbo');
-  const [materialModel, setMaterialModel] = useState('google/gemini-pro');
-  const [systemPrompt, setSystemPrompt] = useState('Gunakan gaya bahasa santun, poin-poin terstruktur, dan huruf tebal untuk menyorot dalil penting.');
+  const [chatModel, setChatModel] = useState('google/gemini-2.5-flash');
+  const [materialModel, setMaterialModel] = useState('google/gemini-2.5-flash');
+  const [systemPrompt, setSystemPrompt] = useState('Gunakan gaya bahasa santun...');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
@@ -169,43 +169,28 @@ export default function AiSettingsPage() {
           </div>
 
           {/* Model AI */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
-                Model AI: Tanya Singkat
-              </label>
-              <select 
-                value={chatModel}
-                onChange={(e) => setChatModel(e.target.value)}
-                className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent text-sm appearance-none"
-              >
-                <option value="openai/gpt-3.5-turbo">GPT-3.5 Turbo (Cepat & Murah)</option>
-                <option value="google/gemini-2.5-flash">Gemini 2.5 Flash (Sangat Cepat & Murah)</option>
-                <option value="google/gemini-pro">Gemini Pro</option>
-                <option value="meta-llama/llama-3-8b-instruct:free">Llama 3 8B (Gratis)</option>
-                <option value="deepseek/deepseek-chat">DeepSeek V3 (Sangat Cerdas)</option>
-                <option value="anthropic/claude-3-haiku">Claude 3 Haiku</option>
-              </select>
-              <p className="text-xs text-zinc-500 mt-2">Model yang digunakan untuk fitur chat di pojok kanan bawah.</p>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
-                Model AI: Buat Materi Kajian
-              </label>
-              <select 
-                value={materialModel}
-                onChange={(e) => setMaterialModel(e.target.value)}
-                className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent text-sm appearance-none"
-              >
-                <option value="openai/gpt-3.5-turbo">GPT-3.5 Turbo (Cepat & Murah)</option>
-                <option value="google/gemini-2.5-flash">Gemini 2.5 Flash (Sangat Cepat & Murah)</option>
-                <option value="google/gemini-pro">Gemini Pro</option>
-                <option value="meta-llama/llama-3-8b-instruct:free">Llama 3 8B (Gratis)</option>
-                <option value="deepseek/deepseek-chat">DeepSeek V3 (Sangat Cerdas)</option>
-                <option value="anthropic/claude-3-haiku">Claude 3 Haiku</option>
-              </select>
-              <p className="text-xs text-zinc-500 mt-2">Model yang digunakan untuk halaman Generator AI Kajian.</p>
-            </div>
+          <div>
+            <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
+              Model AI Utama (Otak Sistem)
+            </label>
+            <select 
+              value={chatModel}
+              onChange={(e) => {
+                setChatModel(e.target.value);
+                setMaterialModel(e.target.value);
+              }}
+              className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent text-sm appearance-none"
+            >
+              <option value="google/gemini-2.5-flash">Gemini 2.5 Flash (Sangat Cepat & Murah, Direkomendasikan)</option>
+              <option value="openai/gpt-4o-mini">GPT-4o Mini (Cerdas & Ringan)</option>
+              <option value="openai/gpt-3.5-turbo">GPT-3.5 Turbo (Klasik)</option>
+              <option value="meta-llama/llama-3-8b-instruct:free">Llama 3 8B (Gratis tapi Terbatas)</option>
+              <option value="deepseek/deepseek-chat">DeepSeek V3 (Sangat Cerdas)</option>
+              <option value="anthropic/claude-3-haiku">Claude 3 Haiku</option>
+            </select>
+            <p className="text-xs text-zinc-500 mt-2">
+              Pilihan model ini akan digunakan sebagai otak utama untuk menjawab di Chat Simulator maupun fitur lainnya.
+            </p>
           </div>
 
           {/* System Prompt */}
