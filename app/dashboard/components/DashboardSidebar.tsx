@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { 
   BookOpen, Upload, LogOut, Loader2, FileStack, Settings, 
   UserCog, Database, MessageSquare, Activity, ShieldBan,
-  ChevronLeft, ChevronRight, BookMarked, Sparkles, Key, Bot
+  ChevronLeft, ChevronRight, BookMarked, Sparkles, Key, Bot, Settings2
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 
@@ -21,20 +21,21 @@ export default function DashboardSidebar() {
     const saved = localStorage.getItem('dashboard_sidebar_minimized');
     if (saved === 'true') {
       setIsMinimized(true);
+      window.dispatchEvent(new CustomEvent('sidebar_minimized_changed', { detail: true }));
     }
+  }, []);
 
+  useEffect(() => {
     const handleToggleEvent = () => {
-      setIsMinimized((prev) => {
-        const nextState = !prev;
-        localStorage.setItem('dashboard_sidebar_minimized', String(nextState));
-        window.dispatchEvent(new CustomEvent('sidebar_minimized_changed', { detail: nextState }));
-        return nextState;
-      });
+      const nextState = !isMinimized;
+      setIsMinimized(nextState);
+      localStorage.setItem('dashboard_sidebar_minimized', String(nextState));
+      window.dispatchEvent(new CustomEvent('sidebar_minimized_changed', { detail: nextState }));
     };
 
     window.addEventListener('toggle_sidebar_minimized', handleToggleEvent);
     return () => window.removeEventListener('toggle_sidebar_minimized', handleToggleEvent);
-  }, []);
+  }, [isMinimized]);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -49,9 +50,16 @@ export default function DashboardSidebar() {
         { name: 'Upload CHM', href: '/dashboard', icon: Upload },
         { name: 'Arsip Brosur', href: '/dashboard/arsip', icon: FileStack },
         { name: 'Data Brosur', href: '/dashboard/data', icon: Database },
-        { name: 'Generator Kajian AI', href: '/dashboard/ai-kajian', icon: Sparkles },
         { name: 'Pengelompokan Hadist', href: '/dashboard/hadist', icon: BookMarked },
         { name: 'Kotak Masukan', href: '/dashboard/masukan', icon: MessageSquare },
+      ],
+    },
+    {
+      label: 'ARTIFICIAL INTELLIGENCE',
+      items: [
+        { name: 'Generator Kajian', href: '/dashboard/ai-kajian', icon: Sparkles },
+        { name: 'Simulator AI', href: '/dashboard/ai-simulator', icon: Bot },
+        { name: 'Pengaturan AI', href: '/dashboard/ai-settings', icon: Settings2 },
       ],
     },
     {
@@ -68,7 +76,6 @@ export default function DashboardSidebar() {
       items: [
         { name: 'App Control', href: '/dashboard/app-settings', icon: Settings },
         { name: 'Pengaturan Web', href: '/dashboard/settings', icon: Settings },
-        { name: 'Pengaturan AI', href: '/dashboard/ai-settings', icon: Bot },
       ],
     },
   ];

@@ -17,7 +17,6 @@ export default function AiChatWidget() {
   const [messages, setMessages] = useState<Message[]>([
     { role: 'assistant', content: 'Halo! Saya Asisten AI Pustaka Brosur Ahad Pagi. Ada yang bisa saya bantu terkait materi brosur?' }
   ]);
-  const [currentContext, setCurrentContext] = useState<string>('');
   const [input, setInput] = useState('');
   const [loadingState, setLoadingState] = useState<'idle' | 'searching' | 'generating'>('idle');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -49,48 +48,13 @@ export default function AiChatWidget() {
     try {
       setLoadingState('searching');
       
-      const cleanWords = userMsg
-        .toLowerCase()
-        .replace(/[^\w\s]/g, '')
-        .split(/\s+/)
-        .filter(w => w.length > 2 && !['apa', 'apakah', 'bagaimana', 'kenapa', 'mengapa', 'siapa', 'kapan', 'dimana', 'yang', 'dan', 'di', 'ke', 'dari', 'untuk', 'dengan', 'ini', 'itu', 'dalil', 'hukum', 'tentang', 'hadis', 'hadist', 'ayat', 'bacaan', 'buatkan', 'tuliskan', 'jelaskan', 'sebutkan', 'uraikan', 'berikan', 'materi', 'ceramah', 'khutbah', 'kultum', 'dalam', 'kata', 'paragraf', 'tolong', 'bantu', 'saya', 'lain', 'lagi', 'terus', 'dong', 'coba', 'contoh', 'tambah', 'tambahan'].includes(w));
-      
-      let contextText = currentContext;
-      
-      if (cleanWords.length > 0) {
-        const searchQuery = cleanWords.join(' ');
-        const timeoutPromise = new Promise<{data: any, error: any}>((resolve) => 
-          setTimeout(() => resolve({ data: null, error: new Error('Pencarian brosur memakan waktu terlalu lama (timeout).') }), 4000)
-        );
-        
-        const searchPromise = supabase.rpc('search_brosur_ranked', {
-          search_query: searchQuery,
-          filter_folder_id: null
-        });
 
-        const { data: searchResults, error: searchError } = await Promise.race([searchPromise, timeoutPromise]);
-        
-        if (!searchError && searchResults && searchResults.length > 0) {
-          contextText = searchResults.slice(0, 5).map((b: any) => {
-            const text = b.teks_bersih || b.konten?.replace(/<[^>]+>/g, '') || '';
-            return `[Sumber: ${b.judul} (${b.tahun})]\nIsi:\n${text.substring(0, 5000)}\n---`;
-          }).join('\n');
-          setCurrentContext(contextText);
-        }
-      }
-      
-      if (!contextText) {
-        setMessages([...newMessages, { role: 'assistant', content: 'Maaf, saya tidak menemukan referensi yang relevan di arsip Brosur Ahad Pagi.' }]);
-        setLoadingState('idle');
-        return;
-      }
-      
       setLoadingState('generating');
 
       const res = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: newMessages, contextText, mode: 'brosur' }),
+        body: JSON.stringify({ messages: newMessages }),
       });
       let data;
       try {
@@ -141,9 +105,6 @@ export default function AiChatWidget() {
                 </div>
                 <div>
                   <h3 className="font-bold text-sm">Asisten AI Pustaka</h3>
-                  <div className="text-[10px] bg-white/20 text-white border border-white/30 rounded px-1.5 py-0.5 mt-1 inline-block">
-                    Khusus Brosur MTA
-                  </div>
                 </div>
               </div>
               <button 

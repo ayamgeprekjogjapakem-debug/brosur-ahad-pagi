@@ -3,7 +3,7 @@ import { createClient } from '@/utils/supabase/server';
 
 export async function POST(request: NextRequest) {
   try {
-    const { messages, contextText, mode } = await request.json();
+    const { messages, wordCount = 100, localContext } = await request.json();
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json({ error: 'Format pesan tidak valid' }, { status: 400 });
@@ -30,18 +30,82 @@ export async function POST(request: NextRequest) {
     // Buat System Prompt khusus untuk RAG dan aturan kewajiban sumber
     const userDefinedPrompt = settings.system_prompt || 'Gunakan gaya bahasa santun, poin-poin terstruktur, dan huruf tebal untuk menyorot dalil penting.';
     
-    const finalSystemPrompt = `
-Anda adalah "Sahabat MTA", asisten AI resmi untuk Pustaka Brosur Majlis Tafsir Al-Qur'an (MTA).
-Tugas utama Anda adalah menjawab pertanyaan pengguna secara akurat, rapi, dan beradab, HANYA berdasarkan konteks dokumen resmi brosur MTA yang diberikan kepada Anda.
+    const lastMessage = messages[messages.length - 1].content;
 
-ATURAN MENJAWAB:
-1. SINTESIS ADAPTIF & SUMBER KEBENARAN: Jika dokumen relevan ditemukan, uraikan terlebih dahulu dalil atau penjelasan umum yang TERCANTUM di dalam brosur tersebut. Jika pengguna menanyakan hal spesifik yang TIDAK dibahas (misalnya kasus khusus), jelaskan apa yang ada di brosur, lalu tambahkan keterangan bahwa arsip yang tersedia tidak menyinggung hal spesifik tersebut. JANGAN langsung menolak menjawab jika topik umum sudah ada di konteks.
-2. GAYA BAHASA LAKSANAKAN DENGAN LUWES: Gunakan bahasa Indonesia yang baku, sopan, santun, dan menyentuh hati. Sapa pengguna dengan hangat di awal. Gunakan pendekatan narasi (bercerita), merangkai kalimat dengan luwes dan tidak kaku, SELAMA substansi hukum, dalil, dan materi tetap murni 100% dari teks brosur (tanpa halusinasi).
-3. FORMAT MARKDOWN NATIF:
-   - Gunakan huruf tebal (**teks**) untuk penekanan atau judul dalil.
-   - Gunakan daftar angka atau bullet points (-) agar jawaban terstruktur namun mengalir.
-   - Jika terdapat teks Arab, tuliskan teks Arab pada baris terpisah diikuti terjemahannya.
-4. ATRIBUSI REFERENSI: Di bagian paling bawah jawaban, WAJIB cantumkan sumber brosur secara spesifik berdasarkan konteks.
+    let contextText = localContext || '';
+
+    // Hanya cari ke Supabase (online) jika tidak ada context lokal dari perangkat
+    if (!contextText) {
+      // FASE 1: Query Rewriting & Spell Check via AI
+      const rewritePrompt = `Tugas Anda adalah memperbaiki salah ketik (typo) dan mengekstrak kata kunci utama dari pertanyaan berikut untuk digunakan dalam mesin pencari database.
+Aturan:
+1. Perbaiki kata yang typo (misal: "aiqah" jadi "aqiqah", "tetnag" jadi "tentang").
+2. Buang kata sambung yang tidak penting (seperti "dan", "di", "ke", "yang", "dari", "buatkan", "tolong", dll).
+3. Hanya kembalikan kata kunci akhir, dipisahkan dengan spasi. JANGAN tambahkan penjelasan apapun. JANGAN pakai tanda kutip.
+
+Pertanyaan Pengguna: "${lastMessage}"`;
+
+      const rewriteResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${openRouterKey}`,
+          'HTTP-Referer': 'https://www.ulilalbab.fun',
+          'X-Title': 'Ulil Albab Chat AI',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash', // Fast and cheap model for query extraction
+          messages: [{ role: 'user', content: rewritePrompt }],
+          temperature: 0,
+        }),
+      });
+
+      let searchQuery = lastMessage; // Fallback
+      if (rewriteResponse.ok) {
+        const rewriteData = await rewriteResponse.json();
+        const extractedQuery = rewriteData.choices?.[0]?.message?.content?.trim();
+        if (extractedQuery) {
+          searchQuery = extractedQuery.replace(/[\n\r]/g, ' '); // Remove any accidental newlines
+        }
+      }
+
+      // FASE 2: Pencarian Database Supabase
+      const timeoutPromise = new Promise<{data: any, error: any}>((resolve) => 
+        setTimeout(() => resolve({ data: null, error: new Error('Timeout mencari brosur') }), 4000)
+      );
+      const searchPromise = supabase.rpc('search_brosur_ranked', {
+        search_query: searchQuery,
+        filter_folder_id: null
+      });
+      
+      const { data: searchResults, error: searchError } = await Promise.race([searchPromise, timeoutPromise]);
+      
+      if (!searchError && searchResults && searchResults.length > 0) {
+        contextText = searchResults.slice(0, 5).map((b: any) => {
+          const text = b.teks_bersih || b.konten?.replace(/<[^>]+>/g, '') || '';
+          return `[Sumber: ${b.judul} (${b.tahun})]\nIsi:\n${text.substring(0, 5000)}\n---`;
+        }).join('\n');
+      }
+    }
+
+    const finalSystemPrompt = `
+Kamu adalah asisten kajian dan arsip resmi Brosur MTA. Tugasmu adalah menjawab pertanyaan pengguna secara amanah, teliti, dan berbasis rujukan yang jelas. HANYA berdasarkan konteks dokumen resmi brosur MTA yang diberikan kepada Anda.
+
+ATURAN KETAT MENGENAI DALIL DAN HUKUM IBADAH:
+1. KAIDAH FIQIH UTAMA: Dalam urusan ibadah (termasuk pelaksanaan aqiqah, waktu, dan tata caranya), hukum asalnya adalah DILARANG/HARAM kecuali ada dalil yang SHAHIH. 
+2. JANGAN PERNAH menggunakan logika "karena tidak ada larangan khusus, maka diperbolehkan". Jika suatu amalan/waktu (seperti aqiqah hari ke-14, ke-21, atau setelah dewasa) hanya bersandar pada hadits DHA'IF atau tidak ada contoh dari Nabi, maka amalan tersebut TIDAK DISYARIATKAN.
+3. JIKA HADITS/RIWAYATNYA DHA'IF (LEMAH):
+   - Anda WAJIB menolak menjadikannya sebagai landasan hukum.
+   - DILARANG KERAS menyarankan, membolehkan, atau memberikan kelonggaran beribadah berdasarkan hadits dha'if tersebut.
+   - Contoh Kasus Aqiqah: Jika ditanya aqiqah selain hari ke-7 (misal hari ke-14/21), Anda wajib menjawab: "Hadits riwayat Baihaqi mengenai pelaksanaan hari ke-14 atau ke-21 adalah dha'if (lemah). Oleh karena itu, hal tersebut tidak disyariatkan dan tidak bisa dijadikan hujjah/dalil untuk melakukan aqiqah selain di hari ke-7."
+4. JIKA TIDAK DITEMUKAN DALIL:
+   - Nyatakan secara tegas: "Belum ditemukan dalil yang shahih yang mendasari hal tersebut dalam arsip rujukan. Karena tidak ada dalil shahih, maka amalan tersebut tidak disyariatkan."
+5. URUTAN PENYAJIAN JAWABAN:
+   - Sapaan hangat: "Saudaraku, Guru Daerah yang dirahmati Allah."
+   - Tegaskan hukum dan kedudukan haditsnya sejak awal kalimat.
+   - Jelaskan dalil yang SHAHIH dan MUTTAFAQ 'ALAIH (sertakan teks Arab berharakat, arti, dan rawi riwayatnya).
+   - Jawaban harus komprehensif, mendalam, dan dijabarkan dengan panjang MINIMAL ${wordCount} KATA.
+   - Cantumkan rujukan brosur secara spesifik di bagian paling bawah.
    Format Wajib:
    **Rujukan Brosur:**
    - [Judul Brosur], Brosur Tahun [Tahun]

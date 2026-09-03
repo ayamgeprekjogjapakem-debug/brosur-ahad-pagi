@@ -15,10 +15,7 @@ export default function AiKajianPage() {
   const [activeTab, setActiveTab] = useState<'generator' | 'saved'>('generator');
 
   // API Config
-  const [apiKey, setApiKey] = useState('');
-  const [model, setModel] = useState('google/gemini-2.5-flash');
   const [prompt, setPrompt] = useState('');
-  const [showConfig, setShowConfig] = useState(false);
 
   // Source Type Configuration
   const [sourceType, setSourceType] = useState<'individual' | 'folder' | 'all' | 'custom'>('individual');
@@ -69,14 +66,9 @@ export default function AiKajianPage() {
   const [editText, setEditText] = useState('');
   const [updating, setUpdating] = useState(false);
 
-  // Load API Key, Model, and prompt from local storage on mount
+  // Load prompt from local storage on mount
   useEffect(() => {
-    const key = localStorage.getItem('openrouter_api_key') || '';
-    const savedModel = localStorage.getItem('openrouter_model') || 'google/gemini-2.5-flash';
     const savedPrompt = localStorage.getItem('openrouter_prompt') || '';
-    
-    setApiKey(key);
-    setModel(savedModel);
     setPrompt(savedPrompt);
 
     const fetchFolders = async () => {
@@ -158,13 +150,7 @@ export default function AiKajianPage() {
     return () => clearTimeout(timer);
   }, [searchQuery, supabase]);
 
-  const handleSaveSettings = () => {
-    localStorage.setItem('openrouter_api_key', apiKey);
-    localStorage.setItem('openrouter_model', model);
-    localStorage.setItem('openrouter_prompt', prompt);
-    alert('Pengaturan default berhasil disimpan!');
-    setShowConfig(false);
-  };
+
 
   const addReference = (brosur: any) => {
     if (!selectedBrosurs.find((b) => b.id === brosur.id)) {
@@ -252,8 +238,6 @@ export default function AiKajianPage() {
         body: JSON.stringify({
           texts: referencesText,
           prompt,
-          model,
-          apiKey,
         }),
       });
 
@@ -573,13 +557,7 @@ export default function AiKajianPage() {
             </p>
           </div>
 
-          <button
-            onClick={() => setShowConfig(!showConfig)}
-            className="flex items-center gap-2 px-4 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-xl font-bold text-sm transition-colors self-start md:self-center"
-          >
-            <Settings2 size={16} />
-            {showConfig ? 'Sembunyikan Pengaturan' : 'Pengaturan AI'}
-          </button>
+
         </header>
 
         {/* Tab Selector with URL sync */}
@@ -598,59 +576,7 @@ export default function AiKajianPage() {
           </button>
         </div>
 
-        {/* Configuration Section */}
-        <AnimatePresence>
-          {showConfig && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden mb-6"
-            >
-              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm space-y-4">
-                <h3 className="font-extrabold text-lg flex items-center gap-2 text-zinc-900 dark:text-zinc-100">
-                  <Key size={18} className="text-amber-500" /> Kunci API & Model OpenRouter
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">OpenRouter API Key</label>
-                    <input
-                      type="password"
-                      placeholder="sk-or-v1-..."
-                      value={apiKey}
-                      onChange={(e) => setApiKey(e.target.value)}
-                      className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 px-4 focus:outline-none focus:border-accent text-sm"
-                    />
-                    <p className="text-[11px] text-zinc-400 mt-1.5">
-                      Dapatkan di <a href="https://openrouter.ai" target="_blank" rel="noreferrer" className="text-accent underline font-semibold">openrouter.ai</a>.
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Pilih Model LLM</label>
-                    <select
-                      value={model}
-                      onChange={(e) => setModel(e.target.value)}
-                      className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 px-4 focus:outline-none focus:border-accent text-sm"
-                    >
-                      <option value="google/gemini-2.5-flash">Gemini 2.5 Flash (Recommended - Cepat & Murah)</option>
-                      <option value="google/gemini-2.5-pro">Gemini 2.5 Pro (Lebih Akurat & Detail)</option>
-                      <option value="meta-llama/llama-3-8b-instruct:free">Meta Llama 3 8B Instruct (Free)</option>
-                      <option value="deepseek/deepseek-chat">DeepSeek V3 (Sangat Cerdas)</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="flex justify-end pt-2">
-                  <button
-                    onClick={handleSaveSettings}
-                    className="bg-accent text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-accent/90 transition-colors flex items-center gap-2"
-                  >
-                    <Save size={16} /> Simpan Pengaturan Default
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+
 
         {activeTab === 'generator' ? (
           /* TAB 1: GENERATOR */
