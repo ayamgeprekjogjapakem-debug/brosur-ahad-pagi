@@ -18,7 +18,6 @@ export default function AiChatWidget() {
     { role: 'assistant', content: 'Halo! Saya Asisten AI Pustaka Brosur Ahad Pagi. Ada yang bisa saya bantu terkait materi brosur?' }
   ]);
   const [currentContext, setCurrentContext] = useState<string>('');
-  const [searchMode, setSearchMode] = useState<'brosur' | 'umum'>('brosur');
   const [input, setInput] = useState('');
   const [loadingState, setLoadingState] = useState<'idle' | 'searching' | 'generating'>('idle');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -58,26 +57,29 @@ export default function AiChatWidget() {
       
       let contextText = currentContext;
       
-      if (searchMode === 'brosur') {
-        if (cleanWords.length > 0) {
-          const searchQuery = cleanWords.join(' ');
+      if (cleanWords.length > 0) {
+        const searchQuery = cleanWords.join(' ');
+        const timeoutPromise = new Promise<{data: any, error: any}>((resolve) => 
+          setTimeout(() => resolve({ data: null, error: new Error('Pencarian brosur memakan waktu terlalu lama (timeout).') }), 4000)
+        );
         
-        const { data: searchResults, error: searchError } = await supabase.rpc('search_brosur_ranked', {
+        const searchPromise = supabase.rpc('search_brosur_ranked', {
           search_query: searchQuery,
           filter_folder_id: null
         });
+
+        const { data: searchResults, error: searchError } = await Promise.race([searchPromise, timeoutPromise]);
         
         if (!searchError && searchResults && searchResults.length > 0) {
-          contextText = searchResults.slice(0, 3).map((b: any) => {
+          contextText = searchResults.slice(0, 5).map((b: any) => {
             const text = b.teks_bersih || b.konten?.replace(/<[^>]+>/g, '') || '';
-            return `Judul: ${b.judul}\nTahun: ${b.tahun}\nIsi:\n${text.substring(0, 5000)}`;
-          }).join('\n\n---\n\n');
+            return `[Sumber: ${b.judul} (${b.tahun})]\nIsi:\n${text.substring(0, 5000)}\n---`;
+          }).join('\n');
           setCurrentContext(contextText);
-        }
         }
       }
       
-      if (searchMode === 'brosur' && !contextText) {
+      if (!contextText) {
         setMessages([...newMessages, { role: 'assistant', content: 'Maaf, saya tidak menemukan referensi yang relevan di arsip Brosur Ahad Pagi.' }]);
         setLoadingState('idle');
         return;
@@ -88,15 +90,18 @@ export default function AiChatWidget() {
       const res = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: newMessages, contextText, mode: searchMode }),
+        body: JSON.stringify({ messages: newMessages, contextText, mode: 'brosur' }),
       });
-
-      const data = await res.json();
+      let data;
+      try {
+        data = await res.json();
+      } catch (err) {
+        data = {};
+      }
       
       if (!res.ok) {
-        throw new Error(data.error || 'Terjadi kesalahan.');
+        throw new Error(data.error || `Error ${res.status}: Gagal memproses obrolan.`);
       }
-
       setMessages([...newMessages, { role: 'assistant', content: data.text }]);
     } catch (error: any) {
       setMessages([...newMessages, { role: 'assistant', content: `Maaf, terjadi kesalahan: ${error.message}` }]);
@@ -136,14 +141,9 @@ export default function AiChatWidget() {
                 </div>
                 <div>
                   <h3 className="font-bold text-sm">Asisten AI Pustaka</h3>
-                  <select
-                    value={searchMode}
-                    onChange={(e) => setSearchMode(e.target.value as 'brosur' | 'umum')}
-                    className="text-[10px] bg-white/20 text-white border border-white/30 rounded px-1 py-0.5 outline-none cursor-pointer mt-1"
-                  >
-                    <option value="brosur" className="text-black">Mode: Khusus Brosur MTA</option>
-                    <option value="umum" className="text-black">Mode: Pengetahuan Bebas</option>
-                  </select>
+                  <div className="text-[10px] bg-white/20 text-white border border-white/30 rounded px-1.5 py-0.5 mt-1 inline-block">
+                    Khusus Brosur MTA
+                  </div>
                 </div>
               </div>
               <button 
