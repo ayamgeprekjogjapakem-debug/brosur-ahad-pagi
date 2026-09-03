@@ -5,7 +5,7 @@ export async function POST(request: Request) {
   try {
     const supabase = await createClient();
     const body = await request.json();
-    const { messages } = body;
+    const { messages, localContext } = body;
 
     if (!messages || messages.length === 0) {
       return NextResponse.json({ error: 'Pesan tidak boleh kosong.' }, { status: 400 });
@@ -100,6 +100,10 @@ export async function POST(request: Request) {
         retrievedDocs.push({ judul: b.judul_brosur, tahun: b.tahun });
         return `[Brosur: ${b.judul_brosur} (Tahun ${b.tahun})]\n${text.substring(0, 15000)}`;
       }).join('\n\n');
+    }
+
+    if (localContext) {
+      contextText = (contextText ? contextText + '\n\n' : '') + localContext;
     }
 
     const finalSystemPrompt = `Anda adalah "Sahabat MTA", asisten AI yang membantu Guru Daerah menjawab pertanyaan berdasarkan database brosur Majlis Tafsir Al-Qur'an (MTA).
