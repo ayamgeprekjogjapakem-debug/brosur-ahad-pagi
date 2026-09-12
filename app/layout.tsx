@@ -12,8 +12,19 @@ const amiri = Amiri({ weight: ["400", "700"], subsets: ["arabic"], variable: "--
 const notoNaskh = Noto_Naskh_Arabic({ weight: ["400", "700"], subsets: ["arabic"], variable: "--font-trad-arabic" });
 
 export const metadata: Metadata = {
-  title: "Brosur MTA Digital | Arsip Kajian Ahad Pagi (Non-Official)",
-  description: "Dedikasi untuk mempermudah peserta kajian mengakses, mencari, dan membaca arsip Brosur Ahad Pagi MTA secara instan dan komprehensif.",
+  metadataBase: new URL('https://brosurmta.vercel.app'), // Ganti dengan URL asli nantinya
+  title: {
+    template: "%s | Brosur MTA Digital",
+    default: "Brosur MTA Digital | Arsip Kajian Ahad Pagi",
+  },
+  description: "Arsip lengkap Brosur Ahad Pagi MTA (Majlis Tafsir Al-Qur'an). Cari dalil, hadits, dan penjelasan tentang zakat, sholat, ibadah, dan muamalah menurut Brosur MTA.",
+  keywords: ["brosur mta", "kajian mta", "ahad pagi mta", "majlis tafsir al quran", "referensi brosur mta", "zakat mta", "sholat mta"],
+  openGraph: {
+    title: "Brosur MTA Digital | Arsip Kajian Ahad Pagi",
+    description: "Arsip referensi kajian Ahad Pagi MTA. Temukan kumpulan dalil dan penjelasan lengkap di sini.",
+    type: "website",
+    locale: "id_ID",
+  },
 };
 
 export default async function RootLayout({

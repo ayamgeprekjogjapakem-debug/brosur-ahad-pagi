@@ -7,8 +7,37 @@ import { createClient } from '@/utils/supabase/server';
 
 export const dynamic = 'force-dynamic';
 
-// generateMetadata dipindahkan ke layout.tsx
+import { Metadata } from 'next';
 
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const resolvedParams = await params;
+  const slug = decodeURIComponent(resolvedParams.slug);
+  const searchSlug = slug.replace('BAP-(Brosur-Ahad-Pagi)-', '').trim();
+  
+  const supabase = await createClient();
+  const { data: brosur } = await supabase
+    .from('brosur')
+    .select('judul, slug')
+    .ilike('slug', `%${searchSlug}%`)
+    .limit(1)
+    .maybeSingle();
+
+  if (!brosur) {
+    return {
+      title: 'Brosur Tidak Ditemukan',
+    };
+  }
+
+  return {
+    title: brosur.judul,
+    description: `Baca penjelasan, dalil, dan kajian mengenai ${brosur.judul} berdasarkan pemahaman dari Brosur Ahad Pagi MTA (Majlis Tafsir Al-Qur'an).`,
+    keywords: [brosur.judul, 'brosur mta', 'kajian mta', 'ahad pagi mta', 'majlis tafsir al quran', 'zakat mta', 'sholat mta'],
+    openGraph: {
+      title: `${brosur.judul} | Brosur MTA Digital`,
+      description: `Baca penjelasan, dalil, dan kajian mengenai ${brosur.judul} dari Brosur Ahad Pagi MTA.`,
+    },
+  };
+}
 export default async function BrosurPage({ params }: { params: Promise<{ slug: string }> }) {
   const resolvedParams = await params;
   const slug = decodeURIComponent(resolvedParams.slug);
