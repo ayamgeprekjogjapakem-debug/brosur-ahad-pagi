@@ -36,6 +36,7 @@ ALTER TABLE hadist_brosur ADD COLUMN IF NOT EXISTS halaman TEXT;
 ALTER TABLE hadist_brosur ADD COLUMN IF NOT EXISTS no_hadist TEXT;
 ALTER TABLE hadist_brosur ADD COLUMN IF NOT EXISTS rawi_teratas TEXT;
 ALTER TABLE hadist_brosur ADD COLUMN IF NOT EXISTS status_hadist TEXT DEFAULT 'terverifikasi';
+ALTER TABLE hadist_brosur ADD COLUMN IF NOT EXISTS catatan_analisis TEXT;
 ALTER TABLE hadist_brosur ALTER COLUMN kelompok_id DROP NOT NULL;
 
 CREATE INDEX IF NOT EXISTS idx_hadist_rawi_kitab ON hadist_brosur(rawi_kitab);
@@ -1695,6 +1696,13 @@ export default function PengelompokanHadistPage() {
                             <ExternalLink size={11} className="opacity-70" />
                           </Link>
                         )}
+                        <Link
+                          href={`/dashboard/hadist/analisis/${item.id}`}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-accent/10 hover:bg-accent/20 text-accent font-bold text-xs transition-colors"
+                        >
+                          <Sparkles size={14} />
+                          <span>Analisis</span>
+                        </Link>
                         <button
                           onClick={() => setEditingItem(item)}
                           className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"

@@ -1,0 +1,76 @@
+'use client';
+
+import React, { useState } from 'react';
+import Link from 'next/link';
+import { Book, Search, Library } from 'lucide-react';
+import Image from 'next/image';
+
+export default function UrutanWahyuPage() {
+  const [search, setSearch] = useState('');
+  
+  return (
+    <div className="min-h-screen bg-white dark:bg-[#0a0a0a] text-zinc-900 dark:text-zinc-100 flex flex-col font-sans">
+      {/* HEADER */}
+      <header className="p-6 md:px-12 md:py-8 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-white/50 dark:bg-black/50 backdrop-blur-xl sticky top-0 z-10">
+        <Link href="/" className="flex items-center gap-3">
+          <div className="w-12 h-12 relative flex items-center justify-center shrink-0">
+            <Image 
+              src="/logo.png" 
+              alt="Logo Ulil Albab" 
+              fill
+              className="object-contain drop-shadow-md"
+            />
+          </div>
+          <span className="font-extrabold text-2xl tracking-tight hidden sm:block">Ulil Albab</span>
+        </Link>
+        
+        {/* MENU */}
+        <nav className="flex items-center gap-6">
+          <Link href="/quran" className="flex items-center gap-2 font-bold text-accent transition-colors">
+            <Book size={18} />
+            <span className="hidden sm:inline">Quran</span>
+          </Link>
+          <Link href="/hadist" className="flex items-center gap-2 font-bold text-zinc-600 hover:text-accent transition-colors">
+            <Book size={18} />
+            <span className="hidden sm:inline">Hadist</span>
+          </Link>
+          <Link href="/" className="flex items-center gap-2 font-bold text-zinc-600 hover:text-accent transition-colors">
+            <Library size={18} />
+            <span className="hidden sm:inline">Brosur MTA</span>
+          </Link>
+        </nav>
+      </header>
+
+      <main className="flex-1 p-6 md:p-12 max-w-7xl mx-auto w-full flex flex-col items-center">
+        {/* Tabs and Sort */}
+        <div className="w-full flex flex-col md:flex-row md:items-center justify-between border-b border-black/10 dark:border-white/10 mb-6 pb-2">
+          <div className="flex items-center gap-6 text-sm font-medium">
+            <Link href="/quran" className="pb-2 text-zinc-500 hover:text-black dark:hover:text-white transition-colors">Surah</Link>
+            <Link href="/quran/juz" className="pb-2 text-zinc-500 hover:text-black dark:hover:text-white transition-colors">Juz</Link>
+            <Link href="/quran/urutan-wahyu" className="border-b-2 border-black dark:border-white pb-2 text-black dark:text-white">Urutan Wahyu</Link>
+          </div>
+        </div>
+
+        {/* Search */}
+        <div className="w-full mb-8">
+          <div className="relative max-w-md">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
+            <input 
+              type="text" 
+              placeholder="Cari..." 
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full bg-white dark:bg-zinc-900 border border-black/10 dark:border-white/10 focus:border-black dark:focus:border-white rounded-full pl-12 pr-4 py-2.5 text-sm outline-none transition-all shadow-sm font-medium"
+            />
+          </div>
+        </div>
+
+        <div className="w-full py-20 flex flex-col items-center justify-center text-zinc-500">
+          <Book size={48} className="mb-4 text-zinc-300" />
+          <p className="font-bold text-lg">Fitur Segera Hadir</p>
+          <p className="text-sm mt-2 text-center max-w-sm">Data urutan turunnya wahyu sedang dalam tahap penyusunan dan akan segera tersedia.</p>
+        </div>
+      </main>
+    </div>
+  );
+}

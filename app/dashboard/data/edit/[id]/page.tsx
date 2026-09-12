@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, use } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Loader2, ArrowLeft, Save, FolderArchive } from 'lucide-react';
+import { Loader2, ArrowLeft, Save, FolderArchive, Code2, Eye } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -20,6 +20,7 @@ export default function EditBrosurPage({ params }: { params: Promise<{ id: strin
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [activeTab, setActiveTab] = useState<'editor' | 'view'>('editor');
   
   const router = useRouter();
   const supabase = createClient();
@@ -88,7 +89,7 @@ export default function EditBrosurPage({ params }: { params: Promise<{ id: strin
   }
 
   return (
-    <main className="p-8 md:p-12 w-full max-w-4xl mx-auto">
+    <main className="p-8 md:p-12 w-full max-w-5xl mx-auto">
       <header className="mb-10 flex items-center gap-4">
         <Link 
           href="/dashboard/data" 
@@ -161,22 +162,50 @@ export default function EditBrosurPage({ params }: { params: Promise<{ id: strin
           />
         </div>
 
-        <div className="mb-8">
-          <label className="block text-sm font-bold text-zinc-500 mb-2">Konten HTML Brosur</label>
-          <textarea 
-            required
-            value={konten}
-            onChange={(e) => setKonten(e.target.value)}
-            rows={15}
-            className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 px-4 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent font-mono text-sm custom-scrollbar resize-y"
-          ></textarea>
+        <div className="mb-8 border border-zinc-200 dark:border-zinc-700 rounded-xl overflow-hidden">
+          <div className="flex border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50">
+            <button
+              type="button"
+              onClick={() => setActiveTab('editor')}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 font-bold text-sm transition-colors ${activeTab === 'editor' ? 'text-accent border-b-2 border-accent bg-white dark:bg-zinc-900' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
+            >
+              <Code2 size={16} />
+              Editor HTML
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('view')}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 font-bold text-sm transition-colors ${activeTab === 'view' ? 'text-accent border-b-2 border-accent bg-white dark:bg-zinc-900' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
+            >
+              <Eye size={16} />
+              Live Preview
+            </button>
+          </div>
+          
+          <div className="bg-white dark:bg-zinc-900">
+            {activeTab === 'editor' ? (
+              <textarea 
+                required
+                value={konten}
+                onChange={(e) => setKonten(e.target.value)}
+                rows={20}
+                className="w-full p-4 focus:outline-none font-mono text-sm custom-scrollbar resize-y bg-transparent"
+                placeholder="Masukkan kode HTML brosur di sini..."
+              ></textarea>
+            ) : (
+              <div 
+                className="p-6 prose prose-zinc dark:prose-invert max-w-none w-full h-[456px] overflow-y-auto custom-scrollbar bg-white dark:bg-zinc-900"
+                dangerouslySetInnerHTML={{ __html: konten || '<p class="text-zinc-500 italic text-center mt-10">Preview kosong, masukkan konten HTML di tab Editor.</p>' }}
+              />
+            )}
+          </div>
         </div>
 
         <div className="flex justify-end">
           <button 
             type="submit" 
             disabled={saving}
-            className="bg-accent text-white px-8 py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-accent/90 transition-colors disabled:opacity-50"
+            className="bg-accent text-white px-8 py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-accent/90 transition-colors disabled:opacity-50 shadow-lg shadow-accent/20 hover:shadow-xl hover:shadow-accent/30 hover:-translate-y-0.5"
           >
             {saving ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
             Simpan Perubahan
@@ -186,3 +215,4 @@ export default function EditBrosurPage({ params }: { params: Promise<{ id: strin
     </main>
   );
 }
+

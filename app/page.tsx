@@ -19,7 +19,7 @@ export default async function Home() {
     <div className="min-h-screen bg-[#fafafa] dark:bg-[#0a0a0a] text-zinc-900 dark:text-zinc-100 flex flex-col font-sans">
       
       {/* HEADER */}
-      <header className="p-6 md:px-12 md:py-8 flex items-center justify-center border-b border-black/5 dark:border-white/5 bg-white/50 dark:bg-black/50 backdrop-blur-xl sticky top-0 z-10">
+      <header className="p-6 md:px-12 md:py-8 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-white/50 dark:bg-black/50 backdrop-blur-xl sticky top-0 z-10">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 relative flex items-center justify-center shrink-0">
             <Image 
@@ -31,6 +31,22 @@ export default async function Home() {
           </div>
           <span className="font-extrabold text-2xl tracking-tight">Ulil Albab</span>
         </div>
+        
+        {/* MENU */}
+        <nav className="flex items-center gap-6">
+          <Link href="/quran" className="flex items-center gap-2 font-bold text-zinc-600 hover:text-accent transition-colors">
+            <Book size={18} />
+            <span className="hidden sm:inline">Quran</span>
+          </Link>
+          <Link href="/hadist" className="flex items-center gap-2 font-bold text-zinc-600 hover:text-accent transition-colors">
+            <Book size={18} />
+            <span className="hidden sm:inline">Hadist</span>
+          </Link>
+          <Link href="/" className="flex items-center gap-2 font-bold text-accent transition-colors">
+            <Library size={18} />
+            <span className="hidden sm:inline">Brosur MTA</span>
+          </Link>
+        </nav>
       </header>
 
       <main className="flex-1 p-6 md:p-12 max-w-7xl mx-auto w-full flex flex-col items-center">

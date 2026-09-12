@@ -51,6 +51,7 @@ export default function DashboardSidebar() {
         { name: 'Arsip Brosur', href: '/dashboard/arsip', icon: FileStack },
         { name: 'Data Brosur', href: '/dashboard/data', icon: Database },
         { name: 'Pengelompokan Hadist', href: '/dashboard/hadist', icon: BookMarked },
+        { name: 'Data Quran', href: '/dashboard/quran', icon: BookOpen },
         { name: 'Kotak Masukan', href: '/dashboard/masukan', icon: MessageSquare },
       ],
     },
@@ -75,6 +76,7 @@ export default function DashboardSidebar() {
       label: 'SISTEM & APP',
       items: [
         { name: 'App Control', href: '/dashboard/app-settings', icon: Settings },
+        { name: 'Kalibrasi Kalender', href: '/dashboard/kalibrasi', icon: Settings2 },
         { name: 'Pengaturan Web', href: '/dashboard/settings', icon: Settings },
       ],
     },
