@@ -104,8 +104,12 @@ export async function GET(request: NextRequest) {
     if (!plainText && item.konten) {
        const cheerio = await import('cheerio');
        const $ = cheerio.load(item.konten);
+       $('style, script').remove();
        plainText = $.text().replace(/\s+/g, ' ').trim();
     }
+    
+    // Always strip leaked CSS regardless of source
+    plainText = plainText.replace(/html,body\s*\{[\s\S]*?\}/gi, '');
     
     const plainTextLower = plainText.toLowerCase();
     

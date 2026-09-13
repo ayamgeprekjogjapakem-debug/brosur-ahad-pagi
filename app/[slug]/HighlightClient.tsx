@@ -280,7 +280,7 @@ export default function HighlightClient({ brosur }: { brosur: BrosurData }) {
           '--arabic-font-size': `${arabicFontSize}px`,
           '--arabic-font-family': arabicFontFamily === 'amiri' ? "var(--font-amiri), serif" : "'Traditional Arabic', var(--font-trad-arabic), 'KFGQPC Uthmanic Script HAFS', Arial, serif",
         } as React.CSSProperties}
-        dangerouslySetInnerHTML={{ __html: brosur.konten }}
+        dangerouslySetInnerHTML={{ __html: brosur.konten.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '').replace(/html,body\s*\{[\s\S]*?\}/gi, '') }}
       />
     </div>
   );
