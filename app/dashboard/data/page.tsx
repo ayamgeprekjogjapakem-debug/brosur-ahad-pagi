@@ -79,9 +79,10 @@ export default function DataBrosurPage() {
     if (searchTerm) {
       const searchNum = parseInt(searchTerm);
       if (!isNaN(searchNum) && searchNum > 1900 && searchNum < 2100) {
-        query = query.or(`judul.ilike.%${searchTerm}%,tahun.eq.${searchNum}`);
+        query = query.or(`tahun.eq.${searchNum},judul.ilike.%${searchTerm}%`);
       } else {
-        query = query.ilike('judul', `%${searchTerm}%`);
+        // Menggunakan logika FTS yang disamakan dengan global search
+        query = query.textSearch('fts', searchTerm, { type: 'websearch', config: 'indonesian' });
       }
     }
     

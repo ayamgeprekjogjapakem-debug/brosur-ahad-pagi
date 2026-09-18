@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { 
   BookOpen, Upload, LogOut, Loader2, FileStack, Settings, 
   UserCog, Database, MessageSquare, Activity, ShieldBan,
-  ChevronLeft, ChevronRight, BookMarked, Sparkles, Key, Bot, Settings2
+  ChevronLeft, ChevronRight, BookMarked, Sparkles, Key, Bot, Settings2, Search
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 
@@ -50,6 +50,7 @@ export default function DashboardSidebar() {
         { name: 'Upload CHM', href: '/dashboard', icon: Upload },
         { name: 'Arsip Brosur', href: '/dashboard/arsip', icon: FileStack },
         { name: 'Data Brosur', href: '/dashboard/data', icon: Database },
+        { name: 'Analisis Pencarian', href: '/dashboard/search-analyzer', icon: Search },
         { name: 'Pengelompokan Hadist', href: '/dashboard/hadist', icon: BookMarked },
         { name: 'Data Quran', href: '/dashboard/quran', icon: BookOpen },
         { name: 'Kotak Masukan', href: '/dashboard/masukan', icon: MessageSquare },

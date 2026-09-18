@@ -229,63 +229,91 @@ export default function CollectionSidebar({ brosurList, activeSlug, folderSlug, 
               </div>
             ) : (
               <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-4">
-                {Object.entries(groupedByYear).sort(([a], [b]) => Number(b) - Number(a)).map(([year, brosurs]) => {
-                  const isExpanded = !!expandedYears[year];
-                  return (
-                    <div key={year} className="space-y-1">
-                      <button 
-                        onClick={() => toggleYear(year)}
-                        className="w-full flex items-center justify-between text-xs font-bold text-zinc-500 uppercase tracking-widest py-2 px-2 hover:text-accent transition-colors"
-                      >
-                        Tahun {year}
-                        {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                      </button>
-                      
-                      <AnimatePresence>
-                        {isExpanded && (
-                          <motion.div 
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="overflow-hidden space-y-1"
-                          >
-                            {(brosurs as any[]).map((b: any) => {
-                              const isActive = b.slug === activeSlug;
-                              return (
-                                <Link
-                                  key={b.slug}
-                                  href={`/${b.slug}${searchQuery ? `?q=${encodeURIComponent(searchQuery)}` : ''}`}
-                                  onClick={() => window.innerWidth < 1024 && setIsSidebarOpen(false)}
-                                  className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex flex-col group relative border ${
-                                    isActive 
-                                      ? 'bg-accent border-accent text-white shadow-lg shadow-accent/20' 
-                                      : 'bg-transparent border-transparent hover:border-black/5 dark:hover:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 text-zinc-700 dark:text-zinc-300'
-                                  }`}
-                                >
-                                  <div className="flex items-center justify-between w-full">
-                                    <span className={`text-sm font-bold leading-snug ${isActive ? 'text-white' : 'group-hover:text-accent transition-colors'}`}>
-                                      {b.judul}
-                                    </span>
-                                  </div>
-                                  {b.snippet && (
-                                    <p className={`text-xs mt-1.5 line-clamp-2 leading-relaxed ${isActive ? 'text-white/80' : 'text-zinc-500'}`}>
-                                      <span dangerouslySetInnerHTML={{ 
-                                        __html: b.snippet.replace(
-                                          new RegExp(searchQuery.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&'), 'gi'), 
-                                          (match: string) => `<mark class="bg-yellow-300 dark:bg-yellow-500/80 text-black px-1 rounded-sm">${match}</mark>`
-                                        )
-                                      }} />
-                                    </p>
-                                  )}
-                                </Link>
-                              )
-                            })}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  );
-                })}
+                {searchQuery ? (
+                  // JIKA SEDANG MENCARI: Tampilkan flat list agar urutan ts_rank dari API (Paling relevan di atas) tidak rusak
+                  <div className="space-y-2">
+                    {displayList.map((b: any) => {
+                      const isActive = b.slug === activeSlug;
+                      return (
+                        <Link
+                          key={b.slug}
+                          href={`/${b.slug}?q=${encodeURIComponent(searchQuery)}`}
+                          onClick={() => window.innerWidth < 1024 && setIsSidebarOpen(false)}
+                          className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex flex-col group relative border ${
+                            isActive 
+                              ? 'bg-accent border-accent text-white shadow-lg shadow-accent/20' 
+                              : 'bg-transparent border-transparent hover:border-black/5 dark:hover:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 text-zinc-700 dark:text-zinc-300'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between w-full">
+                            <span className={`text-sm font-bold leading-snug ${isActive ? 'text-white' : 'group-hover:text-accent transition-colors'}`}>
+                              {b.judul}
+                            </span>
+                          </div>
+                          {b.snippet && (
+                            <p className={`text-xs mt-1.5 line-clamp-2 leading-relaxed ${isActive ? 'text-white/80' : 'text-zinc-500'}`}>
+                              <span dangerouslySetInnerHTML={{ 
+                                __html: b.snippet.replace(
+                                  new RegExp(searchQuery.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&'), 'gi'), 
+                                  (match: string) => `<mark class="bg-yellow-300 dark:bg-yellow-500/80 text-black px-1 rounded-sm">${match}</mark>`
+                                )
+                              }} />
+                            </p>
+                          )}
+                        </Link>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  // JIKA TIDAK MENCARI: Tampilkan berdasarkan Grouping Tahun
+                  Object.entries(groupedByYear).sort(([a], [b]) => Number(b) - Number(a)).map(([year, brosurs]) => {
+                    const isExpanded = !!expandedYears[year];
+                    return (
+                      <div key={year} className="space-y-1">
+                        <button 
+                          onClick={() => toggleYear(year)}
+                          className="w-full flex items-center justify-between text-xs font-bold text-zinc-500 uppercase tracking-widest py-2 px-2 hover:text-accent transition-colors"
+                        >
+                          Tahun {year}
+                          {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                        </button>
+                        
+                        <AnimatePresence>
+                          {isExpanded && (
+                            <motion.div 
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              className="overflow-hidden space-y-1"
+                            >
+                              {(brosurs as any[]).map((b: any) => {
+                                const isActive = b.slug === activeSlug;
+                                return (
+                                  <Link
+                                    key={b.slug}
+                                    href={`/${b.slug}`}
+                                    onClick={() => window.innerWidth < 1024 && setIsSidebarOpen(false)}
+                                    className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex flex-col group relative border ${
+                                      isActive 
+                                        ? 'bg-accent border-accent text-white shadow-lg shadow-accent/20' 
+                                        : 'bg-transparent border-transparent hover:border-black/5 dark:hover:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 text-zinc-700 dark:text-zinc-300'
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between w-full">
+                                      <span className={`text-sm font-bold leading-snug ${isActive ? 'text-white' : 'group-hover:text-accent transition-colors'}`}>
+                                        {b.judul}
+                                      </span>
+                                    </div>
+                                  </Link>
+                                )
+                              })}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    );
+                  })
+                )}
                 
                 {displayList.length === 0 && (
                   <div className="text-center text-zinc-500 text-sm mt-10">
