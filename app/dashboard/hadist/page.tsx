@@ -5,10 +5,11 @@ import {
   BookMarked, Plus, Search, Trash2, Edit2, BookOpen, Quote, 
   AlertCircle, Copy, Check, ExternalLink, X, 
   Layers, Database, Tag, BookmarkCheck, RefreshCw, Loader2, FileText, ArrowRight,
-  ChevronDown, Sparkles, UserCheck, Award, BookText, Filter, CheckCircle2, Clock, ShieldCheck
+  ChevronDown, Sparkles, UserCheck, Award, BookText, Filter, CheckCircle2, Clock, ShieldCheck, Upload
 } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
+import Papa from 'papaparse';
 
 // SQL Schema V2 Lengkap untuk copy-paste interaktif di tombol Salin Script SQL
 const SQL_SCHEMA_V2_TEXT = `-- ====================================================================
@@ -116,6 +117,10 @@ export default function PengelompokanHadistPage() {
   const [selectedRawiProfile, setSelectedRawiProfile] = useState<any | null>(null);
   const [rawiHadistHistory, setRawiHadistHistory] = useState<any[]>([]);
   const [showRawiModal, setShowRawiModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importingCsv, setImportingCsv] = useState(false);
+  const [importResult, setImportResult] = useState<any | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [editingRawi, setEditingRawi] = useState<any | null>(null);
   const [isActionDropdownOpen, setIsActionDropdownOpen] = useState(false);
   const [namaRawiForm, setNamaRawiForm] = useState('');
@@ -553,6 +558,42 @@ export default function PengelompokanHadistPage() {
     }
   };
 
+  // CSV Import Logic
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImportingCsv(true);
+    setImportResult(null);
+
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: async (results) => {
+        try {
+          const res = await fetch('/api/hadist/rawi/import', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ items: results.data }),
+          });
+          const data = await res.json();
+          setImportResult(data);
+          if (res.ok) {
+            fetchRawiList();
+          }
+        } catch (error: any) {
+          setImportResult({ error: error.message });
+        } finally {
+          setImportingCsv(false);
+        }
+      },
+      error: (err) => {
+        setImportResult({ error: err.message });
+        setImportingCsv(false);
+      }
+    });
+  };
+
   // Buka Brosur Hadist Studio
   const handleOpenStudio = async (brosur: any) => {
     setSelectedBrosur(brosur);
@@ -760,6 +801,18 @@ export default function PengelompokanHadistPage() {
                   >
                     <UserCheck size={18} className="text-accent" />
                     <span>+ Profil Rawi / Sahabat</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setIsActionDropdownOpen(false);
+                      setImportResult(null);
+                      setShowImportModal(true);
+                    }}
+                    className="w-full flex items-center gap-3 px-3.5 py-3 rounded-2xl text-left text-sm font-extrabold text-zinc-700 dark:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                  >
+                    <Upload size={18} className="text-blue-500" />
+                    <span>Impor CSV Dataset Rawi</span>
                   </button>
 
                   <button
@@ -1054,52 +1107,72 @@ export default function PengelompokanHadistPage() {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {rawiList
-                .filter((rw) => rw.kategori_rawi !== 'mukharij')
-                .map((rw) => (
-                  <div
-                    key={rw.id}
-                    onClick={() => handleOpenRawiProfile(rw)}
-                    className="group cursor-pointer bg-white/80 dark:bg-zinc-900/80 hover:bg-white dark:hover:bg-zinc-900 p-6 rounded-3xl border border-black/[0.04] dark:border-white/[0.04] shadow-sm hover:shadow-xl hover:shadow-black/5 transition-all duration-300 flex flex-col justify-between gap-6"
-                  >
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="px-3 py-1 rounded-full bg-accent/10 text-accent font-extrabold text-xs uppercase tracking-wider">
-                          {rw.kredibilitas || 'Thiqah'}
-                        </span>
-                        <span className="text-xs font-bold text-zinc-400">
-                          {rw.kategori_rawi === 'sahabat' ? 'Sahabat Nabi ﷺ' : 'Perawi Sanad'}
-                        </span>
-                      </div>
-
-                      <div>
-                        <h4 className="text-lg font-black text-zinc-900 dark:text-zinc-100 group-hover:text-accent transition-colors">
-                          {rw.nama_rawi}
-                        </h4>
-                        {rw.nama_arab && (
-                          <p className="font-serif text-base text-zinc-500 text-right" dir="rtl">
-                            {rw.nama_arab}
-                          </p>
-                        )}
-                      </div>
-
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400 line-clamp-2 leading-relaxed">
-                        {rw.biografi || 'Belum ada biografi rinci untuk perawi ini.'}
-                      </p>
-                    </div>
-
-                    <div className="pt-4 border-t border-black/5 dark:border-white/5 flex items-center justify-between">
-                      <span className="text-xs font-bold text-zinc-500">
-                        <strong className="text-accent">{rw.total_hadist || 0}</strong> Hadist di Arsip
-                      </span>
-                      <span className="inline-flex items-center gap-1 text-xs font-bold text-accent group-hover:underline">
-                        <span>Lihat Biografi & Sanad</span>
-                        <ArrowRight size={14} />
-                      </span>
-                    </div>
-                  </div>
-                ))}
+            <div className="bg-white/70 dark:bg-zinc-900/70 rounded-3xl border border-black/5 dark:border-white/5 overflow-hidden shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-zinc-100/50 dark:bg-zinc-800/50 border-b border-black/5 dark:border-white/5 text-xs font-extrabold text-zinc-500 uppercase tracking-widest">
+                      <th className="px-6 py-4">No</th>
+                      <th className="px-6 py-4">Nama Perawi / Arab</th>
+                      <th className="px-6 py-4">Kategori & Kredibilitas</th>
+                      <th className="px-6 py-4 max-w-sm">Biografi</th>
+                      <th className="px-6 py-4 text-center">Hadist</th>
+                      <th className="px-6 py-4 text-right">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-black/5 dark:divide-white/5">
+                    {rawiList
+                      .filter((rw) => rw.kategori_rawi !== 'mukharij')
+                      .map((rw, idx) => (
+                        <tr 
+                          key={rw.id} 
+                          className="hover:bg-white dark:hover:bg-zinc-900/50 transition-colors group"
+                        >
+                          <td className="px-6 py-4 text-sm font-bold text-zinc-400">
+                            {idx + 1}
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="font-black text-sm text-zinc-900 dark:text-zinc-100 group-hover:text-accent transition-colors">
+                              {rw.nama_rawi}
+                            </div>
+                            {rw.nama_arab && (
+                              <div className="font-serif text-sm text-zinc-500 mt-1" dir="rtl">
+                                {rw.nama_arab}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex flex-col gap-2 items-start">
+                              <span className="px-2.5 py-1 rounded-md bg-accent/10 text-accent font-extrabold text-[10px] uppercase tracking-wider">
+                                {rw.kredibilitas || 'Thiqah'}
+                              </span>
+                              <span className="text-xs font-bold text-zinc-500">
+                                {rw.kategori_rawi === 'sahabat' ? 'Sahabat Nabi ﷺ' : 'Perawi Sanad'}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 max-w-sm">
+                            <p className="text-xs text-zinc-600 dark:text-zinc-400 line-clamp-2 leading-relaxed">
+                              {rw.biografi || '-'}
+                            </p>
+                          </td>
+                          <td className="px-6 py-4 text-center text-sm font-bold text-zinc-700 dark:text-zinc-300">
+                            {rw.total_hadist || 0}
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <button
+                              onClick={() => handleOpenRawiProfile(rw)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-xs font-bold text-zinc-600 dark:text-zinc-300 hover:bg-accent hover:text-white transition-colors"
+                            >
+                              <span>Detail</span>
+                              <ArrowRight size={14} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
@@ -1983,6 +2056,84 @@ export default function PengelompokanHadistPage() {
       {/* ========================================================================= */}
       {/* MODAL BUAT / EDIT PROFIL RAWI */}
       {/* ========================================================================= */}
+      {/* MODAL IMPORT CSV RAWI */}
+      {showImportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowImportModal(false)}></div>
+          <div className="relative w-full max-w-lg bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl border border-black/10 dark:border-white/10 flex flex-col max-h-[90vh]">
+            <div className="p-6 border-b border-black/5 dark:border-white/5 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                  <Database className="text-blue-500" />
+                  Impor Dataset Rawi (CSV)
+                </h3>
+                <p className="text-xs text-zinc-500 mt-1">
+                  Upload file CSV (Kaggle/Syamilah) untuk bulk insert ke master rijalul hadits.
+                </p>
+              </div>
+              <button onClick={() => setShowImportModal(false)} className="p-2 bg-zinc-100 dark:bg-zinc-800 rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-6 overflow-y-auto">
+              <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl text-sm text-blue-800 dark:text-blue-200">
+                <p><strong>Format Kolom Header yang Didukung:</strong></p>
+                <ul className="list-disc pl-5 mt-2 space-y-1 text-xs">
+                  <li><code>nama_rawi</code> atau <code>full_name</code> (Wajib)</li>
+                  <li><code>nama_arab</code> atau <code>kunya</code></li>
+                  <li><code>kategori_rawi</code> (Default: mukharij)</li>
+                  <li><code>thabaqat</code> atau <code>generation_tier</code></li>
+                  <li><code>kredibilitas</code> atau <code>jarh_tadil_status</code></li>
+                  <li><code>biografi</code></li>
+                  <li><code>places_of_stay</code> (Akan digabung ke biografi)</li>
+                </ul>
+              </div>
+
+              <div className="flex items-center justify-center w-full">
+                <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-zinc-300 dark:border-zinc-700 border-dashed rounded-3xl cursor-pointer bg-zinc-50 dark:bg-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    {importingCsv ? (
+                      <Loader2 className="w-10 h-10 text-blue-500 animate-spin mb-3" />
+                    ) : (
+                      <Upload className="w-10 h-10 text-zinc-400 mb-3" />
+                    )}
+                    <p className="mb-2 text-sm text-zinc-500 dark:text-zinc-400 font-bold">
+                      {importingCsv ? 'Sedang Memproses...' : 'Klik untuk upload file CSV'}
+                    </p>
+                    <p className="text-xs text-zinc-500">Maksimal 5MB</p>
+                  </div>
+                  <input 
+                    type="file" 
+                    className="hidden" 
+                    accept=".csv"
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                    disabled={importingCsv}
+                  />
+                </label>
+              </div>
+
+              {importResult && (
+                <div className={`p-4 rounded-2xl border text-sm font-bold \${importResult.success ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' : 'bg-red-500/10 text-red-600 border-red-500/20'}`}>
+                  {importResult.success ? (
+                    <div className="flex flex-col items-center gap-2 text-center">
+                      <CheckCircle2 size={24} />
+                      <p>{importResult.message}</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2 text-center">
+                      <AlertCircle size={24} />
+                      <p>Error: {importResult.error}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {showRawiModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
           <div className="w-full max-w-lg bg-white dark:bg-zinc-900 rounded-3xl border border-black/10 dark:border-white/10 shadow-2xl overflow-hidden">
