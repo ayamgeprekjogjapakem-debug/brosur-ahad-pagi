@@ -288,14 +288,14 @@ export default function SearchAnalyzerPage() {
           <div className={`p-5 rounded-2xl border ${
             syncResult.status === 'synced' ? 'bg-emerald-500/10 border-emerald-500/20' :
             syncResult.status === 'partial' ? 'bg-amber-500/10 border-amber-500/20' :
-            syncResult.status === 'invalid_url' ? 'bg-blue-500/10 border-blue-500/20' :
+            syncResult.status === 'search_url' || syncResult.status === 'invalid_url' ? 'bg-blue-500/10 border-blue-500/20' :
             'bg-red-500/10 border-red-500/20'
           }`}>
             <div className="flex items-start gap-4">
               <div className={`mt-1 shrink-0 ${
                 syncResult.status === 'synced' ? 'text-emerald-500' :
                 syncResult.status === 'partial' ? 'text-amber-500' :
-                syncResult.status === 'invalid_url' ? 'text-blue-500' :
+                syncResult.status === 'search_url' || syncResult.status === 'invalid_url' ? 'text-blue-500' :
                 'text-red-500'
               }`}>
                 {syncResult.status === 'synced' ? <Sparkles size={24} /> : <AlertCircle size={24} />}
@@ -304,11 +304,13 @@ export default function SearchAnalyzerPage() {
                 <h3 className={`font-bold text-lg mb-1 ${
                   syncResult.status === 'synced' ? 'text-emerald-700 dark:text-emerald-300' :
                   syncResult.status === 'partial' ? 'text-amber-700 dark:text-amber-300' :
+                  syncResult.status === 'search_url' ? 'text-blue-700 dark:text-blue-300' :
                   syncResult.status === 'invalid_url' ? 'text-blue-700 dark:text-blue-300' :
                   'text-red-700 dark:text-red-300'
                 }`}>
                   {syncResult.status === 'synced' ? 'Sudah Tersinkronisasi' : 
                    syncResult.status === 'partial' ? 'Sinkronisasi Parsial / Belum Sempurna' : 
+                   syncResult.status === 'search_url' ? 'Link Halaman Pencarian' :
                    syncResult.status === 'invalid_url' ? 'Format URL Salah' :
                    'Tidak Tersinkronisasi (404)'}
                 </h3>
@@ -316,11 +318,12 @@ export default function SearchAnalyzerPage() {
                   {syncResult.message}
                 </p>
                 
+                
                 {syncResult.data && (
                   <div className="bg-white/50 dark:bg-black/20 p-4 rounded-xl border border-black/5 dark:border-white/5 font-mono text-xs space-y-2">
                     <div className="flex flex-col sm:flex-row sm:gap-2">
                       <span className="text-zinc-500 w-32 shrink-0">slug:</span>
-                      <span className="font-bold">{syncResult.slug}</span>
+                      <span className="font-bold break-all">{syncResult.slug}</span>
                     </div>
                     <div className="flex flex-col sm:flex-row sm:gap-2">
                       <span className="text-zinc-500 w-32 shrink-0">judul:</span>
@@ -332,6 +335,43 @@ export default function SearchAnalyzerPage() {
                         {syncResult.data.teks_bersih_length} karakter
                       </span>
                     </div>
+                  </div>
+                )}
+                
+                {syncResult.match && (
+                  <div className="mt-4 bg-zinc-900 text-zinc-100 p-4 rounded-xl border border-zinc-800 text-xs">
+                    <h4 className="font-bold mb-3 flex items-center gap-2 text-blue-400">
+                      <Search size={14} /> Hasil Analisis Pencarian untuk Brosur Ini
+                    </h4>
+                    <div className="space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                        <span className="text-zinc-400">Kata Kunci (Query):</span>
+                        <span className="font-bold text-base text-white">"{syncResult.match.query}"</span>
+                      </div>
+                      <div className="w-full h-px bg-zinc-800"></div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-zinc-300">Terdeteksi oleh Mesin FTS (Database):</span>
+                        <span className={`font-bold px-2 py-1 rounded text-[10px] uppercase tracking-widest ${syncResult.match.is_fts_match ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
+                          {syncResult.match.is_fts_match ? 'YA (Cocok)' : 'TIDAK COCOK'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-zinc-300">Terdeteksi oleh Sistem Fallback String:</span>
+                        <span className={`font-bold px-2 py-1 rounded text-[10px] uppercase tracking-widest ${syncResult.match.is_exact_match ? 'bg-amber-500/20 text-amber-400' : 'bg-red-500/20 text-red-400'}`}>
+                          {syncResult.match.is_exact_match ? 'YA (Persis)' : 'TIDAK'}
+                        </span>
+                      </div>
+                    </div>
+                    {(!syncResult.match.is_fts_match && !syncResult.match.is_exact_match) && (
+                      <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-[11px] leading-relaxed">
+                        ⚠️ <strong>Kesimpulan:</strong> Kata kunci tersebut sama sekali <strong>tidak ada</strong> di dalam brosur ini. Oleh karena itu brosur ini tidak akan pernah muncul saat pengguna mencari kata tersebut.
+                      </div>
+                    )}
+                    {(syncResult.match.is_fts_match) && (
+                      <div className="mt-4 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-emerald-400 text-[11px] leading-relaxed">
+                        ✅ <strong>Kesimpulan:</strong> Brosur ini pasti akan terindeks dan muncul di pencarian untuk kata kunci ini, serta akan dihitung ranking <code>ts_rank</code> nya.
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

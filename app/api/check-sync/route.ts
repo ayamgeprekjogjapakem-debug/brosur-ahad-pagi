@@ -9,31 +9,34 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'URL atau Slug tidak valid' }, { status: 400 });
   }
 
-  // Extract slug from URL if it's a full URL
   let slug = urlOrSlug;
+  let qParam = '';
+
   try {
     if (slug.startsWith('http')) {
       const urlObj = new URL(slug);
-      // Asumsi format: http://localhost:3000/[slug]
       const pathParts = urlObj.pathname.split('/').filter(Boolean);
       slug = pathParts[pathParts.length - 1] || '';
+      qParam = urlObj.searchParams.get('q') || '';
       
-      // Jika ternyata URL pencarian, misal /search?q=...
       if (slug === 'search') {
           return NextResponse.json({ 
-              status: 'invalid_url',
-              message: 'URL ini adalah halaman pencarian, bukan halaman brosur spesifik.'
+              status: 'search_url',
+              q: qParam,
+              message: qParam ? `URL ini adalah halaman pencarian global untuk kata kunci: "${qParam}". Gunakan kotak Analisis Query di atas untuk mengeksekusi!` : 'URL ini adalah halaman pencarian tanpa kata kunci.'
           });
       }
     } else {
-      // Jika berupa string url lokal, misal "/BAP-..."
-      slug = slug.split('/').filter(Boolean).pop() || slug;
+      if (slug.includes('?')) {
+        const parts = slug.split('?');
+        slug = parts[0].split('/').filter(Boolean).pop() || parts[0];
+        const sp = new URLSearchParams(parts[1]);
+        qParam = sp.get('q') || '';
+      } else {
+        slug = slug.split('/').filter(Boolean).pop() || slug;
+      }
     }
-    
-    // Hilangkan query params jika ada
-    slug = slug.split('?')[0];
   } catch (e) {
-    // Ignore URL parse error
   }
 
   if (!slug) {
@@ -42,7 +45,6 @@ export async function GET(request: NextRequest) {
 
   const supabase = await createClient();
 
-  // Cek database untuk slug ini
   const { data, error } = await supabase
     .from('brosur')
     .select('id, judul, slug, folder_id, teks_bersih, created_at')
@@ -57,22 +59,39 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  // Cek kelengkapan untuk FTS (Full Text Search)
   const isTeksBersihReady = !!data.teks_bersih && data.teks_bersih.length > 50;
-  const isIndexed = isTeksBersihReady;
+  
+  // Jika URL membawa query ?q=... maka kita sekalian cek apakah dokumen ini cocok dengan query tersebut
+  let matchStatus = null;
+  if (qParam && isTeksBersihReady) {
+    const isExactMatch = data.teks_bersih.toLowerCase().includes(qParam.toLowerCase()) || data.judul.toLowerCase().includes(qParam.toLowerCase());
+    
+    // Cek FTS engine
+    const { data: ftsCheck } = await supabase
+        .from('brosur')
+        .select('id')
+        .eq('id', data.id)
+        .textSearch('fts', qParam, { type: 'websearch', config: 'indonesian' })
+        .maybeSingle();
+        
+    matchStatus = {
+        query: qParam,
+        is_fts_match: !!ftsCheck,
+        is_exact_match: isExactMatch
+    };
+  }
 
   return NextResponse.json({
-    status: isIndexed ? 'synced' : 'partial',
+    status: isTeksBersihReady ? 'synced' : 'partial',
     slug,
     data: {
       id: data.id,
       judul: data.judul,
-      folder_id: data.folder_id,
       teks_bersih_length: data.teks_bersih ? data.teks_bersih.length : 0,
-      created_at: data.created_at
     },
-    message: isIndexed 
+    match: matchStatus,
+    message: isTeksBersihReady 
       ? 'Brosur sudah tersinkronisasi dan sepenuhnya terindeks oleh mesin pencari.'
-      : 'Brosur ditemukan, namun Teks Bersih belum di-generate (atau terlalu pendek). Brosur mungkin sulit ditemukan di pencarian.'
+      : 'Brosur ditemukan, namun Teks Bersih belum di-generate (atau terlalu pendek).'
   });
 }

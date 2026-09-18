@@ -305,10 +305,17 @@ function parseFilename(baseName: string) {
   const cleanId = id.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
   const cleanJudul = judul.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
 
-  // Gabungkan slug tanpa duplikasi (jika judul sudah mengandung ID)
-  let rawSlug = `BAP-(Brosur-Ahad-Pagi)-${tahun}-${cleanId}-${cleanJudul}`;
+  // Gabungkan slug tanpa duplikasi (jika cleanId sama dengan cleanJudul, cukup pakai salah satu)
+  let rawSlug = '';
+  if (cleanId === cleanJudul) {
+    rawSlug = cleanJudul;
+  } else if (cleanJudul.includes(cleanId)) {
+    rawSlug = cleanJudul;
+  } else {
+    rawSlug = `${cleanId}-${cleanJudul}`;
+  }
   
-  // Hapus dobel strip jika ada
+  // Hapus dobel strip jika ada, dan pastikan tidak terlalu panjang
   const slug = rawSlug.replace(/-+/g, '-').replace(/(^-|-$)+/g, '');
   
   return { id, tahun, judul: judul.trim(), slug };
