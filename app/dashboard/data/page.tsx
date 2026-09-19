@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Loader2, Plus, Edit2, Trash2, Search, Database, FolderArchive, FileText, CheckSquare, Settings } from 'lucide-react';
+import { Loader2, Plus, Edit2, Trash2, Search, Database, FolderArchive, FileText, CheckSquare, Settings, Download } from 'lucide-react';
 import Link from 'next/link';
 
 export default function DataBrosurPage() {
@@ -27,6 +27,7 @@ export default function DataBrosurPage() {
   const [isUpdatingBulk, setIsUpdatingBulk] = useState(false);
   const [isEmptyingTable, setIsEmptyingTable] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   // State untuk Generator Teks Bersih & Standarisasi
   const [isGeneratingTeks, setIsGeneratingTeks] = useState(false);
@@ -159,6 +160,42 @@ export default function DataBrosurPage() {
     if (error) alert(`Gagal menghapus: ${error.message}`);
     else setFolders(folders.filter(f => f.id !== id));
     setDeletingId(null);
+  };
+
+  const handleDownloadBrosur = async (id: string, judul: string) => {
+    try {
+      setDownloadingId(id);
+      const { data, error } = await supabase
+        .from('brosur')
+        .select('konten, teks_bersih')
+        .eq('id', id)
+        .single();
+        
+      if (error) throw error;
+      
+      const contentToDownload = data?.teks_bersih || data?.konten || '';
+      
+      if (!contentToDownload) {
+        alert('Tidak ada konten teks pada brosur ini.');
+        return;
+      }
+      
+      // Clean up the filename by removing invalid characters
+      const safeJudul = judul.replace(/[/\\?%*:|"<>]/g, '-');
+      const blob = new Blob([contentToDownload], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${safeJudul}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(`Gagal mengunduh: ${err.message}`);
+    } finally {
+      setDownloadingId(null);
+    }
   };
 
   const filteredFolders = folders.filter(f => 
@@ -608,6 +645,14 @@ export default function DataBrosurPage() {
                         )}
                       </td>
                       <td className="p-4 text-right flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleDownloadBrosur(brosur.id, brosur.judul)}
+                          disabled={downloadingId === brosur.id}
+                          className="p-2 bg-green-500/10 text-green-600 dark:text-green-400 hover:bg-green-500 hover:text-white rounded-lg transition-colors disabled:opacity-50"
+                          title="Download Teks Brosur"
+                        >
+                          {downloadingId === brosur.id ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />}
+                        </button>
                         <Link 
                           href={`/dashboard/data/edit/${brosur.id}`}
                           className="p-2 bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500 hover:text-white rounded-lg transition-colors"

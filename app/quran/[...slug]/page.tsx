@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect, useRef, use } from 'react';
 import Link from 'next/link';
+import { createSlug } from '../utils';
 import {
   ChevronDown, Bookmark, Play, Copy, Share2,
   MoreHorizontal, Settings, Info, Search, List, Edit3, MessageCircle, FileText, BookOpen,
-  X, Command, Pin, ClipboardList, Repeat, Languages, MessageSquareWarning, Settings2, Code, Image as ImageIcon, Video, Copy as CopyIcon, CheckCircle2
+  X, Command, Pin, ClipboardList, Repeat, Languages, MessageSquareWarning, Settings2, Code, Image as ImageIcon, Video, Copy as CopyIcon, CheckCircle2, Home
 } from 'lucide-react';
 
 interface Ayat {
@@ -33,9 +34,11 @@ const toArabicNumber = (num: number) => {
   return num.toString().replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[parseInt(d)]);
 };
 
-export default function SurahPage({ params }: { params: Promise<{ id: string }> }) {
+export default function SurahPage({ params, searchParams }: { params: Promise<{ slug: string[] }>, searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
   const unwrappedParams = use(params);
-  const id = unwrappedParams.id;
+  const unwrappedSearchParams = use(searchParams);
+  const surahSlug = unwrappedParams.slug[0];
+  const verseParam = unwrappedParams.slug[1] || unwrappedSearchParams.startingVerse;
   const [surah, setSurah] = useState<SurahDetail | null>(null);
   const [allSurahs, setAllSurahs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,7 +51,9 @@ export default function SurahPage({ params }: { params: Promise<{ id: string }> 
   const surahInputRef = useRef<HTMLInputElement>(null);
 
   // Sidebar state
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const initialTab = unwrappedSearchParams.tab === 'ayat' ? 'ayat' : 'surah';
+  const [activeSidebarTab, setActiveSidebarTab] = useState<'surah' | 'ayat'>(initialTab);
 
   // Features state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -83,24 +88,47 @@ export default function SurahPage({ params }: { params: Promise<{ id: string }> 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [surahRes, listRes] = await Promise.all([
-          fetch(`https://equran.id/api/v2/surat/${id}`),
-          fetch('https://equran.id/api/v2/surat')
-        ]);
-        if (!surahRes.ok || !listRes.ok) throw new Error('Gagal memuat data');
-        const surahData = await surahRes.json();
+        setLoading(true);
+        // First, fetch the list of all surahs to map the slug to an ID
+        const listRes = await fetch('https://equran.id/api/v2/surat');
         const listData = await listRes.json();
-        setSurah(surahData.data);
-        setAllSurahs(listData.data);
+        
+        if (listData.code === 200) {
+          setAllSurahs(listData.data);
+          
+          // Find the surah that matches the slug
+          const matchedSurah = listData.data.find(
+            (s: any) => createSlug(s.namaLatin) === surahSlug || s.nomor.toString() === surahSlug
+          );
+          
+          if (matchedSurah) {
+            // Now fetch the specific surah details using its ID
+            const surahRes = await fetch(`https://equran.id/api/v2/surat/${matchedSurah.nomor}`);
+            const surahData = await surahRes.json();
+            
+            if (surahData.code === 200) {
+              setSurah(surahData.data);
+            } else {
+              setError(true);
+            }
+          } else {
+            setError(true);
+          }
+        } else {
+          setError(true);
+        }
       } catch (err) {
-        console.error("Error fetching detail surah:", err);
+        console.error("Error fetching surah:", err);
         setError(true);
       } finally {
         setLoading(false);
       }
     };
-    if (id) fetchData();
-  }, [id]);
+
+    if (surahSlug) {
+      fetchData();
+    }
+  }, [surahSlug]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -114,11 +142,31 @@ export default function SurahPage({ params }: { params: Promise<{ id: string }> 
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isSidebarOpen]);
 
-  const scrollToAyat = (nomorAyat: number) => {
-    setActiveAyat(nomorAyat);
-    const el = document.getElementById(`ayat-${nomorAyat}`);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  useEffect(() => {
+    if (window.innerWidth >= 768) {
+      setIsSidebarOpen(true);
+    }
+  }, []);
+
+  // Initial scroll to active ayat from URL parameter (verseParam)
+  useEffect(() => {
+    if (surah && verseParam) {
+      const verseStr = Array.isArray(verseParam) ? verseParam[0] : verseParam;
+      const verseNum = parseInt(verseStr as string);
+      if (!isNaN(verseNum)) {
+        // Use requestAnimationFrame to ensure DOM is painted before scrolling
+        requestAnimationFrame(() => {
+          scrollToAyat(verseNum, true);
+        });
+      }
+    }
+  }, [surah, verseParam]);
+
+  const scrollToAyat = (ayatNomor: number, instant = false) => {
+    setActiveAyat(ayatNomor);
+    const element = document.getElementById(`ayat-${ayatNomor}`);
+    if (element) {
+      element.scrollIntoView({ behavior: instant ? 'instant' : 'smooth', block: 'center' });
     }
   };
 
@@ -138,12 +186,17 @@ export default function SurahPage({ params }: { params: Promise<{ id: string }> 
 
       {/* TOP HEADER */}
       <header className="h-14 border-b border-zinc-200 flex items-center justify-between px-4 sticky top-0 bg-white z-20 text-sm">
-        <div
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="flex items-center gap-2 cursor-pointer font-bold hover:bg-zinc-50 p-2 rounded-md transition-colors"
-        >
-          {surah.nomor}. {surah.namaLatin}
-          <ChevronDown size={16} className={`text-zinc-400 transition-transform ${isSidebarOpen ? '' : '-rotate-90'}`} />
+        <div className="flex items-center gap-2">
+          <Link href="/quran" className="p-2 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 rounded-md transition-colors" title="Kembali ke Beranda Al-Quran">
+            <Home size={18} />
+          </Link>
+          <div
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="flex items-center gap-2 cursor-pointer font-bold hover:bg-zinc-50 p-2 rounded-md transition-colors"
+          >
+            {surah.nomor}. {surah.namaLatin}
+            <ChevronDown size={16} className={`text-zinc-400 transition-transform ${isSidebarOpen ? '' : '-rotate-90'}`} />
+          </div>
         </div>
 
         <div className="hidden md:flex items-center gap-2 text-zinc-500 text-xs font-medium">
@@ -164,22 +217,68 @@ export default function SurahPage({ params }: { params: Promise<{ id: string }> 
         </div>
       </header>
 
-      <div className="flex flex-1 overflow-hidden relative">
+      <div className="flex flex-1 relative overflow-hidden">
 
-        {/* SIDEBAR WRAPPER (for smooth animation) */}
-        <div className={`hidden md:block transition-all duration-300 ease-in-out overflow-hidden shrink-0 ${isSidebarOpen ? 'w-[340px] opacity-100' : 'w-0 opacity-0'}`}>
-          <aside className="flex flex-col w-[340px] border-r border-zinc-200 h-[calc(100vh-56px)] sticky top-14 bg-white z-10">
-            <div className="p-4 pt-6">
+        {/* MOBILE OVERLAY */}
+        {isSidebarOpen && (
+          <div 
+            className="md:hidden absolute inset-0 bg-black/20 z-20" 
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
 
-              <div className="flex items-center gap-1 text-sm font-medium bg-zinc-100/80 rounded-full p-1 mb-5">
-                <button className="flex-1 py-1.5 text-zinc-500 rounded-full hover:text-black transition">Surah</button>
-                <button className="flex-1 py-1.5 bg-white shadow-sm text-black rounded-full font-bold">Ayat</button>
-                <button className="flex-1 py-1.5 text-zinc-500 rounded-full hover:text-black transition">Juz</button>
-                <button className="flex-1 py-1.5 text-zinc-500 rounded-full hover:text-black transition hidden lg:block">Halaman</button>
-                <button className="px-2 text-zinc-400 hover:text-black transition"><X size={16} /></button>
+        {/* SIDEBAR WRAPPER */}
+        <div className={`
+          absolute md:relative z-30 md:z-10
+          top-2 left-2 right-2 md:top-0 md:left-0 md:right-auto
+          transition-all duration-300 ease-in-out shrink-0 overflow-hidden
+          ${isSidebarOpen 
+            ? 'h-[85vh] sm:h-[600px] md:h-[calc(100vh-56px)] md:w-[340px] opacity-100 translate-y-0 md:translate-y-0 md:translate-x-0' 
+            : 'h-0 md:h-[calc(100vh-56px)] w-auto md:w-0 opacity-0 md:opacity-100 -translate-y-4 md:translate-y-0 md:-translate-x-full'}
+        `}>
+          <aside className="flex flex-col w-full md:w-[340px] rounded-2xl md:rounded-none border md:border-y-0 md:border-l-0 border-zinc-200 h-full bg-white shadow-2xl md:shadow-none overflow-hidden">
+            <div className="p-4 pt-4 md:pt-6">
+
+              <div className="flex items-center gap-2 mb-4 md:mb-5">
+                <div className="flex-1 relative flex items-center bg-zinc-100/80 rounded-full p-1 isolate">
+                  {/* Sliding Background */}
+                  <div 
+                    className="absolute top-1 bottom-1 transition-transform duration-300 ease-in-out z-0"
+                    style={{
+                      width: 'calc(50% - 2px)',
+                      transform: `translateX(${['surah', 'ayat'].indexOf(activeSidebarTab) * 100}%)`
+                    }}
+                  >
+                    <div className="w-full h-full bg-white rounded-full shadow-sm"></div>
+                  </div>
+
+                  {/* Separators */}
+                  {[0].map(idx => {
+                    const activeIdx = ['surah', 'ayat'].indexOf(activeSidebarTab);
+                    return (
+                      <div 
+                        key={idx}
+                        className={`absolute top-1/2 -translate-y-1/2 w-[1px] h-4 bg-zinc-300 transition-opacity duration-300 z-0 ${activeIdx === idx || activeIdx === idx + 1 ? 'opacity-0' : 'opacity-100'}`}
+                        style={{ left: `${(idx + 1) * 50}%` }}
+                      />
+                    );
+                  })}
+
+                  {/* Tabs */}
+                  {(['surah', 'ayat'] as const).map((tab) => (
+                    <button 
+                      key={tab}
+                      onClick={() => setActiveSidebarTab(tab)}
+                      className={`flex-1 py-1.5 text-[14px] capitalize transition-colors relative z-10 ${activeSidebarTab === tab ? 'text-black font-semibold' : 'text-zinc-500 hover:text-black'}`}
+                    >
+                      {tab === 'ayat' ? 'Verse' : tab}
+                    </button>
+                  ))}
+                </div>
+                <button onClick={() => setIsSidebarOpen(false)} className="p-2 text-zinc-600 hover:text-black transition md:hidden shrink-0"><X size={20} strokeWidth={1.5} /></button>
               </div>
 
-              <div className="flex items-center justify-between text-[13px] text-zinc-400 mb-6 px-1 italic">
+              <div className="hidden md:flex items-center justify-between text-[13px] text-zinc-400 mb-6 px-1 italic">
                 <span>Tips: coba navigasi dengan</span>
                 <kbd className="bg-white border border-zinc-200 rounded px-2 py-0.5 font-sans not-italic text-zinc-600 shadow-sm flex items-center gap-1 text-[11px] font-medium">
                   <Command size={11} /> K
@@ -187,63 +286,75 @@ export default function SurahPage({ params }: { params: Promise<{ id: string }> 
               </div>
 
               <div className="flex gap-2 mb-2">
-                <div className="relative flex-[2]">
+                <div className={`relative transition-all duration-300 ${activeSidebarTab === 'ayat' ? 'flex-[2]' : 'w-full'}`}>
                   <input
                     type="text"
                     ref={surahInputRef}
                     value={searchSurah}
                     onChange={(e) => setSearchSurah(e.target.value)}
-                    placeholder="Cari Surah"
-                    className="w-full bg-zinc-100/80 rounded-xl px-4 py-2.5 text-[14px] outline-none focus:bg-zinc-200 transition text-zinc-600 placeholder:text-zinc-400"
+                    placeholder="Search Surah"
+                    className="w-full bg-zinc-100/80 rounded-xl px-4 py-2.5 text-[13px] md:text-[14px] outline-none focus:bg-zinc-200 transition text-zinc-600 placeholder:text-zinc-400"
                   />
                 </div>
-                <div className="relative flex-1">
-                  <input
-                    type="text"
-                    value={searchAyat}
-                    onChange={(e) => setSearchAyat(e.target.value)}
-                    placeholder="Ayat"
-                    className="w-full bg-zinc-100/80 rounded-xl px-4 py-2.5 text-[14px] outline-none focus:bg-zinc-200 transition text-zinc-600 placeholder:text-zinc-400"
-                  />
-                </div>
+                {activeSidebarTab === 'ayat' && (
+                  <div className="relative flex-[1.2] transition-all duration-300">
+                    <input
+                      type="text"
+                      value={searchAyat}
+                      onChange={(e) => setSearchAyat(e.target.value)}
+                      placeholder="Verse"
+                      className="w-full bg-zinc-100/80 rounded-xl px-4 py-2.5 text-[13px] md:text-[14px] outline-none focus:bg-zinc-200 transition text-zinc-600 placeholder:text-zinc-400"
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
             <div className="flex-1 flex overflow-hidden">
-              {/* Surah List Column */}
-              <div className="flex-[2] overflow-y-auto px-2 pb-4 space-y-[2px]">
-                {filteredSurahs.map((s) => (
-                  <Link
-                    key={s.nomor}
-                    href={`/quran/${s.nomor}`}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] transition-colors ${s.nomor === surah.nomor ? 'bg-zinc-100/80 font-bold text-black' : 'text-zinc-700 hover:bg-zinc-50'}`}
-                  >
-                    <span className={`w-5 text-left ${s.nomor === surah.nomor ? 'text-black' : 'text-zinc-500'}`}>{s.nomor}</span>
-                    <span>{s.namaLatin}</span>
-                  </Link>
-                ))}
-                {filteredSurahs.length === 0 && (
-                  <div className="px-3 py-4 text-xs text-zinc-400 text-center">Surah tidak ditemukan</div>
-                )}
-              </div>
+                  {/* Surah List Column */}
+                  <div className={`overflow-y-auto px-2 pb-4 space-y-[2px] transition-all duration-300 ${activeSidebarTab === 'ayat' ? 'flex-[2]' : 'flex-1 w-full'}`}>
+                    {filteredSurahs.map((s) => (
+                      <Link
+                        key={s.nomor}
+                        href={`/quran/${createSlug(s.namaLatin)}?tab=${activeSidebarTab}`}
+                        className={`relative flex items-center gap-4 px-4 py-3 rounded-xl text-[14px] transition-colors ${s.nomor === surah.nomor ? 'bg-zinc-100/80 font-bold text-black' : 'text-zinc-700 hover:bg-zinc-50'}`}
+                      >
+                        <span className={`w-5 text-left ${s.nomor === surah.nomor ? 'text-black' : 'text-zinc-500'}`}>{s.nomor}</span>
+                        <span>{s.namaLatin}</span>
+                        {s.nomor === surah.nomor && (
+                          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-3/4 bg-zinc-300 rounded-l-full" />
+                        )}
+                      </Link>
+                    ))}
+                    {filteredSurahs.length === 0 && (
+                      <div className="px-3 py-4 text-xs text-zinc-400 text-center">Surah tidak ditemukan</div>
+                    )}
+                  </div>
 
-              {/* Ayat List Column */}
-              <div className="flex-[1.2] overflow-y-auto px-2 pb-4 space-y-[2px] border-l border-zinc-100 relative">
-                {surah.ayat.length > 0 && <div className="absolute right-1 top-4 w-1.5 h-16 bg-zinc-200 rounded-full" />}
-
-                {filteredAyats.map((a) => (
-                  <button
-                    key={a.nomorAyat}
-                    onClick={() => scrollToAyat(a.nomorAyat)}
-                    className={`w-full text-left px-5 py-2.5 rounded-xl text-[14px] transition-colors ${activeAyat === a.nomorAyat ? 'bg-zinc-100/80 font-bold text-black' : 'text-zinc-700 hover:bg-zinc-50'}`}
-                  >
-                    {a.nomorAyat}
-                  </button>
-                ))}
-                {filteredAyats.length === 0 && (
-                  <div className="px-3 py-4 text-xs text-zinc-400 text-center">Ayat tidak ditemukan</div>
-                )}
-              </div>
+                  {/* Ayat List Column */}
+                  {activeSidebarTab === 'ayat' && (
+                    <div className="flex-[1.2] overflow-y-auto px-2 pb-4 space-y-[2px] relative transition-all duration-300">
+                      {filteredAyats.map((a) => (
+                        <button
+                          key={a.nomorAyat}
+                          onClick={() => {
+                            window.history.pushState(null, '', `/quran/${createSlug(surah.namaLatin)}?startingVerse=${a.nomorAyat}`);
+                            scrollToAyat(a.nomorAyat);
+                            setIsSidebarOpen(false);
+                          }}
+                          className={`relative w-full text-left px-5 py-3 rounded-xl text-[14px] transition-colors ${activeAyat === a.nomorAyat ? 'bg-zinc-100/80 font-bold text-black' : 'text-zinc-700 hover:bg-zinc-50'}`}
+                        >
+                          {a.nomorAyat}
+                          {activeAyat === a.nomorAyat && (
+                            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-3/4 bg-zinc-300 rounded-r-full" />
+                          )}
+                        </button>
+                      ))}
+                      {filteredAyats.length === 0 && (
+                        <div className="px-3 py-4 text-xs text-zinc-400 text-center">Ayat tidak ditemukan</div>
+                      )}
+                    </div>
+                  )}
             </div>
           </aside>
         </div>

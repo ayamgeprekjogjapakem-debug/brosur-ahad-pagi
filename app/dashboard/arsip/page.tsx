@@ -199,11 +199,13 @@ export default function ArsipPage() {
     if (copyError) {
       alert(`Gagal menduplikasi nama baru: ${copyError.message}`);
     } else {
-      const { error: removeError } = await supabase.storage.from('chm-uploads').remove([oldName]);
+      const { data: removeData, error: removeError } = await supabase.storage.from('chm-uploads').remove([oldName]);
       if (removeError) {
          alert(`Nama baru berhasil dibuat, tapi gagal menghapus nama lama: ${removeError.message}`);
+      } else if (removeData && removeData.length === 0) {
+         alert('Nama baru berhasil dibuat, tapi gagal menghapus nama lama (mungkin karena batasan akses/RLS).');
       }
-      setFiles(files.map(f => f.name === oldName ? { ...f, name: newName } : f));
+      setFiles(prev => prev.map(f => f.name === oldName ? { ...f, name: newName } : f));
       router.refresh();
     }
     setIsRenaming(null);
@@ -213,12 +215,14 @@ export default function ArsipPage() {
     if (!confirm(`Apakah Anda yakin ingin menghapus arsip "${fileName}"?`)) return;
     
     setIsDeleting(fileName);
-    const { error } = await supabase.storage.from('chm-uploads').remove([fileName]);
+    const { data, error } = await supabase.storage.from('chm-uploads').remove([fileName]);
     
     if (error) {
       alert(`Gagal menghapus file: ${error.message}`);
+    } else if (data && data.length === 0) {
+      alert('Gagal menghapus file: File tidak ditemukan atau ditolak oleh aturan akses (RLS).');
     } else {
-      setFiles(files.filter(f => f.name !== fileName));
+      setFiles(prev => prev.filter(f => f.name !== fileName));
       router.refresh(); // Segarkan route agar halaman beranda juga terupdate
     }
     setIsDeleting(null);

@@ -19,32 +19,32 @@ export default async function Home() {
     <div className="min-h-screen bg-[#fafafa] dark:bg-[#0a0a0a] text-zinc-900 dark:text-zinc-100 flex flex-col font-sans">
       
       {/* HEADER */}
-      <header className="p-6 md:px-12 md:py-8 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-white/50 dark:bg-black/50 backdrop-blur-xl sticky top-0 z-10">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 relative flex items-center justify-center shrink-0">
+      <header className="h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between border-b border-zinc-200/80 bg-white/80 backdrop-blur-2xl sticky top-0 z-50 transition-all">
+        <Link href="/" className="flex items-center gap-2.5 group">
+          <div className="w-8 h-8 relative flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110">
             <Image 
               src="/logo.png" 
               alt="Logo Ulil Albab" 
               fill
-              className="object-contain drop-shadow-md"
+              className="object-contain"
             />
           </div>
-          <span className="font-extrabold text-2xl tracking-tight">Ulil Albab</span>
-        </div>
+          <span className="font-bold text-[17px] tracking-tight text-zinc-900 hidden sm:block">Ulil Albab</span>
+        </Link>
         
         {/* MENU */}
-        <nav className="flex items-center gap-6">
-          <Link href="/quran" className="flex items-center gap-2 font-bold text-zinc-600 hover:text-accent transition-colors">
-            <Book size={18} />
+        <nav className="flex items-center gap-1 sm:gap-2">
+          <Link href="/quran" className="flex items-center gap-2 text-[13px] font-semibold text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 px-3.5 py-1.5 rounded-full transition-all">
+            <Book size={15} strokeWidth={2} />
             <span className="hidden sm:inline">Quran</span>
           </Link>
-          <Link href="/hadist" className="flex items-center gap-2 font-bold text-zinc-600 hover:text-accent transition-colors">
-            <Book size={18} />
+          <Link href="/hadist" className="flex items-center gap-2 text-[13px] font-semibold text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 px-3.5 py-1.5 rounded-full transition-all">
+            <Book size={15} strokeWidth={2} />
             <span className="hidden sm:inline">Hadist</span>
           </Link>
-          <Link href="/" className="flex items-center gap-2 font-bold text-accent transition-colors">
-            <Library size={18} />
-            <span className="hidden sm:inline">Brosur MTA</span>
+          <Link href="/" className="flex items-center gap-2 text-[13px] font-bold text-teal-600 bg-teal-50 px-3.5 py-1.5 rounded-full transition-all">
+            <Library size={15} strokeWidth={2.5} />
+            <span className="hidden md:inline">Brosur</span>
           </Link>
         </nav>
       </header>

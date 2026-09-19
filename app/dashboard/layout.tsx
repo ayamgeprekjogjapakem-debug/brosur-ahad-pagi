@@ -3,6 +3,7 @@ import { createClient } from '@/utils/supabase/server';
 import DashboardSidebar from './components/DashboardSidebar';
 import DashboardHeader from './components/DashboardHeader';
 import AiChatWidget from '../components/AiChatWidget';
+import MainContentWrapper from './components/MainContentWrapper';
 
 export default async function DashboardLayout({
   children,
@@ -59,9 +60,9 @@ export default async function DashboardLayout({
       <DashboardSidebar />
       <div className="flex-1 w-full h-full overflow-hidden flex flex-col min-w-0 md:rounded-3xl border-0 md:border md:border-black/5 md:dark:border-white/10 bg-white/75 dark:bg-zinc-900/75 backdrop-blur-xl shadow-sm relative">
         <DashboardHeader email={user.email} role={profile.role} />
-        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 md:p-8">
+        <MainContentWrapper>
           {children}
-        </main>
+        </MainContentWrapper>
       </div>
       {aiSettings?.ai_enabled && <AiChatWidget />}
     </div>

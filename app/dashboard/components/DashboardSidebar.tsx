@@ -40,8 +40,14 @@ export default function DashboardSidebar() {
   const handleLogout = async () => {
     setIsLoggingOut(true);
     await supabase.auth.signOut();
-    router.replace('/login');
+    router.push('/login');
+    router.refresh();
   };
+
+  // Sembunyikan sidebar utama jika sedang berada di dalam menu /dashboard/hadist
+  if (pathname?.startsWith('/dashboard/hadist')) {
+    return null;
+  }
 
   const navGroups = [
     {
@@ -51,7 +57,8 @@ export default function DashboardSidebar() {
         { name: 'Arsip Brosur', href: '/dashboard/arsip', icon: FileStack },
         { name: 'Data Brosur', href: '/dashboard/data', icon: Database },
         { name: 'Analisis Pencarian', href: '/dashboard/search-analyzer', icon: Search },
-        { name: 'Pengelompokan Hadist', href: '/dashboard/hadist', icon: BookMarked },
+        { name: 'Hadist Sumber Brosur', href: '/dashboard/hadist', icon: BookMarked },
+        { name: 'Hadist dari API', href: '/dashboard/hadist-api', icon: BookOpen },
         { name: 'Data Quran', href: '/dashboard/quran', icon: BookOpen },
         { name: 'Kotak Masukan', href: '/dashboard/masukan', icon: MessageSquare },
       ],
