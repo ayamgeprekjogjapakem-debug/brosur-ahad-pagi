@@ -8,12 +8,13 @@ import {
 } from 'lucide-react';
 
 export default function HadistApiImportPage() {
-  const [sumberApi, setSumberApi] = useState('gading');
+  const [sumberApi, setSumberApi] = useState('vercel');
   const [kitab, setKitab] = useState('bukhari');
-  const [rangeStart, setRangeStart] = useState('1');
-  const [rangeEnd, setRangeEnd] = useState('50');
+  const [startNumber, setStartNumber] = useState('1');
   
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState({ current: 0, total: 0 });
+  const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
   const [pulledData, setPulledData] = useState<any[]>([]);
   const [errorMsg, setErrorMsg] = useState('');
   
@@ -23,40 +24,122 @@ export default function HadistApiImportPage() {
   const supabase = createClient();
 
   const handlePullData = async () => {
-    const start = parseInt(rangeStart);
-    const end = parseInt(rangeEnd);
+    // Estimasi jumlah hadist per kitab (bisa disesuaikan atau diambil dari API metadata jika ada)
+    const kitabTotals: Record<string, number> = {
+      'bukhari': 7008, 'muslim': 5362, 'tirmidzi': 3956, 'abudaud': 5274,
+      'nasai': 5758, 'ibnumajah': 4341, 'ahmad': 27100, 'malik': 1587, 'darimi': 3367
+    };
     
-    if (isNaN(start) || isNaN(end) || start < 1 || end < start) {
-      setErrorMsg('Range tidak valid. Pastikan nomor awal lebih kecil dari nomor akhir, minimal 1.');
-      return;
-    }
+    const totalToFetch = kitabTotals[kitab] || 5000;
+    const batchSize = 100; // Tarik per 100 agar aman
     
-    if (end - start + 1 > 300) {
-      setErrorMsg('Maksimal penarikan API adalah 300 hadist dalam satu waktu.');
-      return;
-    }
-
     setLoading(true);
     setErrorMsg('');
     setPulledData([]);
     setImportStats({ success: 0, failed: 0 });
+    setProgress({ current: 0, total: totalToFetch });
+
+    let allData: any[] = [];
+    let hasError = false;
+
+    // Mapping Kitab
+    let mappedKitab = kitab;
+    if (sumberApi === 'hadithapi') {
+      const mapHadithApi: Record<string, string> = {
+        'bukhari': 'sahih-bukhari', 'muslim': 'sahih-muslim', 'tirmidzi': 'al-tirmidhi',
+        'abudaud': 'abu-dawood', 'nasai': 'sunan-an-nasai', 'ibnumajah': 'sunan-ibn-majah', 'malik': 'muwatta-malik'
+      };
+      mappedKitab = mapHadithApi[kitab] || kitab;
+    } else if (sumberApi === 'sunnah') {
+      const mapSunnah: Record<string, string> = {
+        'tirmidzi': 'tirmidhi', 'abudaud': 'abudawud', 'ibnumajah': 'ibnmajah'
+      };
+      mappedKitab = mapSunnah[kitab] || kitab;
+    }
 
     try {
-      const proxyUrl = `/api/hadist/proxy?sumberApi=${encodeURIComponent(sumberApi)}&kitab=${kitab}&start=${start}&end=${end}`;
-      const res = await fetch(proxyUrl);
-      const data = await res.json();
+      const initialStart = parseInt(startNumber) || 1;
       
-      if (data && data.data && data.data.hadiths) {
-        setPulledData(data.data.hadiths);
-      } else if (data.error) {
-        setErrorMsg('Proxy Error: ' + data.error);
-      } else {
-        setErrorMsg('Gagal memproses data dari API. Pastikan format range benar.');
+      for (let start = initialStart; start <= totalToFetch; start += batchSize) {
+        const end = Math.min(start + batchSize - 1, totalToFetch);
+        setProgress({ current: start, total: totalToFetch });
+        
+        let batchData: any[] = [];
+        
+        if (sumberApi === 'vercel' || sumberApi === 'gading') {
+          const baseUrl = sumberApi === 'vercel' ? 'https://hadis-api-id.vercel.app' : 'https://api.hadith.gading.dev';
+          const pageNum = Math.ceil(start / batchSize);
+          
+          const fetchUrl = sumberApi === 'vercel'
+            ? `${baseUrl}/hadith/${mappedKitab}?page=${pageNum}&limit=${batchSize}` // Vercel uses limit and page
+            : `${baseUrl}/books/${mappedKitab}?range=${start}-${end}`; // Gading uses range
+            
+          const res = await fetch(fetchUrl);
+          const data = await res.json();
+          
+          if (sumberApi === 'vercel' && data?.items) {
+             batchData = data.items;
+          } else if (sumberApi === 'gading' && data?.data?.hadiths) {
+             batchData = data.data.hadiths;
+          } else {
+             throw new Error("Format API tidak sesuai dari " + sumberApi);
+          }
+        }
+        else if (sumberApi === 'myquran') {
+          const requests = [];
+          for (let i = start; i <= end; i++) {
+            requests.push(fetch(`https://api.myquran.com/v2/hadits/perawi/${mappedKitab}/${i}`).then(r => r.json()));
+          }
+          const results = await Promise.allSettled(requests);
+          batchData = results
+            .filter(r => r.status === 'fulfilled' && (r as any).value?.data?.arab)
+            .map((r: any) => ({
+              number: r.value.data.number,
+              arab: r.value.data.arab,
+              id: r.value.data.id
+            }));
+        }
+        else if (sumberApi === 'hadithapi') {
+          const apiKey = process.env.NEXT_PUBLIC_HADITHAPI_KEY || 'YOUR_KEY';
+          // Client fetch allows paginate
+          const fetchUrl = `https://hadithapi.com/api/hadiths?apiKey=${apiKey}&book=${mappedKitab}&paginate=100&page=${Math.ceil(start/100)}`;
+          const res = await fetch(fetchUrl);
+          const data = await res.json();
+          if (data?.hadiths?.data) {
+             batchData = data.hadiths.data.map((h: any) => ({
+              number: h.hadithNumber,
+              arab: h.hadithArabic,
+              id: h.hadithUrdu ? "Terjemahan Indo tidak tersedia (lihat Inggris)" : "",
+              en: h.hadithEnglish,
+              chapterId: h.chapterId,
+              headingArabic: h.headingArabic,
+              headingEnglish: h.headingEnglish,
+              volume: h.volume,
+              status: h.status
+            }));
+          }
+        }
+        
+        if (batchData.length > 0) {
+          allData = [...allData, ...batchData];
+          setPulledData(allData); // Update UI per batch
+        } else {
+           // Jika data kosong, berarti sudah mentok di ujung kitab, stop loop!
+           break;
+        }
+        
+        // Delay kecil agar tidak di rate-limit
+        await new Promise(r => setTimeout(r, 500));
       }
     } catch (err: any) {
-      setErrorMsg('Gagal menghubungi server API Gading: ' + err.message);
+      setErrorMsg('Gagal menarik API secara langsung: ' + err.message);
+      hasError = true;
     } finally {
       setLoading(false);
+      setProgress({ current: totalToFetch, total: totalToFetch }); // Selesai
+      if (!hasError) {
+        alert(`Berhasil menarik ${allData.length} hadist dari API ke layar! Silakan klik tombol Simpan.`);
+      }
     }
   };
 
@@ -78,19 +161,47 @@ export default function HadistApiImportPage() {
     
     try {
       const payload = pulledData.map(h => ({
-        kitab: kitab, // name of the kitab
-        nomor: h.number,
-        teks_arab: h.arab,
-        terjemahan: h.id
+        kitab: kitab, 
+        nomor: h.number || parseInt(h.hadithNumber) || parseInt(h.id) || 0,
+        teks_arab: h.arab || h.hadithArabic || h.body || '',
+        terjemahan: h.id || h.en || h.hadithEnglish || h.hadithUrdu || '',
+        terjemahan_inggris: h.en || h.hadithEnglish || null,
+        terjemahan_urdu: h.urdu || h.hadithUrdu || null,
+        judul_bab_arab: h.headingArabic || null,
+        judul_bab_terjemahan: h.headingEnglish || null,
+        nomor_bab: h.chapterId || h.chapterNumber || null,
+        volume: h.volume || null,
+        status_sanad: h.status || h.grade || null,
+        sumber_api: sumberApi
       }));
 
-      // upsert dengan onConflict kitab,nomor agar duplikat diabaikan/diperbarui
-      const { data, error } = await supabase
-        .from('master_hadist_api')
-        .upsert(payload, { onConflict: 'kitab,nomor', ignoreDuplicates: true });
+      // Chunk payload into batches of 100 to avoid Supabase Payload Too Large errors
+      const chunkSize = 100;
+      setImportProgress({ current: 0, total: payload.length });
+      
+      for (let i = 0; i < payload.length; i += chunkSize) {
+        const batch = payload.slice(i, i + chunkSize);
+        
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://gbdvcwjdttcjirrsgwsj.supabase.co';
+        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_Mpf4AtQtblWyhe2KTWjrrA_vfAV0SBQ';
+        
+        const res = await fetch(`${supabaseUrl}/rest/v1/master_hadist_api`, {
+          method: 'POST',
+          headers: {
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'resolution=ignore-duplicates' // bypass unique constraint errors
+          },
+          body: JSON.stringify(batch)
+        });
 
-      if (error) {
-        throw error;
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(`HTTP ${res.status}: ${errText}`);
+        }
+        
+        setImportProgress({ current: Math.min(i + chunkSize, payload.length), total: payload.length });
       }
       
       // Jika berhasil tanpa error throw, anggap semua sukses (yang duplikat diabaikan dengan aman)
@@ -98,7 +209,15 @@ export default function HadistApiImportPage() {
       
     } catch (err: any) {
       console.error('Import Error:', err);
-      setErrorMsg('Sebagian atau seluruh data gagal diimpor: ' + err.message);
+      let errMsg = err?.message || '';
+      if (!errMsg && typeof err === 'object') {
+        try {
+          errMsg = JSON.stringify(err, Object.getOwnPropertyNames(err));
+        } catch(e) {
+          errMsg = String(err);
+        }
+      }
+      setErrorMsg('Gagal menyimpan ke database: ' + errMsg);
       failed = pulledData.length;
     }
 
@@ -118,7 +237,7 @@ export default function HadistApiImportPage() {
         .arabic-text { font-family: 'Amiri', serif; direction: rtl; }
       `}} />
 
-      <div className="p-5 sm:p-7 space-y-6 font-jakarta text-slate-800 bg-slate-50/60 min-h-full">
+      <div className="p-5 sm:p-7 space-y-6 font-jakarta text-slate-800 bg-slate-50/60 h-full overflow-y-auto">
         
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/70 shadow-sm relative overflow-hidden">
@@ -140,7 +259,7 @@ export default function HadistApiImportPage() {
           
           {/* KOLOM KIRI: KONFIGURASI PENARIKAN */}
           <div className="lg:col-span-1 space-y-4">
-            <div className="bg-white rounded-2xl border border-slate-200/70 shadow-sm p-5 flex flex-col gap-4">
+            <div className="bg-white rounded-3xl border-2 border-indigo-50 shadow-lg shadow-indigo-100/40 p-5 flex flex-col gap-4">
               <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2 border-b border-slate-100 pb-3">
                 <Search className="w-4 h-4 text-indigo-600" />
                 <span>Parameter Tarik API</span>
@@ -153,8 +272,11 @@ export default function HadistApiImportPage() {
                   onChange={(e) => setSumberApi(e.target.value)}
                   className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
                 >
+                  <option value="vercel">Renomureza API (Vercel/Sutanlab)</option>
+                  <option value="myquran">MyQuran Hadith API</option>
+                  <option value="hadithapi">HadithAPI.com (Intl)</option>
+                  <option value="sunnah">Sunnah.com API (v1)</option>
                   <option value="gading">API Hadith Gading (Kemenag)</option>
-                  <option value="vercel">Renomureza API (Vercel Node)</option>
                 </select>
               </div>
 
@@ -178,25 +300,27 @@ export default function HadistApiImportPage() {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-600 mb-1.5 block">Range Nomor (Maks 300)</label>
-                <div className="flex items-center gap-2">
-                  <input 
-                    type="number"
-                    value={rangeStart}
-                    onChange={(e) => setRangeStart(e.target.value)}
-                    className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none"
-                    placeholder="Awal"
-                  />
-                  <span className="text-slate-400 font-semibold">-</span>
-                  <input 
-                    type="number"
-                    value={rangeEnd}
-                    onChange={(e) => setRangeEnd(e.target.value)}
-                    className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none"
-                    placeholder="Akhir"
-                  />
-                </div>
+                <label className="text-xs font-bold text-slate-600 mb-1.5 block">Mulai dari Nomor (Resume)</label>
+                <input 
+                  type="number"
+                  value={startNumber}
+                  onChange={(e) => setStartNumber(e.target.value)}
+                  className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none"
+                  placeholder="Contoh: 1"
+                  min="1"
+                />
+                <p className="text-[10px] text-slate-400 mt-1">Isi 1 untuk mulai dari awal. Isi nomor lain jika ingin melanjutkan penarikan yang terputus.</p>
               </div>
+
+              {loading && progress.total > 0 && (
+                <div className="mt-4 bg-slate-100 rounded-full h-2.5 w-full overflow-hidden">
+                  <div 
+                    className="bg-indigo-600 h-2.5 rounded-full transition-all duration-300" 
+                    style={{ width: `${Math.min(100, Math.round((progress.current / progress.total) * 100))}%` }}
+                  ></div>
+                  <p className="text-[10px] text-center mt-1 text-slate-500 font-medium">Menarik data: {progress.current} / {progress.total}</p>
+                </div>
+              )}
 
               {errorMsg && (
                 <div className="bg-rose-50 text-rose-600 text-xs p-3 rounded-lg flex items-start gap-2 border border-rose-100 mt-2">
@@ -239,25 +363,49 @@ export default function HadistApiImportPage() {
           </div>
 
           {/* KOLOM KANAN: PREVIEW DATA & IMPORT */}
-          <div className="lg:col-span-3 bg-white rounded-2xl border border-slate-200/70 shadow-sm flex flex-col overflow-hidden">
-            <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-              <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+          <div className="lg:col-span-3 bg-white rounded-3xl border-2 border-indigo-50 shadow-lg shadow-indigo-100/40 flex flex-col overflow-hidden">
+            <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center relative overflow-hidden">
+              <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2 relative z-10">
                 <Database className="w-4 h-4 text-emerald-600" />
                 <span>Preview Data Tarikan API</span>
               </h4>
               {pulledData.length > 0 && (
-                <button 
-                  onClick={handleBulkImport}
-                  disabled={isImporting}
-                  className="px-4 py-2 text-xs font-semibold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 flex items-center gap-2 transition disabled:opacity-70 shadow-sm shadow-emerald-600/30"
-                >
-                  {isImporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  Import {pulledData.length} Hadist ke DB
-                </button>
+                <div className="flex flex-col items-end gap-2 relative z-10">
+                  <button 
+                    onClick={handleBulkImport}
+                    disabled={isImporting}
+                    className="px-4 py-2 text-xs font-semibold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 flex items-center gap-2 transition disabled:opacity-70 shadow-sm shadow-emerald-600/30"
+                  >
+                    {isImporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    Import {pulledData.length} Hadist ke DB
+                  </button>
+                  
+                  {isImporting && importProgress.total > 0 && (
+                    <div className="w-full bg-slate-200 rounded-full h-1.5 mt-1 overflow-hidden">
+                      <div 
+                        className="bg-emerald-500 h-1.5 rounded-full transition-all duration-300" 
+                        style={{ width: `${Math.min(100, Math.round((importProgress.current / importProgress.total) * 100))}%` }}
+                      ></div>
+                    </div>
+                  )}
+                  {isImporting && (
+                    <span className="text-[9px] font-bold text-emerald-700 uppercase tracking-widest">
+                      MENYIMPAN: {importProgress.current} / {importProgress.total}
+                    </span>
+                  )}
+                </div>
+              )}
+              
+              {/* Progress Background Overlay */}
+              {isImporting && importProgress.total > 0 && (
+                <div 
+                  className="absolute left-0 top-0 bottom-0 bg-emerald-50/50 transition-all duration-500 z-0"
+                  style={{ width: `${Math.min(100, Math.round((importProgress.current / importProgress.total) * 100))}%` }}
+                ></div>
               )}
             </div>
 
-            <div className="flex-1 bg-slate-50/30 p-5">
+            <div className="flex-1 bg-slate-50/30 p-5 max-h-[75vh] overflow-y-auto">
               {loading ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-3 text-indigo-600">
                   <Loader2 className="w-8 h-8 animate-spin" />
