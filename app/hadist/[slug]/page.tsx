@@ -42,7 +42,7 @@ export default function HadistRawiPage({ params }: { params: Promise<{ slug: str
       try {
         const [resKelompok, resRawi] = await Promise.all([
           fetch('/api/hadist/kelompok'),
-          fetch('/api/hadist/rawi')
+          fetch('/api/hadist-api/kitab')
         ]);
         
         if (resKelompok.ok) {
@@ -56,7 +56,7 @@ export default function HadistRawiPage({ params }: { params: Promise<{ slug: str
           setRawiList(rawis);
 
           // Temukan rawi yang cocok dengan slug
-          const matchedRawi = rawis.find((r: any) => createSlug(r.nama_rawi) === slug);
+          const matchedRawi = rawis.find((r: any) => createSlug(r.nama_rawi) === slug || r.id === slug);
           if (matchedRawi) {
             setCurrentRawi(matchedRawi);
             setSelectedRawi(matchedRawi.nama_rawi);
@@ -75,11 +75,12 @@ export default function HadistRawiPage({ params }: { params: Promise<{ slug: str
       setLoading(true);
       try {
         const params = new URLSearchParams();
-        params.set('status_hadist', 'terverifikasi');
+        if (currentRawi) params.set('kitab', currentRawi.id);
         if (searchQuery) params.set('search', searchQuery);
-        if (selectedKelompok !== 'all') params.set('kelompok_id', selectedKelompok);
-        if (selectedRawi !== 'all') params.set('rawi_kitab', selectedRawi);
-
+        
+        // Kelompok and Rawi filters might not be perfectly mapped yet for the new API, 
+        // but we send the kitab.
+        // Revert to using hadist_brosur to get the brosur relation
         const res = await fetch(`/api/hadist/items?${params.toString()}`);
         const data = await res.json();
         
@@ -267,47 +268,84 @@ export default function HadistRawiPage({ params }: { params: Promise<{ slug: str
                       )}
                     </div>
 
-                    {/* Content Card */}
-                    <div className="p-6 md:p-8">
-                      {/* Arabic Text */}
-                      <div 
-                        className="text-right text-3xl md:text-4xl leading-loose md:leading-[1.8] font-arabic text-zinc-900 dark:text-zinc-100 mb-8"
-                        dir="rtl"
-                      >
-                        {item.kutipan_arab}
+                    {/* Main Content Area: Flex layout for text and sidebar */}
+                    <div className="flex flex-col lg:flex-row border-t border-black/5 dark:border-white/5">
+                      {/* Left Side: Hadith Text (Takes up most space) */}
+                      <div className="p-6 md:p-8 flex-1">
+                        {/* Arabic Text */}
+                        <div 
+                          className="text-right text-3xl md:text-4xl leading-loose md:leading-[1.8] font-arabic text-zinc-900 dark:text-zinc-100 mb-8"
+                          dir="rtl"
+                        >
+                          {item.kutipan_arab}
+                        </div>
+
+                        {/* Translation */}
+                        {item.terjemahan && (
+                          <div className="text-base md:text-lg text-zinc-700 dark:text-zinc-300 leading-relaxed font-medium">
+                            <span className="text-accent font-bold mr-2">Artinya:</span>
+                            "{item.terjemahan}"
+                          </div>
+                        )}
+
+                        {/* Catatan / Keterangan Tambahan */}
+                        {item.catatan && (
+                          <div className="mt-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-sm text-amber-800 dark:text-amber-200">
+                            <strong>Catatan Tambahan:</strong> {item.catatan}
+                          </div>
+                        )}
                       </div>
 
-                      {/* Translation */}
-                      {item.terjemahan && (
-                        <div className="text-base md:text-lg text-zinc-700 dark:text-zinc-300 leading-relaxed font-medium">
-                          <span className="text-accent font-bold mr-2">Artinya:</span>
-                          "{item.terjemahan}"
-                        </div>
-                      )}
-
-                      {/* Catatan / Keterangan Tambahan */}
-                      {item.catatan && (
-                        <div className="mt-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-sm text-amber-800 dark:text-amber-200">
-                          <strong>Catatan Tambahan:</strong> {item.catatan}
+                      {/* Right Side: Sidebar Informasi Brosur */}
+                      {item.brosur && (
+                        <div className="lg:w-72 bg-zinc-50/50 dark:bg-black/20 border-t lg:border-t-0 lg:border-l border-black/5 dark:border-white/5 p-6 flex flex-col">
+                          <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                            <Library size={14} /> Sumber Brosur
+                          </h4>
+                          
+                          <div className="flex-1 space-y-4">
+                            <div>
+                              <div className="text-[10px] text-zinc-500 font-bold mb-1 uppercase">Judul Brosur</div>
+                              <div className="text-sm font-bold text-zinc-800 dark:text-zinc-200 leading-snug">
+                                {item.brosur.judul}
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-4">
+                              <div>
+                                <div className="text-[10px] text-zinc-500 font-bold mb-1 uppercase">Tahun</div>
+                                <div className="text-sm font-semibold text-accent bg-accent/10 px-2 py-0.5 rounded inline-block">
+                                  {item.brosur.tahun || '-'}
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-[10px] text-zinc-500 font-bold mb-1 uppercase">Hal / Juz</div>
+                                <div className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+                                  {item.halaman || '-'} / {item.juz || '-'}
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {item.brosur.folders?.name && (
+                              <div>
+                                <div className="text-[10px] text-zinc-500 font-bold mb-1 uppercase">Koleksi</div>
+                                <div className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                                  {item.brosur.folders.name}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          
+                          <Link 
+                            href={`/${item.brosur.slug}`}
+                            className="mt-6 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-zinc-800 border border-black/10 dark:border-white/10 rounded-xl text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:bg-accent hover:text-white hover:border-accent transition-all shadow-sm group"
+                          >
+                            Baca Brosur Asli
+                            <ExternalLink size={14} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                          </Link>
                         </div>
                       )}
                     </div>
-
-                    {/* Footer Card: Link to Brosur */}
-                    {item.brosur && (
-                      <div className="px-6 py-4 border-t border-black/5 dark:border-white/5 bg-zinc-50/50 dark:bg-black/20 flex items-center justify-between gap-4">
-                        <div className="text-xs text-zinc-500 font-medium">
-                          Disarikan dari arsip kajian Ahad Pagi.
-                        </div>
-                        <Link 
-                          href={`/${item.brosur.slug}`}
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-zinc-800 border border-black/10 dark:border-white/10 rounded-xl text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 hover:text-accent transition-colors shadow-sm group"
-                        >
-                          Baca Brosur Asli
-                          <ExternalLink size={14} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                        </Link>
-                      </div>
-                    )}
                   </div>
                 );
               })}

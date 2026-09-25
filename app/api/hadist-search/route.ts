@@ -31,6 +31,10 @@ export async function GET(request: Request) {
         query: q,
         total: data?.length || 0,
       }
+    }, {
+      headers: {
+        'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+      }
     });
   } catch (error: any) {
     console.error('API Error:', error);

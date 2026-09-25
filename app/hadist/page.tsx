@@ -20,7 +20,7 @@ export default function PublicHadistPage() {
   useEffect(() => {
     const fetchKitab = async () => {
       try {
-        const res = await fetch('/api/hadist/rawi');
+        const res = await fetch('/api/hadist-api/kitab');
         if (res.ok) {
           const data = await res.json();
           // Filter out Kitab that have 0 hadiths
@@ -37,8 +37,8 @@ export default function PublicHadistPage() {
   }, []);
 
   const filteredKitab = kitabList.filter(k => 
-    k.nama_rawi.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (k.nama_arab && k.nama_arab.includes(searchQuery))
+    (k.nama_rawi || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (k.nama_arab || '').includes(searchQuery)
   );
 
   return (
@@ -95,28 +95,30 @@ export default function PublicHadistPage() {
             <Loader2 className="animate-spin text-teal-600" size={32} />
           </div>
         ) : (
-          <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+          <div className="w-full flex flex-col gap-3 md:gap-4">
             {filteredKitab.map((kitab, i) => (
               <Link 
                 key={kitab.id} 
                 href={`/hadist/${createSlug(kitab.nama_rawi)}`}
-                className="group bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 md:p-6 hover:shadow-lg hover:border-teal-500/30 transition-all flex items-center justify-between"
+                className="group bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 md:p-5 hover:shadow-md hover:border-teal-500/50 transition-all flex items-center justify-between"
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-zinc-50 dark:bg-zinc-800 rounded-xl flex items-center justify-center font-bold text-zinc-500 group-hover:text-teal-600 group-hover:bg-teal-50 transition-colors">
+                <div className="flex items-center gap-4 w-full">
+                  <div className="w-12 h-12 shrink-0 bg-zinc-50 dark:bg-zinc-800 rounded-xl flex items-center justify-center font-bold text-zinc-500 group-hover:text-teal-600 group-hover:bg-teal-50 transition-colors">
                     {i + 1}
                   </div>
-                  <div>
-                    <h3 className="font-bold text-lg text-zinc-900 dark:text-white group-hover:text-teal-600 transition-colors">{kitab.nama_rawi}</h3>
+                  <div className="flex flex-col md:flex-row md:items-center justify-between w-full pr-4">
+                    <div className="flex flex-col">
+                      <h3 className="font-bold text-lg text-zinc-900 dark:text-white group-hover:text-teal-600 transition-colors">{kitab.nama_rawi}</h3>
+                      <p className="text-xs font-semibold text-zinc-500 mt-1 uppercase tracking-widest bg-zinc-100 dark:bg-zinc-800 w-fit px-2 py-0.5 rounded-full">
+                        {kitab.total_hadist} Hadist
+                      </p>
+                    </div>
                     {kitab.nama_arab && (
-                      <p className="font-arabic text-xl text-zinc-500 text-right mt-1" dir="rtl">{kitab.nama_arab}</p>
+                      <p className="font-arabic text-xl md:text-2xl text-zinc-500 text-left md:text-right mt-2 md:mt-0" dir="rtl">{kitab.nama_arab}</p>
                     )}
-                    <p className="text-xs font-semibold text-zinc-500 mt-1 uppercase tracking-widest bg-zinc-100 dark:bg-zinc-800 w-fit px-2 py-0.5 rounded-full">
-                      {kitab.total_hadist} Hadist
-                    </p>
                   </div>
                 </div>
-                <ChevronRight size={20} className="text-zinc-300 group-hover:text-teal-500 transition-colors" />
+                <ChevronRight size={20} className="text-zinc-300 group-hover:text-teal-500 transition-colors shrink-0" />
               </Link>
             ))}
             

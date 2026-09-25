@@ -21,7 +21,32 @@ export default function HadistApiImportPage() {
   const [isImporting, setIsImporting] = useState(false);
   const [importStats, setImportStats] = useState({ success: 0, failed: 0 });
 
+  const [viewMode, setViewMode] = useState<'preview' | 'imported'>('preview');
+  const [importedData, setImportedData] = useState<any[]>([]);
+  const [loadingImported, setLoadingImported] = useState(false);
+
   const supabase = createClient();
+
+  const fetchImportedData = async () => {
+    setLoadingImported(true);
+    const { data, error } = await supabase
+      .from('master_hadist_api')
+      .select('*')
+      .eq('kitab', kitab)
+      .order('nomor', { ascending: true })
+      .limit(100);
+    
+    if (!error && data) {
+      setImportedData(data);
+    }
+    setLoadingImported(false);
+  };
+
+  React.useEffect(() => {
+    if (viewMode === 'imported') {
+      fetchImportedData();
+    }
+  }, [viewMode, kitab]);
 
   const handlePullData = async () => {
     // Estimasi jumlah hadist per kitab (bisa disesuaikan atau diambil dari API metadata jika ada)
@@ -365,11 +390,23 @@ export default function HadistApiImportPage() {
           {/* KOLOM KANAN: PREVIEW DATA & IMPORT */}
           <div className="lg:col-span-3 bg-white rounded-3xl border-2 border-indigo-50 shadow-lg shadow-indigo-100/40 flex flex-col overflow-hidden">
             <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center relative overflow-hidden">
-              <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2 relative z-10">
-                <Database className="w-4 h-4 text-emerald-600" />
-                <span>Preview Data Tarikan API</span>
-              </h4>
-              {pulledData.length > 0 && (
+              <div className="flex items-center gap-4 relative z-10">
+                <button
+                  onClick={() => setViewMode('preview')}
+                  className={`font-bold text-sm flex items-center gap-2 pb-1 border-b-2 ${viewMode === 'preview' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700 transition-colors'}`}
+                >
+                  <CloudDownload className="w-4 h-4" />
+                  <span>Preview API</span>
+                </button>
+                <button
+                  onClick={() => setViewMode('imported')}
+                  className={`font-bold text-sm flex items-center gap-2 pb-1 border-b-2 ${viewMode === 'imported' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700 transition-colors'}`}
+                >
+                  <Database className="w-4 h-4" />
+                  <span>Sudah Diimpor (Top 100)</span>
+                </button>
+              </div>
+              {viewMode === 'preview' && pulledData.length > 0 && (
                 <div className="flex flex-col items-end gap-2 relative z-10">
                   <button 
                     onClick={handleBulkImport}
@@ -406,34 +443,67 @@ export default function HadistApiImportPage() {
             </div>
 
             <div className="flex-1 bg-slate-50/30 p-5 max-h-[75vh] overflow-y-auto">
-              {loading ? (
-                <div className="flex flex-col items-center justify-center py-20 gap-3 text-indigo-600">
-                  <Loader2 className="w-8 h-8 animate-spin" />
-                  <p className="text-sm font-bold animate-pulse">Menghubungi Server API Gading...</p>
-                </div>
-              ) : pulledData.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-slate-400 gap-3">
-                  <ArrowRight className="w-10 h-10 text-slate-300" />
-                  <p className="text-sm font-medium">Isi parameter di sebelah kiri lalu klik "Tarik Data Sekarang".</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {pulledData.map((hadist, idx) => (
-                    <div key={idx} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-indigo-300 transition-colors">
-                      <div className="flex justify-between items-center mb-3">
-                        <span className="inline-flex px-2.5 py-1 rounded-md text-xs font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-100 uppercase tracking-widest">
-                          {kitab} - No. {hadist.number}
-                        </span>
+              {viewMode === 'preview' ? (
+                loading ? (
+                  <div className="flex flex-col items-center justify-center py-20 gap-3 text-indigo-600">
+                    <Loader2 className="w-8 h-8 animate-spin" />
+                    <p className="text-sm font-bold animate-pulse">Menghubungi Server API...</p>
+                  </div>
+                ) : pulledData.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-20 text-slate-400 gap-3">
+                    <ArrowRight className="w-10 h-10 text-slate-300" />
+                    <p className="text-sm font-medium">Isi parameter di sebelah kiri lalu klik "Tarik Data Sekarang".</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {pulledData.map((hadist, idx) => (
+                      <div key={idx} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-indigo-300 transition-colors">
+                        <div className="flex justify-between items-center mb-3">
+                          <span className="inline-flex px-2.5 py-1 rounded-md text-xs font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-100 uppercase tracking-widest">
+                            {kitab} - No. {hadist.number}
+                          </span>
+                        </div>
+                        <p className="arabic-text text-slate-800 text-lg font-semibold leading-loose text-right pb-3 border-b border-slate-50 mb-3">
+                          {hadist.arab}
+                        </p>
+                        <p className="text-sm text-slate-600 leading-relaxed">
+                          {hadist.id}
+                        </p>
                       </div>
-                      <p className="arabic-text text-slate-800 text-lg font-semibold leading-loose text-right pb-3 border-b border-slate-50 mb-3">
-                        {hadist.arab}
-                      </p>
-                      <p className="text-sm text-slate-600 leading-relaxed">
-                        {hadist.id}
-                      </p>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )
+              ) : (
+                loadingImported ? (
+                  <div className="flex flex-col items-center justify-center py-20 gap-3 text-emerald-600">
+                    <Loader2 className="w-8 h-8 animate-spin" />
+                    <p className="text-sm font-bold animate-pulse">Mengambil data dari Database...</p>
+                  </div>
+                ) : importedData.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-20 text-slate-400 gap-3">
+                    <Database className="w-10 h-10 text-slate-300" />
+                    <p className="text-sm font-medium">Belum ada data untuk kitab {kitab} di database.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {importedData.map((hadist, idx) => (
+                      <div key={idx} className="bg-white p-5 rounded-xl border border-emerald-200 shadow-sm hover:border-emerald-300 transition-colors">
+                        <div className="flex justify-between items-center mb-3">
+                          <span className="inline-flex px-2.5 py-1 rounded-md text-xs font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-100 uppercase tracking-widest">
+                            {hadist.kitab} - No. {hadist.nomor}
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-medium">Dari: {hadist.sumber_api}</span>
+                        </div>
+                        <p className="arabic-text text-slate-800 text-lg font-semibold leading-loose text-right pb-3 border-b border-slate-50 mb-3">
+                          {hadist.teks_arab}
+                        </p>
+                        <p className="text-sm text-slate-600 leading-relaxed">
+                          {hadist.terjemahan}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )
               )}
             </div>
           </div>

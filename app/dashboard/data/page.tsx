@@ -12,6 +12,7 @@ export default function DataBrosurPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [capacity, setCapacity] = useState<any>(null);
   
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -130,9 +131,20 @@ export default function DataBrosurPage() {
     }
   };
 
+  const fetchCapacity = async () => {
+    try {
+      const res = await fetch('/api/database-capacity');
+      const json = await res.json();
+      if (json.success) {
+        setCapacity(json.data);
+      }
+    } catch (e) {}
+  };
+
   useEffect(() => {
     fetchFolders();
     fetchAvailableYears();
+    fetchCapacity();
   }, []);
 
   useEffect(() => {
@@ -442,6 +454,48 @@ export default function DataBrosurPage() {
           </Link>
         )}
       </header>
+
+      {/* Kapasitas Database Widget */}
+      {capacity && (
+        <div className="mb-8 bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-2xl p-5 flex flex-col md:flex-row items-center gap-6 shadow-sm">
+          <div className="flex-1 w-full">
+            <div className="flex justify-between items-end mb-2">
+              <div>
+                <div className="text-sm font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+                  <Database size={14} /> Estimasi Kapasitas Database
+                </div>
+                <div className="font-bold text-lg mt-1">
+                  {(capacity.estimatedBytesUsed / (1024 * 1024)).toFixed(2)} MB <span className="text-zinc-400 text-sm font-medium">dari {capacity.limitBytes / (1024 * 1024)} MB (Free Tier)</span>
+                </div>
+              </div>
+              <div className="text-accent font-extrabold text-xl">
+                {capacity.percentageUsed.toFixed(2)}%
+              </div>
+            </div>
+            <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-2.5 overflow-hidden">
+              <div 
+                className={`h-full rounded-full transition-all duration-1000 ${capacity.percentageUsed > 90 ? 'bg-red-500' : capacity.percentageUsed > 75 ? 'bg-amber-500' : 'bg-accent'}`}
+                style={{ width: `${Math.min(100, capacity.percentageUsed)}%` }}
+              ></div>
+            </div>
+          </div>
+          
+          <div className="flex gap-4 md:border-l md:border-black/5 md:dark:border-white/5 md:pl-6 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
+            <div className="flex flex-col text-center min-w-[80px]">
+              <span className="text-xl font-black text-zinc-800 dark:text-zinc-200">{capacity.tables.brosur}</span>
+              <span className="text-xs font-bold text-zinc-500">Brosur</span>
+            </div>
+            <div className="flex flex-col text-center min-w-[80px]">
+              <span className="text-xl font-black text-zinc-800 dark:text-zinc-200">{capacity.tables.hadist}</span>
+              <span className="text-xs font-bold text-zinc-500">Hadist</span>
+            </div>
+            <div className="flex flex-col text-center min-w-[80px]">
+              <span className="text-xl font-black text-zinc-800 dark:text-zinc-200">{capacity.totalRecords}</span>
+              <span className="text-xs font-bold text-zinc-500">Total Baris</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex items-center gap-2 mb-6 border-b border-black/5 dark:border-white/5 pb-2">

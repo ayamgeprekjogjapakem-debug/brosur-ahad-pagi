@@ -10,6 +10,8 @@ export default function GenerateSQLPage() {
   const [brosurs, setBrosurs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [brosurSearch, setBrosurSearch] = useState('');
+  const [filterTahun, setFilterTahun] = useState('');
+  const [availableYears, setAvailableYears] = useState<number[]>([]);
   
   // Pagination state for Brosur
   const [currentPage, setCurrentPage] = useState(1);
@@ -40,11 +42,16 @@ export default function GenerateSQLPage() {
   const fetchBrosurs = async () => {
     try {
       setLoading(true);
-      const { data } = await supabase
+      let query = supabase
         .from('brosur')
         .select('id, judul, tahun, slug, teks_bersih, folders(name)')
-        .order('tahun', { ascending: false })
-        .limit(200);
+        .order('tahun', { ascending: false });
+        
+      if (filterTahun) {
+        query = query.eq('tahun', filterTahun);
+      }
+
+      const { data } = await query.limit(200);
       setBrosurs(data || []);
     } catch (e) {
       console.error(e);
@@ -52,6 +59,22 @@ export default function GenerateSQLPage() {
       setLoading(false);
     }
   };
+
+  const fetchAvailableYears = async () => {
+    const { data } = await supabase.from('brosur').select('tahun').order('tahun', { ascending: false });
+    if (data) {
+      const years = Array.from(new Set(data.map(d => d.tahun).filter(Boolean)));
+      setAvailableYears(years as number[]);
+    }
+  };
+
+  useEffect(() => {
+    fetchAvailableYears();
+  }, []);
+
+  useEffect(() => {
+    fetchBrosurs();
+  }, [filterTahun]);
 
   const extractHadistFromText = (teks: string, brosurId: string) => {
     if (!teks) return [];
@@ -270,15 +293,27 @@ export default function GenerateSQLPage() {
                 <BookOpen className="w-4 h-4 text-emerald-600" />
                 <span>1. Pilih Brosur Sumber</span>
               </h4>
-              <div className="mt-3 relative">
-                <input
-                  type="text"
-                  placeholder="Cari judul brosur..."
-                  value={brosurSearch}
-                  onChange={(e) => setBrosurSearch(e.target.value)}
-                  className="w-full pl-8 pr-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                />
-                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
+              <div className="mt-3 relative flex gap-2">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    placeholder="Cari judul..."
+                    value={brosurSearch}
+                    onChange={(e) => setBrosurSearch(e.target.value)}
+                    className="w-full pl-8 pr-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  />
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
+                </div>
+                <select
+                  value={filterTahun}
+                  onChange={(e) => setFilterTahun(e.target.value)}
+                  className="w-24 text-xs bg-white border border-slate-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                >
+                  <option value="">Semua Thn</option>
+                  {availableYears.map(year => (
+                    <option key={year} value={year}>{year}</option>
+                  ))}
+                </select>
               </div>
             </div>
 

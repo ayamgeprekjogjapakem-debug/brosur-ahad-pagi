@@ -2,13 +2,16 @@
 
 import React, { useState } from 'react';
 import { Search, Loader2, Book, Library } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
 
 export default function GlobalSearch() {
   const [query, setQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  const [searchType, setSearchType] = useState<'brosur' | 'hadist'>('hadist');
+  
   const router = useRouter();
+  const pathname = usePathname();
+  const searchType = pathname?.startsWith('/hadist') || pathname?.startsWith('/makstabah-hadist') ? 'hadist' : 'brosur';
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,7 +22,7 @@ export default function GlobalSearch() {
     if (searchType === 'brosur') {
       router.push(`/search?q=${encodeURIComponent(query.trim())}`);
     } else if (searchType === 'hadist') {
-      router.push(`/hadist/search?q=${encodeURIComponent(query.trim())}`);
+      router.push(`/makstabah-hadist?q=${encodeURIComponent(query.trim())}`);
     }
   };
 
@@ -27,9 +30,8 @@ export default function GlobalSearch() {
     <div className="w-full max-w-2xl mx-auto relative mt-8">
       {/* Tabs untuk Tipe Pencarian */}
       <div className="flex justify-center gap-2 mb-4">
-        <button
-          type="button"
-          onClick={() => setSearchType('brosur')}
+        <Link
+          href="/"
           className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all ${
             searchType === 'brosur' 
               ? 'bg-teal-600 text-white shadow-md' 
@@ -38,10 +40,9 @@ export default function GlobalSearch() {
         >
           <Library size={16} />
           <span>Brosur MTA</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setSearchType('hadist')}
+        </Link>
+        <Link
+          href="/hadist"
           className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all ${
             searchType === 'hadist' 
               ? 'bg-emerald-600 text-white shadow-md' 
@@ -50,7 +51,7 @@ export default function GlobalSearch() {
         >
           <Book size={16} />
           <span>Hadist Shahih</span>
-        </button>
+        </Link>
       </div>
 
       {/* Form Pencarian */}

@@ -4,8 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Search, Loader2, ArrowLeft, BookOpen } from 'lucide-react';
-import GlobalSearch from '../../components/GlobalSearch';
-import Footer from '../../components/Footer';
+import GlobalSearch from '../components/GlobalSearch';
+import Footer from '../components/Footer';
 
 // Komponen penyorot teks agar kata kunci stabil di-*highlight*
 function HighlightedText({ text, highlight }: { text: string; highlight: string }) {
