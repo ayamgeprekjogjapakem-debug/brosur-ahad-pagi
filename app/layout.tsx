@@ -3,9 +3,7 @@ import { Inter, Amiri, Noto_Naskh_Arabic } from "next/font/google";
 import "./globals.css";
 import { SettingsProvider } from "./SettingsContext";
 import AnalyticsTracker from "./AnalyticsTracker";
-import ThemeToggle from "./components/ThemeToggle";
 import NetworkStatus from "./components/NetworkStatus";
-import { cookies } from "next/headers";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const amiri = Amiri({ weight: ["400", "700"], subsets: ["arabic"], variable: "--font-amiri" });
@@ -32,20 +30,15 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Ambil pengaturan tema dari cookie
-  const cookieStore = await cookies();
-  const theme = cookieStore.get('theme')?.value;
-  const isDarkMode = theme === 'dark';
-
+  // Hanya Light Mode
   return (
     <html
       lang="id"
-      className={`${inter.variable} ${isDarkMode ? 'dark' : ''} h-full print:h-auto antialiased`}
+      className={`${inter.variable} h-full print:h-auto antialiased`}
       suppressHydrationWarning
     >
-      <body className={`min-h-full print:min-h-0 print:h-auto flex flex-col font-sans bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 ${amiri.variable} ${notoNaskh.variable}`} suppressHydrationWarning>
+      <body className={`min-h-full print:min-h-0 print:h-auto flex flex-col font-sans bg-zinc-50 text-zinc-900 ${amiri.variable} ${notoNaskh.variable}`} suppressHydrationWarning>
         <AnalyticsTracker />
-        <ThemeToggle />
         <NetworkStatus />
         <SettingsProvider>
           {children}

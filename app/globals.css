@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
   --color-background: hsl(var(--background));
@@ -13,12 +12,6 @@
     --background: 0 0% 100%;
     --foreground: 240 10% 3.9%;
     --accent: 180 48% 33%; /* Ulil Albab Teal */
-  }
-
-  .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --accent: 180 48% 33%;
   }
 }
 
@@ -34,14 +27,8 @@
     background-color: #e4e4e7; /* zinc-200 */
     border-radius: 9999px;
   }
-  .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-    background-color: #27272a; /* zinc-800 */
-  }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background-color: #d4d4d8; /* zinc-300 */
-  }
-  .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background-color: #3f3f46; /* zinc-700 */
   }
 }
 

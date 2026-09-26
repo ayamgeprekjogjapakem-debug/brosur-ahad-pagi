@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import Mark from 'mark.js';
 import { useSearchParams } from 'next/navigation';
 import { Copy, CheckCircle2, Image as ImageIcon, Loader2, Share2, Share, Printer, Smartphone, Link as LinkIcon } from 'lucide-react';
-import { useSettings } from '../SettingsContext';
+import { useSettings } from '@/app/SettingsContext';
 import html2canvas from 'html2canvas';
 
 interface BrosurData {

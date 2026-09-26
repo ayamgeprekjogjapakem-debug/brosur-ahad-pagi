@@ -252,7 +252,7 @@ export default function CollectionSidebar({ brosurList, activeSlug, folderSlug, 
                     return (
                       <Link
                         key={b.slug}
-                        href={`/${b.slug}?q=${encodeURIComponent(searchQuery)}`}
+                        href={`/bap/${b.tahun}/${b.judul.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}?q=${encodeURIComponent(searchQuery)}`}
                         onClick={() => window.innerWidth < 1024 && setIsSidebarOpen(false)}
                         className={`w-full text-left px-3 py-2 rounded-lg transition-all duration-200 flex flex-col group relative ${isActive
                             ? 'bg-emerald-50 text-emerald-700'
@@ -305,7 +305,7 @@ export default function CollectionSidebar({ brosurList, activeSlug, folderSlug, 
                               return (
                                 <Link
                                   key={b.slug}
-                                  href={`/${b.slug}`}
+                                  href={`/bap/${b.tahun}/${b.judul.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`}
                                   onClick={() => window.innerWidth < 1024 && setIsSidebarOpen(false)}
                                   className={`w-full text-left px-3 py-2 rounded-lg transition-all duration-200 flex flex-col group relative ${isActive
                                       ? 'bg-emerald-50 text-emerald-700'

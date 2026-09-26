@@ -7,7 +7,7 @@ import {
   Search, BookOpen, Bookmark,
   Menu, MessageSquare, Settings, Sparkles, X,
   ArrowLeft, FileText, ChevronRight, Info,
-  CheckCircle2, AlertTriangle, BookMarked, Copy, Check,
+  CheckCircle2, AlertTriangle, BookMarked, Copy, Check, Share2,
   TrendingUp, Loader2, Users, ScrollText
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -42,16 +42,18 @@ export default function MakkahPortal() {
   const pathname = usePathname();
   const router = useRouter();
 
-  const handleCopy = (item: any) => {
+  const getShareText = (item: any) => {
     const sumber = item.sumber_jenis === 'quran'
       ? `QS. ${item.nama_surat || ''} : ${item.ayat || ''}`
       : `HR. ${item.rawi_kitab || ''} ${item.no_hadist ? 'no. ' + item.no_hadist : ''}`;
 
     const sumberBrosur = item.brosur?.judul ? `\nPustaka - Dari: ${item.brosur.judul}` : '';
 
-    const textToCopy = `${item.kutipan_arab ? item.kutipan_arab + '\n\n' : ''}${item.terjemahan ? '"' + item.terjemahan + '"\n\n' : ''}[ ${sumber.trim()} ]${sumberBrosur}`;
+    return `${item.kutipan_arab ? item.kutipan_arab + '\n\n' : ''}${item.terjemahan ? '"' + item.terjemahan + '"\n\n' : ''}[ ${sumber.trim()} ]${sumberBrosur}`;
+  };
 
-    navigator.clipboard.writeText(textToCopy);
+  const handleCopy = (item: any) => {
+    navigator.clipboard.writeText(getShareText(item));
     setCopiedId(item.id);
     setTimeout(() => setCopiedId(null), 2000);
   };
@@ -495,6 +497,15 @@ export default function MakkahPortal() {
                           >
                             {copiedId === item.id ? <Check className="w-5 h-5 text-emerald-500" /> : <Copy className="w-5 h-5" />}
                           </button>
+                          <a
+                            href={`https://api.whatsapp.com/send?text=${encodeURIComponent(getShareText(item))}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-slate-300 hover:text-[#25D366] transition"
+                            title="Bagikan ke WhatsApp"
+                          >
+                            <Share2 className="w-5 h-5" />
+                          </a>
                           <button
                             onClick={() => toggleSaveItem(item)}
                             className={`transition ${savedItems.some(saved => saved.id === item.id) ? 'text-amber-500' : 'text-slate-300 hover:text-amber-500'}`}
@@ -523,7 +534,7 @@ export default function MakkahPortal() {
                         <div className="flex items-center gap-1.5">
                           <FileText className="w-4 h-4" />
                           {item.brosur?.slug ? (
-                            <Link href={`/${item.brosur.slug}?q=${encodeURIComponent(searchQuery || '')}&scroll=${encodeURIComponent((item.kutipan_arab || item.terjemahan || '').substring(0, 1000))}`} className="hover:text-emerald-600 hover:underline transition" title="Baca brosur asli">
+                            <Link href={`/bap/${item.brosur.tahun}/${item.brosur.judul.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}?q=${encodeURIComponent(searchQuery || '')}&scroll=${encodeURIComponent((item.kutipan_arab || item.terjemahan || '').substring(0, 1000))}`} className="hover:text-emerald-600 hover:underline transition" title="Baca brosur asli">
                               Dari: {item.brosur.judul}
                             </Link>
                           ) : (

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Settings2, X, Type } from 'lucide-react';
-import { useSettings } from '../SettingsContext';
+import { useSettings } from '@/app/SettingsContext';
 
 export default function SettingsPopover() {
   const [isOpen, setIsOpen] = useState(false);
