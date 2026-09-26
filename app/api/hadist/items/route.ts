@@ -51,22 +51,162 @@ export async function GET(request: NextRequest) {
       query = query.eq('status_hadist', statusHadist);
     }
 
+    let finalSearch = search;
+    let contextKeywords = '';
+
     if (search) {
-      query = query.or(`kutipan_arab.ilike.%${search}%,terjemahan.ilike.%${search}%,perawi_sumber.ilike.%${search}%,rawi_kitab.ilike.%${search}%,rawi_teratas.ilike.%${search}%`);
-      
-      // Async log search untuk melacak topik populer (non-blocking)
       const cleanSearch = search.trim().toLowerCase();
-      if (cleanSearch.length > 2 && cleanSearch.length < 50) {
-        // Coba insert langsung dengan RPC jika sudah dibuatkan di Supabase,
-        // jika belum, kita pakai pendekatan JS query biasa.
-        supabase.rpc('increment_search_count', { search_keyword: cleanSearch }).then(async ({error}) => {
+      
+      // 1. Cek tabel cache
+      const { data: cacheData } = await supabase
+        .from('search_intent_cache')
+        .select('*')
+        .eq('query_asli', cleanSearch)
+        .single();
+        
+      if (cacheData) {
+        // Gunakan cache
+        finalSearch = cacheData.query_koreksi || cleanSearch;
+        contextKeywords = cacheData.kata_kunci_konteks || '';
+        
+        try {
+          const parsedKategori = JSON.parse(cacheData.kategori_ditebak || '{}');
+          if (parsedKategori.saran) {
+            (request as any)._aiSuggestions = parsedKategori.saran;
+          }
+        } catch (e) {
+          // Abaikan jika bukan JSON
+        }
+        
+        // Update frekuensi (Background)
+        supabase.from('search_intent_cache')
+          .update({ 
+            frekuensi_pencarian: (cacheData.frekuensi_pencarian || 1) + 1,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', cacheData.id)
+          .then();
+      } else {
+        // 2. Jika tidak ada cache, panggil LLM
+        const { data: settings } = await supabase
+          .from('app_settings')
+          .select('openrouter_token, google_ai_token, chat_model')
+          .eq('id', 1)
+          .single();
+          
+        if (settings) {
+          try {
+            const isNativeGoogle = settings.chat_model?.endsWith('-native');
+            let responseText = '{}';
+            
+            const systemPromptText = 'Anda adalah mesin analisis intent pencarian Islami. Anda harus HANYA merespons format JSON murni: { "query_koreksi": "kata baku", "kategori_ditebak": "Fiqih/Aqidah/dll", "kata_kunci_konteks": ["kata1", "kata2"], "saran_topik": ["Topik A", "Topik B"] }. ATURAN PENTING: JIKA query berupa istilah Arab/sejarah (misal: Haditsul Ifki, Qadzaf), Anda WAJIB memasukkan TERJEMAHANNYA ke dalam kata_kunci_konteks (misal: "berita bohong", "dusta", "menuduh zina") karena database kami hanya berisi teks terjemahan bahasa Indonesia. Berikan saran_topik jika query rancu.';
+
+            if (isNativeGoogle && settings.google_ai_token) {
+              // GAYA NATIVE GOOGLE AI STUDIO
+              let actualModel = settings.chat_model.replace('-native', '');
+              if (actualModel === 'gemini-1.5-flash' || actualModel === 'gemini-2.5-flash') actualModel = 'gemini-3.8-flash';
+              
+              const aiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${actualModel}:generateContent?key=${settings.google_ai_token}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  contents: [{ parts: [{ text: `${systemPromptText}\n\nQuery User: ${cleanSearch}` }] }],
+                  generationConfig: { responseMimeType: "application/json" }
+                })
+              });
+
+              if (aiRes.ok) {
+                const aiData = await aiRes.json();
+                responseText = aiData.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+              }
+            } else if (!isNativeGoogle && settings.openrouter_token) {
+              // GAYA OPENROUTER LAMA
+              const token = settings.openrouter_token.trim();
+              const aiRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+                  'HTTP-Referer': 'http://localhost:3000',
+                  'X-Title': 'Pustaka MTA'
+                },
+                body: JSON.stringify({
+                  model: settings.chat_model || 'google/gemini-2.5-flash',
+                  response_format: { type: 'json_object' },
+                  messages: [
+                    { role: 'system', content: systemPromptText },
+                    { role: 'user', content: cleanSearch }
+                  ]
+                })
+              });
+
+              if (aiRes.ok) {
+                const aiData = await aiRes.json();
+                responseText = aiData.choices?.[0]?.message?.content || '{}';
+              }
+            }
+
+            // Hapus backticks jika LLM bandel
+            const cleanJson = responseText.replace(/```json|```/g, '').trim();
+            const parsed = JSON.parse(cleanJson);
+            
+            finalSearch = parsed.query_koreksi || cleanSearch;
+            contextKeywords = Array.isArray(parsed.kata_kunci_konteks) ? parsed.kata_kunci_konteks.join(' ') : (parsed.kata_kunci_konteks || '');
+            
+            // Simpan suggestions ke memori lokal request ini
+            const saranTopik = Array.isArray(parsed.saran_topik) ? parsed.saran_topik : [];
+            // Akali kolom kategori_ditebak agar bisa simpan JSON (tanpa ubah struktur DB)
+            const kategoriJsonStr = JSON.stringify({
+              kategori: parsed.kategori_ditebak || 'Umum',
+              saran: saranTopik
+            });
+
+            // 3. Simpan ke cache (Background)
+            supabase.from('search_intent_cache').insert({
+              query_asli: cleanSearch,
+              query_koreksi: finalSearch,
+              kategori_ditebak: kategoriJsonStr,
+              kata_kunci_konteks: contextKeywords,
+              frekuensi_pencarian: 1
+            }).then();
+            
+            // Attach suggestions to request object temporarily to pass to the response later
+            (request as any)._aiSuggestions = saranTopik;
+            
+          } catch (e) {
+            console.error('AI Request Error:', e);
+            // Fallback ke pencarian asli jika error
+          }
+        }
+      }
+
+      // Bangun query pencarian (Gunakan hasil OpenRouter jika ada)
+      const searchTerms = finalSearch ? [finalSearch] : [];
+      if (contextKeywords) {
+        contextKeywords.split(' ').forEach((k: string) => {
+          if (k.length > 2) searchTerms.push(k.trim());
+        });
+      }
+      
+      if (searchTerms.length > 0) {
+        const orConditions = searchTerms.map(term => 
+          `kutipan_arab.ilike.%${term}%,terjemahan.ilike.%${term}%,perawi_sumber.ilike.%${term}%,rawi_kitab.ilike.%${term}%,rawi_teratas.ilike.%${term}%`
+        ).join(',');
+        query = query.or(orConditions);
+      } else {
+        query = query.or(`kutipan_arab.ilike.%${finalSearch}%,terjemahan.ilike.%${finalSearch}%,perawi_sumber.ilike.%${finalSearch}%,rawi_kitab.ilike.%${finalSearch}%,rawi_teratas.ilike.%${finalSearch}%`);
+      }
+      
+      // Async log pencarian populer yang lama (Tetap dipertahankan)
+      const logSearch = search.trim().toLowerCase();
+      if (logSearch.length > 2 && logSearch.length < 50) {
+        supabase.rpc('increment_search_count', { search_keyword: logSearch }).then(async ({error}) => {
           if (error) {
-            // Jika function tidak ditemukan atau error lain, fallback ke JS approach
-            const { data } = await supabase.from('pencarian_populer').select('id, search_count').eq('keyword', cleanSearch).single();
+            const { data } = await supabase.from('pencarian_populer').select('id, search_count').eq('keyword', logSearch).single();
             if (data) {
               await supabase.from('pencarian_populer').update({ search_count: data.search_count + 1, last_searched_at: new Date().toISOString() }).eq('id', data.id);
             } else {
-              await supabase.from('pencarian_populer').insert({ keyword: cleanSearch, search_count: 1 });
+              await supabase.from('pencarian_populer').insert({ keyword: logSearch, search_count: 1 });
             }
           }
         });
@@ -93,7 +233,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ items: data || [] });
+    return NextResponse.json({ 
+      items: data || [], 
+      suggestions: (request as any)._aiSuggestions || [] 
+    });
   } catch (err: any) {
     console.error('Error GET /api/hadist/items:', err);
     return NextResponse.json({ error: err.message || 'Terjadi kesalahan internal' }, { status: 500 });

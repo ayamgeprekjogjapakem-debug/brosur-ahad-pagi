@@ -69,6 +69,7 @@ export default function DashboardSidebar() {
         { name: 'Generator Kajian', href: '/dashboard/ai-kajian', icon: Sparkles },
         { name: 'Simulator AI', href: '/dashboard/ai-simulator', icon: Bot },
         { name: 'Pengaturan AI', href: '/dashboard/ai-settings', icon: Settings2 },
+        { name: 'Analisa Pencarian AI', href: '/dashboard/ai-analytics', icon: Activity },
       ],
     },
     {

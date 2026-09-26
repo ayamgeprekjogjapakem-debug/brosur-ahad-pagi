@@ -9,6 +9,7 @@ import remarkGfm from 'remark-gfm';
 export default function AiSettingsPage() {
   const [aiEnabled, setAiEnabled] = useState(false);
   const [openrouterToken, setOpenrouterToken] = useState('');
+  const [googleAiToken, setGoogleAiToken] = useState('');
   const [chatModel, setChatModel] = useState('google/gemini-2.5-flash');
   const [materialModel, setMaterialModel] = useState('google/gemini-2.5-flash');
   const [systemPrompt, setSystemPrompt] = useState('Gunakan gaya bahasa santun...');
@@ -57,13 +58,14 @@ export default function AiSettingsPage() {
   const fetchSettings = async () => {
     const { data, error } = await supabase
       .from('app_settings')
-      .select('ai_enabled, openrouter_token, chat_model, material_model, system_prompt')
+      .select('ai_enabled, openrouter_token, google_ai_token, chat_model, material_model, system_prompt')
       .eq('id', 1)
       .single();
     
     if (data) {
       setAiEnabled(data.ai_enabled || false);
       setOpenrouterToken(data.openrouter_token || '');
+      setGoogleAiToken(data.google_ai_token || '');
       if (data.chat_model) setChatModel(data.chat_model);
       if (data.material_model) setMaterialModel(data.material_model);
       if (data.system_prompt) setSystemPrompt(data.system_prompt);
@@ -75,27 +77,58 @@ export default function AiSettingsPage() {
     e.preventDefault();
     setIsSaving(true);
     
+    // Check if column google_ai_token exists, if it errors, we inform the user to run SQL
+    const updatePayload: any = {
+      ai_enabled: aiEnabled,
+      openrouter_token: openrouterToken,
+      google_ai_token: googleAiToken,
+      chat_model: chatModel,
+      material_model: materialModel,
+      system_prompt: systemPrompt,
+    };
+
     const { error } = await supabase
       .from('app_settings')
-      .update({
-        ai_enabled: aiEnabled,
-        openrouter_token: openrouterToken,
-        chat_model: chatModel,
-        material_model: materialModel,
-        system_prompt: systemPrompt,
-      })
+      .update(updatePayload)
       .eq('id', 1);
       
     if (error) {
-      alert(`Gagal menyimpan pengaturan: ${error.message}`);
+      if (error.code === 'PGRST204' || error.message?.includes('google_ai_token')) {
+         alert('Gagal! Sepertinya tabel database perlu diupdate. Jalankan SQL ini di Supabase:\n\nALTER TABLE app_settings ADD COLUMN google_ai_token text;');
+      } else {
+         alert(`Gagal menyimpan pengaturan: ${error.message}`);
+      }
     } else {
       alert('Pengaturan AI berhasil disimpan!');
     }
     setIsSaving(false);
-    setIsSaving(false);
   };
 
+  const [isTesting, setIsTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{success: boolean, message: string} | null>(null);
 
+  const handleTestConnection = async () => {
+    setIsTesting(true);
+    setTestResult(null);
+    try {
+      const isNative = chatModel.endsWith('-native');
+      const tokenToUse = isNative ? googleAiToken : openrouterToken;
+      const provider = isNative ? 'google' : 'openrouter';
+
+      const res = await fetch('/api/ai-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: tokenToUse, model: chatModel, provider })
+      });
+      
+      const data = await res.json();
+      setTestResult({ success: data.success, message: data.message });
+    } catch (err: any) {
+      setTestResult({ success: false, message: `Error: ${err.message}` });
+    } finally {
+      setIsTesting(false);
+    }
+  };
 
   if (isLoading) return <div className="p-8">Memuat pengaturan AI...</div>;
 
@@ -136,10 +169,29 @@ export default function AiSettingsPage() {
             </label>
           </div>
 
-          {/* OpenRouter Token */}
+          {/* API Key Google AI */}
+          <div className="pt-4">
+            <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2 flex items-center gap-2">
+              <Key size={16} /> API Key Google AI Studio (Disarankan)
+            </label>
+            <div className="relative flex items-center">
+              <input 
+                type="password" 
+                value={googleAiToken}
+                onChange={(e) => setGoogleAiToken(e.target.value)}
+                placeholder="AIzaSy..."
+                className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent text-sm font-mono"
+              />
+            </div>
+            <p className="text-xs text-zinc-500 mt-2">
+              Dapatkan token gratis di <a href="https://aistudio.google.com/api-keys" target="_blank" rel="noreferrer" className="text-accent hover:underline">Google AI Studio</a>. Digunakan untuk model berakhiran (Native).
+            </p>
+          </div>
+
+          {/* API Key OpenRouter */}
           <div>
             <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2 flex items-center gap-2">
-              <Key size={16} /> API Key OpenRouter
+              <Key size={16} /> API Key OpenRouter (Opsional)
             </label>
             <div className="relative flex items-center">
               <input 
@@ -164,14 +216,14 @@ export default function AiSettingsPage() {
               </button>
             </div>
             <p className="text-xs text-zinc-500 mt-2">
-              Dapatkan API Key dari <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer" className="text-accent hover:underline">OpenRouter</a>. AI ini disetel untuk menggunakan model yang gratis/optimal.
+              Dapatkan token di <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer" className="text-accent hover:underline">OpenRouter</a>. Digunakan jika Anda memilih model Llama atau GPT.
             </p>
           </div>
 
           {/* Model AI */}
           <div>
             <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
-              Model AI Utama (Otak Sistem)
+              Model AI Utama (Pilih Sesuai Key Anda)
             </label>
             <select 
               value={chatModel}
@@ -181,15 +233,18 @@ export default function AiSettingsPage() {
               }}
               className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent text-sm appearance-none"
             >
-              <option value="google/gemini-2.5-flash">Gemini 2.5 Flash (Sangat Cepat & Murah, Direkomendasikan)</option>
-              <option value="openai/gpt-4o-mini">GPT-4o Mini (Cerdas & Ringan)</option>
-              <option value="openai/gpt-3.5-turbo">GPT-3.5 Turbo (Klasik)</option>
-              <option value="meta-llama/llama-3-8b-instruct:free">Llama 3 8B (Gratis tapi Terbatas)</option>
-              <option value="deepseek/deepseek-chat">DeepSeek V3 (Sangat Cerdas)</option>
-              <option value="anthropic/claude-3-haiku">Claude 3 Haiku</option>
+              <optgroup label="🌐 Native Google AI Studio (Gratis 100%)">
+                <option value="gemini-3.8-flash-native">Google Gemini 3.8 Flash (Paling Baru & Stabil)</option>
+                <option value="gemini-2.5-flash-native">Google Gemini 2.5 Flash (Generasi Sebelumnya)</option>
+              </optgroup>
+              <optgroup label="🔌 Via OpenRouter API (Universal)">
+                <option value="google/gemini-2.5-flash">Gemini 2.5 Flash (via OpenRouter)</option>
+                <option value="openai/gpt-4o-mini">GPT-4o Mini (Cerdas & Ringan)</option>
+                <option value="meta-llama/llama-3-8b-instruct:free">Llama 3 8B (Gratis tapi Terbatas)</option>
+              </optgroup>
             </select>
             <p className="text-xs text-zinc-500 mt-2">
-              Pilihan model ini akan digunakan sebagai otak utama untuk menjawab di Chat Simulator maupun fitur lainnya.
+              Pastikan Anda memilih model yang sesuai dengan asal API Key Anda. Jika menggunakan Key Google (AIza...), pilih model di grup pertama.
             </p>
           </div>
 
@@ -212,13 +267,31 @@ export default function AiSettingsPage() {
 
 
           <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800">
-            <button 
-              type="submit" 
-              disabled={isSaving}
-              className="flex justify-center items-center gap-2 bg-accent hover:bg-accent/90 text-white px-6 py-3 rounded-xl font-bold transition-colors disabled:opacity-50 text-sm"
-            >
-              <Save size={18} /> {isSaving ? 'Menyimpan...' : 'Simpan Pengaturan'}
-            </button>
+            <div className="flex flex-wrap items-center gap-4">
+              <button 
+                type="submit" 
+                disabled={isSaving}
+                className="flex justify-center items-center gap-2 bg-accent hover:bg-accent/90 text-white px-6 py-3 rounded-xl font-bold transition-colors disabled:opacity-50 text-sm"
+              >
+                <Save size={18} /> {isSaving ? 'Menyimpan...' : 'Simpan'}
+              </button>
+
+              <button 
+                type="button"
+                onClick={handleTestConnection}
+                disabled={isTesting || (!googleAiToken && !openrouterToken)}
+                className="flex justify-center items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold transition-colors disabled:opacity-50 text-sm"
+              >
+                <Power size={18} /> {isTesting ? 'Menguji...' : 'Uji Koneksi AI'}
+              </button>
+            </div>
+
+            {testResult && (
+              <div className={`mt-4 p-4 rounded-xl text-sm font-bold flex items-start gap-2 border ${testResult.success ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>
+                {testResult.success ? <Check size={18} className="mt-0.5 flex-shrink-0" /> : <Power size={18} className="mt-0.5 flex-shrink-0" />}
+                <span>{testResult.message}</span>
+              </div>
+            )}
           </div>
         </form>
       </div>

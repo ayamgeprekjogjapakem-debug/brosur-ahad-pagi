@@ -34,6 +34,7 @@ export default function MakkahPortal() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [searchResults, setSearchResults] = useState<any[] | null>(null);
+  const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [copiedId, setCopiedId] = useState<string | number | null>(null);
   const [savedItems, setSavedItems] = useState<any[]>([]);
@@ -114,12 +115,15 @@ export default function MakkahPortal() {
       const data = await res.json();
       if (res.ok) {
         setSearchResults(data.items || []);
+        setSearchSuggestions(data.suggestions || []);
       } else {
         setSearchResults([]);
+        setSearchSuggestions([]);
       }
     } catch (e) {
       console.error('Error fetching search results:', e);
       setSearchResults([]);
+      setSearchSuggestions([]);
     } finally {
       setIsSearching(false);
     }
@@ -139,6 +143,7 @@ export default function MakkahPortal() {
   const resetSearch = () => {
     setSearchQuery('');
     setSearchResults(null);
+    setSearchSuggestions([]);
     setIsShowingSaved(false);
     setVisibleCount(10);
     if (typeof window !== 'undefined') {
@@ -468,12 +473,36 @@ export default function MakkahPortal() {
                   </p>
                 </div>
               ) : searchResults?.length === 0 ? (
-                <div className="text-center py-20">
+                <div className="text-center py-20 px-4">
                   <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-100 text-slate-400 rounded-full mb-4">
                     <Search className="w-8 h-8" />
                   </div>
                   <h4 className="text-lg font-bold text-slate-700">Tidak Ditemukan</h4>
-                  <p className="text-slate-500 mt-1">Coba gunakan kata kunci lain atau sinonim.</p>
+                  <p className="text-slate-500 mt-1 mb-8">Coba gunakan kata kunci lain atau sinonim.</p>
+                  
+                  {searchSuggestions && searchSuggestions.length > 0 && (
+                    <div className="max-w-xl mx-auto bg-amber-50 border border-amber-200 rounded-2xl p-6 text-left shadow-sm">
+                      <div className="flex items-center gap-2 mb-4 text-amber-800">
+                        <Sparkles className="w-5 h-5" />
+                        <h4 className="font-bold text-lg">Apakah yang Anda maksud tentang:</h4>
+                      </div>
+                      <div className="flex flex-col gap-3">
+                        {searchSuggestions.map((suggestion, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => {
+                              const cleanSuggestion = suggestion.split(' (')[0];
+                              handleSearch(cleanSuggestion);
+                            }}
+                            className="flex items-center justify-between px-4 py-3 bg-white hover:bg-amber-100/50 border border-amber-200 rounded-xl transition text-left group"
+                          >
+                            <span className="text-amber-900 font-medium text-sm">{suggestion}</span>
+                            <ChevronRight className="w-4 h-4 text-amber-400 group-hover:text-amber-600 transition-transform group-hover:translate-x-1" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-4 pb-20">

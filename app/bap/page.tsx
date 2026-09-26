@@ -13,7 +13,7 @@ export default function BapPage() {
   const pathname = usePathname();
   const router = useRouter();
 
-  // Generate years from 2026 down to 1995
+// Generate years from 2026 down to 1995
   const allYears = Array.from({ length: 2026 - 1995 + 1 }, (_, i) => 2026 - i);
 
   // Handle window resize for sidebar
@@ -34,6 +34,38 @@ export default function BapPage() {
       try { setSavedItems(JSON.parse(saved)); } catch (e) { }
     }
   }, []);
+
+  // Search logic for brochure titles
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  
+  useEffect(() => {
+    if (!search || search.length < 2) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    const fetchBrosur = async () => {
+      setIsSearching(true);
+      const { createClient } = await import('@/utils/supabase/client');
+      const supabase = createClient();
+      
+      const { data, error } = await supabase
+        .from('brosur')
+        .select('id, judul, slug, tahun')
+        .ilike('judul', `%${search}%`)
+        .limit(20);
+        
+      if (!error && data) {
+        setSearchResults(data);
+      }
+      setIsSearching(false);
+    };
+
+    const debounce = setTimeout(fetchBrosur, 300);
+    return () => clearTimeout(debounce);
+  }, [search]);
 
   // Filter years by search query
   const filteredYears = allYears.filter((year) => 
@@ -209,12 +241,56 @@ export default function BapPage() {
                 </Link>
               ))}
 
-              {filteredYears.length === 0 && (
+              {filteredYears.length === 0 && searchResults.length === 0 && !isSearching && (
                 <div className="col-span-full text-center py-12 text-slate-500 font-medium">
-                  Tahun "{search}" tidak ditemukan.
+                  Tahun atau Judul "{search}" tidak ditemukan.
                 </div>
               )}
             </div>
+
+            {/* Title Search Results */}
+            {search.length >= 2 && searchResults.length > 0 && (
+              <div className="mt-12">
+                <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+                  <BookOpen className="text-emerald-600" size={20} />
+                  Hasil Pencarian Judul Brosur
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
+                  {searchResults.map((brosur) => {
+                    const cleanSlug = brosur.judul
+                      .toLowerCase()
+                      .replace(/[^a-z0-9]+/g, '-')
+                      .replace(/^-+|-+$/g, '');
+
+                    return (
+                      <Link 
+                        href={`/bap/${brosur.tahun}/${cleanSlug}`} 
+                        key={brosur.id}
+                        className="group bg-white border border-slate-200 p-5 rounded-2xl hover:border-emerald-300 hover:shadow-md transition-all flex items-start gap-4"
+                      >
+                        <div className="w-10 h-10 shrink-0 bg-emerald-50 text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white transition-colors rounded-xl flex items-center justify-center mt-0.5">
+                          <BookOpen size={18} />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-slate-800 text-[15px] group-hover:text-emerald-700 leading-snug line-clamp-3">
+                            {brosur.judul}
+                          </h3>
+                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-2">
+                            Tahun {brosur.tahun}
+                          </p>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            
+            {isSearching && (
+              <div className="text-center py-12 text-emerald-600 font-medium animate-pulse">
+                Mencari judul brosur...
+              </div>
+            )}
 
           </div>
         </div>
