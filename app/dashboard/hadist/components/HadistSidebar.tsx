@@ -27,8 +27,9 @@ export default function HadistSidebar() {
 
   const menuItems = [
     { name: 'Hadist Sumber Brosur', href: '/dashboard/hadist', icon: FileText, exact: true },
-    { name: 'Master Kitab', href: '/dashboard/hadist/rawi', icon: BookOpen, exact: false },
-    { name: 'Master Perawi', href: '/dashboard/hadist/rijal', icon: BookOpen, exact: false },
+    { name: 'Master Kitab (Rawi)', href: '/dashboard/hadist/rawi', icon: BookOpen, exact: false },
+    { name: 'Master Sahabat', href: '/dashboard/hadist/sahabat', icon: BookOpen, exact: false },
+    { name: 'Master Sanad (Rijal)', href: '/dashboard/hadist/rijal', icon: BookOpen, exact: false },
     { name: 'Kelompok / Tema', href: '/dashboard/hadist/kelompok', icon: Layers, exact: false },
     { name: 'Master Brosur', href: '/dashboard/hadist/brosur', icon: BookMarked, exact: false },
     { name: 'Generate SQL', href: '/dashboard/hadist/generate', icon: Sparkles, exact: false },

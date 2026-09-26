@@ -22,11 +22,17 @@ export default function AnalisisHadistPage() {
   const [filterSumberJenis, setFilterSumberJenis] = useState<'all' | 'hadist' | 'quran'>('all');
   const [filterRawiItem, setFilterRawiItem] = useState('all');
   
+  // Pagination & Modal State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [viewItem, setViewItem] = useState<any>(null);
+  const itemsPerPage = 10;
+  
   const supabase = createClient();
 
   useEffect(() => {
     fetchHadistItems();
     fetchStats();
+    setCurrentPage(1); // Reset pagination on filter change
   }, [filterSumberJenis, filterRawiItem]);
 
   const fetchHadistItems = async () => {
@@ -56,6 +62,39 @@ export default function AnalisisHadistPage() {
       }
     } catch (e) {
       console.error('Error fetching stats:', e);
+    }
+  };
+
+  const handleResetSemuaHadist = async () => {
+    const konfirmasi = window.confirm(
+      "PERINGATAN BAHAYA!\n\nAnda yakin ingin MENGHAPUS SEMUA DATA HADIST dari database secara permanen? Tindakan ini tidak dapat dibatalkan!"
+    );
+    if (!konfirmasi) return;
+
+    const konfirmasiKedua = window.prompt(
+      "Untuk melanjutkan, ketik 'HAPUS SEMUA' (tanpa tanda kutip):"
+    );
+    
+    if (konfirmasiKedua !== "HAPUS SEMUA") {
+      alert("Proses dibatalkan.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      // Delete all records where ID is not a dummy UUID
+      const { error } = await supabase.from('hadist_brosur').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      
+      if (error) throw error;
+      
+      alert("Berhasil! Semua data hadist telah direset.");
+      fetchHadistItems();
+      fetchStats();
+    } catch (e: any) {
+      alert("Gagal mereset database: " + e.message);
+      console.error(e);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -120,6 +159,12 @@ export default function AnalisisHadistPage() {
 
           {/* Quick Action Buttons */}
           <div className="flex items-center gap-2.5 shrink-0 relative z-10">
+            <button 
+              onClick={handleResetSemuaHadist}
+              className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 rounded-xl hover:bg-rose-100 shadow-sm transition"
+            >
+              Reset Database
+            </button>
             <button className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 shadow-sm transition">
               <Download className="w-3.5 h-3.5 text-slate-500" />
               Export Laporan
@@ -346,6 +391,21 @@ export default function AnalisisHadistPage() {
                 <option value="quran">Al-Qur'an (QS)</option>
                 <option value="hadist">Hadist (HR)</option>
               </select>
+              <select
+                value={filterRawiItem}
+                onChange={(e) => setFilterRawiItem(e.target.value)}
+                className="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 rounded-lg border border-slate-200 transition focus:outline-none"
+              >
+                <option value="all">Riwayat Siapa?</option>
+                <option value="Bukhari">Bukhari</option>
+                <option value="Muslim">Muslim</option>
+                <option value="Tirmidzi">Tirmidzi</option>
+                <option value="Nasai">Nasai</option>
+                <option value="Abu Daud">Abu Daud</option>
+                <option value="Ibnu Majah">Ibnu Majah</option>
+                <option value="Ahmad">Ahmad</option>
+                <option value="Malik">Malik</option>
+              </select>
             </div>
           </div>
 
@@ -376,7 +436,7 @@ export default function AnalisisHadistPage() {
                     </td>
                   </tr>
                 ) : (
-                  hadistItems.map((item) => {
+                  hadistItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((item) => {
                     const isQuran = item.sumber_jenis === 'quran' || item.nama_surat;
                     const refTitle = isQuran 
                       ? `QS. ${item.nama_surat || "Al-Qur'an"} ${item.no_ayat ? `#${item.no_ayat}` : ''}`
@@ -425,7 +485,11 @@ export default function AnalisisHadistPage() {
                         </td>
                         <td className="py-3.5 px-4 text-right align-top">
                           <div className="flex items-center justify-end gap-1.5">
-                            <button className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition" title="Lihat Detail">
+                            <button 
+                              onClick={() => setViewItem(item)}
+                              className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition" 
+                              title="Lihat Detail"
+                            >
                               <Eye className="w-4 h-4" />
                             </button>
                             <button className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Edit Data">
@@ -443,16 +507,67 @@ export default function AnalisisHadistPage() {
 
           {/* Table Footer Pagination */}
           <div className="px-4 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-            <span>Menampilkan <b className="font-semibold text-slate-700">{hadistItems.length}</b> data teratas</span>
+            <span>Menampilkan data <b>{(currentPage - 1) * itemsPerPage + 1}</b> - <b>{Math.min(currentPage * itemsPerPage, hadistItems.length)}</b> dari total <b className="font-semibold text-slate-700">{hadistItems.length}</b> arsip</span>
             <div className="flex items-center gap-1">
-              <button className="px-2.5 py-1 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50" disabled>Sebelumnya</button>
-              <button className="px-2.5 py-1 rounded-md border border-emerald-500 bg-emerald-50 text-emerald-700 font-semibold">1</button>
-              <button className="px-2.5 py-1 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50" disabled>Selanjutnya</button>
+              <button 
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-2.5 py-1 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+              >
+                Sebelumnya
+              </button>
+              <button className="px-2.5 py-1 rounded-md border border-emerald-500 bg-emerald-50 text-emerald-700 font-semibold">
+                {currentPage}
+              </button>
+              <button 
+                onClick={() => setCurrentPage(p => Math.min(Math.ceil(hadistItems.length / itemsPerPage), p + 1))}
+                disabled={currentPage >= Math.ceil(hadistItems.length / itemsPerPage) || hadistItems.length === 0}
+                className="px-2.5 py-1 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+              >
+                Selanjutnya
+              </button>
             </div>
           </div>
         </div>
-
       </div>
+
+      {/* Modal View Item */}
+      {viewItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-2xl rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[85vh]">
+            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <h3 className="font-bold text-slate-800 text-sm">Detail Kutipan {viewItem.sumber_jenis === 'quran' ? "Al-Qur'an" : 'Hadist'}</h3>
+              <button onClick={() => setViewItem(null)} className="p-1 hover:bg-slate-200 rounded text-slate-500 transition">
+                ✕
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto space-y-5">
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <p className="arabic-text text-2xl font-bold text-slate-900 leading-[2.5] text-right mb-4">
+                  {viewItem.kutipan_arab || '-'}
+                </p>
+                <p className="text-sm text-slate-700 italic leading-relaxed">
+                  "{viewItem.terjemahan || '-'}"
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-4 text-xs">
+                <div className="bg-white p-3 border border-slate-100 rounded-lg">
+                  <p className="text-slate-400 mb-1">Sumber Brosur</p>
+                  <p className="font-semibold text-slate-800">{viewItem.brosur?.judul || 'Arsip Umum'}</p>
+                </div>
+                <div className="bg-white p-3 border border-slate-100 rounded-lg">
+                  <p className="text-slate-400 mb-1">{viewItem.sumber_jenis === 'quran' ? 'Surat/Ayat' : 'Riwayat'}</p>
+                  <p className="font-semibold text-slate-800">
+                    {viewItem.sumber_jenis === 'quran' 
+                      ? `QS. ${viewItem.nama_surat} Ayat ${viewItem.no_ayat}` 
+                      : (viewItem.rawi_kitab || '-')}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
