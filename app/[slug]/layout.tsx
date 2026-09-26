@@ -71,7 +71,7 @@ export default async function SlugLayout({
 
   return (
     <div className="h-[100dvh] print:h-auto print:overflow-visible flex flex-col lg:flex-row w-full relative overflow-hidden bg-[#fafafa] dark:bg-[#0a0a0a]">
-      {brosur?.folder_id && (
+        {brosur?.folder_id && (
         <Suspense fallback={<div className="w-[320px] bg-white dark:bg-zinc-900 border-r border-black/5 dark:border-white/5" />}>
           <CollectionSidebar 
             brosurList={brosurList} 

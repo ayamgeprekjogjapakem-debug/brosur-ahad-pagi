@@ -18,6 +18,7 @@ export default function HighlightClient({ brosur }: { brosur: BrosurData }) {
   const contentRef = useRef<HTMLDivElement>(null);
   const searchParams = useSearchParams();
   const query = searchParams.get('q');
+  const scrollText = searchParams.get('scroll');
   const [copied, setCopied] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [isRendering, setIsRendering] = useState(false);
@@ -54,30 +55,68 @@ export default function HighlightClient({ brosur }: { brosur: BrosurData }) {
         node.parentNode.replaceChild(span, node);
       });
 
-      if (query) {
-        const markInstance = new Mark(contentRef.current);
-        // Unmark any previous highlights
+      const markInstance = new Mark(contentRef.current);
+      
+      // We will perform markings inside unmark callback to ensure clean state
       markInstance.unmark({
         done: () => {
-          // Mark the new query
-          markInstance.mark(query, {
-            className: 'bg-yellow-300 dark:bg-yellow-500/80 text-black px-1 rounded-sm shadow-sm',
-            accuracy: 'partially',
-            separateWordSearch: true,
-          });
+          
+          // 1. We no longer use Mark.js for scrollText because it struggles with Arabic diacritics
+          // and HTML tags. Instead, we highlight the actual DOM node block below.
 
-          // Optionally, scroll to the first highlight
+          // 2. If there's a search query, highlight it with a stronger green
+          if (query) {
+            markInstance.mark(query, {
+              className: 'bg-emerald-200 dark:bg-emerald-500/80 text-emerald-900 px-1 rounded-sm shadow-sm font-bold',
+              accuracy: 'partially',
+              separateWordSearch: true,
+            });
+          }
+
+          // 3. Scroll logic
           setTimeout(() => {
-            const firstHighlight = contentRef.current?.querySelector('mark');
-            if (firstHighlight) {
-              firstHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            let foundTarget = false;
+            
+            // First priority: Scroll to the scrollText target
+            if (scrollText) {
+               const elements = contentRef.current?.querySelectorAll('p, div, span, h1, h2, h3, h4, li');
+               const normalizedScrollText = scrollText.replace(/\s+/g, ' ').trim();
+               if (elements && normalizedScrollText.length > 0) {
+                 let bestMatch: Element | null = null;
+                 
+                 for (let i = 0; i < elements.length; i++) {
+                   const elText = elements[i].textContent?.replace(/\s+/g, ' ') || '';
+                   if (elText.includes(normalizedScrollText)) {
+                     // Pick the most specific element (the one with the shortest text content)
+                     if (!bestMatch || (elements[i].textContent?.length || 0) < (bestMatch.textContent?.length || 0)) {
+                       bestMatch = elements[i];
+                     }
+                   }
+                 }
+
+                 if (bestMatch) {
+                   bestMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                   
+                   // Stabilo full block
+                   bestMatch.classList.add('bg-emerald-100', 'dark:bg-emerald-900/40', 'rounded-lg', 'p-2', 'ring-2', 'ring-emerald-300', 'dark:ring-emerald-700', 'transition-all', 'duration-700', 'shadow-sm');
+                   
+                   foundTarget = true;
+                 }
+               }
+            }
+            
+            // Fallback to first highlighted word if no scroll target or it wasn't found
+            if (!foundTarget && query) {
+              const firstHighlight = contentRef.current?.querySelector('mark');
+              if (firstHighlight) {
+                firstHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }
             }
           }, 300);
         }
       });
-      }
     }
-  }, [query, brosur.konten]);
+  }, [query, scrollText, brosur.konten]);
 
   const handleCopyText = () => {
     if (contentRef.current) {
@@ -93,7 +132,7 @@ export default function HighlightClient({ brosur }: { brosur: BrosurData }) {
         dateString = brosur.tahun.toString();
       }
 
-      const signature = `\n\n---\nBAP (Brosur Ahad Pagi) - ${dateString} - ${brosur.judul}\nLink: https://ulilalbab.fun/${brosur.slug}`;
+      const signature = `\n\n---\nBAP (Brosur Ahad Pagi) - ${dateString} - ${brosur.judul}\nLink: ${typeof window !== 'undefined' ? window.location.origin : ''}/${brosur.slug}`;
       const finalCopy = text + signature;
 
       navigator.clipboard.writeText(finalCopy);
@@ -202,7 +241,7 @@ export default function HighlightClient({ brosur }: { brosur: BrosurData }) {
 
               <button 
                 onClick={() => {
-                  navigator.clipboard.writeText(`https://ulilalbab.fun/${brosur.slug}`);
+                  navigator.clipboard.writeText(`${typeof window !== 'undefined' ? window.location.origin : ''}/${brosur.slug}`);
                   setCopiedLink(true);
                   setTimeout(() => {
                     setCopiedLink(false);
@@ -216,7 +255,7 @@ export default function HighlightClient({ brosur }: { brosur: BrosurData }) {
               </button>
 
               <a
-                href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`Baca kajian: ${brosur.judul}\nhttps://ulilalbab.fun/${brosur.slug}`)}`}
+                href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`Baca kajian: ${brosur.judul}\n${typeof window !== 'undefined' ? window.location.origin : ''}/${brosur.slug}`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => setIsShareOpen(false)}
@@ -227,7 +266,7 @@ export default function HighlightClient({ brosur }: { brosur: BrosurData }) {
               </a>
 
               <a
-                href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(`https://ulilalbab.fun/${brosur.slug}`)}`}
+                href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(`${typeof window !== 'undefined' ? window.location.origin : ''}/${brosur.slug}`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => setIsShareOpen(false)}
@@ -238,7 +277,7 @@ export default function HighlightClient({ brosur }: { brosur: BrosurData }) {
               </a>
 
               <a
-                href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(brosur.judul)}&url=${encodeURIComponent(`https://ulilalbab.fun/${brosur.slug}`)}`}
+                href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(brosur.judul)}&url=${encodeURIComponent(`${typeof window !== 'undefined' ? window.location.origin : ''}/${brosur.slug}`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => setIsShareOpen(false)}
@@ -257,7 +296,7 @@ export default function HighlightClient({ brosur }: { brosur: BrosurData }) {
                       navigator.share({
                         title: brosur.judul,
                         text: `Baca kajian Brosur Ahad Pagi: ${brosur.judul}`,
-                        url: `https://ulilalbab.fun/${brosur.slug}`,
+                        url: `${typeof window !== 'undefined' ? window.location.origin : ''}/${brosur.slug}`,
                       }).catch(console.error);
                       setIsShareOpen(false);
                     }}

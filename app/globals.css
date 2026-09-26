@@ -47,8 +47,9 @@
 
 /* Custom Reader Typographic Styles */
 .reader-content, .reader-content p, .reader-content li, .reader-content span:not([dir="rtl"]):not(.arabic):not([lang^="ar" i]):not([style*="Arabic" i]) {
-  font-size: var(--base-font-size, 18px) !important;
-  line-height: 1.6 !important;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif !important;
+  font-size: var(--base-font-size, 16px) !important;
+  line-height: 1.8 !important;
 }
 
 /* Target Arabic text based on lang or dir attributes commonly found in the CHM HTML */
@@ -59,9 +60,9 @@
 .reader-content font[face*="Arabic" i],
 .reader-content [style*="Arabic" i],
 .reader-content .arabic {
-  font-family: var(--arabic-font-family, 'Amiri', serif) !important;
-  font-size: var(--arabic-font-size, 28px) !important;
-  line-height: 2 !important;
+  font-family: var(--font-amiri), 'Amiri', serif !important;
+  font-size: var(--arabic-font-size, 32px) !important;
+  line-height: 2.5 !important;
   display: inline-block;
   direction: rtl;
 }

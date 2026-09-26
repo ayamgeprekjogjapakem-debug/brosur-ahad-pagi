@@ -3,6 +3,7 @@ import { AlignLeft, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import HighlightClient from './HighlightClient';
 import SettingsPopover from './SettingsPopover';
+import HeaderBar from './HeaderBar';
 import { createClient } from '@/utils/supabase/server';
 
 export const dynamic = 'force-dynamic';
@@ -93,45 +94,21 @@ export default async function BrosurPage({ params }: { params: Promise<{ slug: s
 
   return (
     <main className="flex-1 h-[100dvh] print:h-auto flex flex-col relative bg-white dark:bg-[#111]">
-      <header className="px-6 py-4 border-b border-black/5 dark:border-white/5 relative bg-white/50 dark:bg-black/50 backdrop-blur-xl sticky top-0 z-10 print:hidden">
-        <div className="flex flex-col gap-4 max-w-4xl mx-auto w-full">
-          {/* Top Bar (Branding & Settings) */}
-          <div className="flex items-center justify-between">
-            <div className="flex-1 flex justify-start">
-              {/* Tempat kosong untuk mengimbangi Settings di kanan, 
-                  supaya Logo persis di tengah */}
-            </div>
-            
-            <Link href="/" className="flex items-center justify-center gap-2.5 hover:opacity-80 transition-opacity">
-              <div className="w-8 h-8 relative flex items-center justify-center shrink-0">
-                <img 
-                  src="/logo.png" 
-                  alt="Logo Ulil Albab" 
-                  className="w-full h-full object-contain drop-shadow-sm"
-                />
-              </div>
-              <span className="font-extrabold text-lg tracking-tight">Ulil Albab</span>
-            </Link>
-            
-            <div className="flex-1 flex items-center justify-end gap-2">
-              <SettingsPopover />
-            </div>
-          </div>
-
-          {/* Title Area */}
-          <div className="text-center flex flex-col items-center">
-            <div className="flex items-center gap-2 text-accent text-[10px] md:text-xs font-extrabold mb-2 uppercase tracking-widest">
-              <AlignLeft size={14} /> Tahun {brosur.tahun}
-            </div>
-            <h1 className="text-xl md:text-3xl font-extrabold tracking-tight leading-snug">
-              {brosur.judul}
-            </h1>
-          </div>
-        </div>
-      </header>
+      <HeaderBar />
       
       <div className="flex-1 overflow-y-auto print:overflow-visible p-6 md:p-12 print:p-0 custom-scrollbar relative">
         <div className="max-w-3xl mx-auto pb-12 print:pb-0">
+          
+          {/* Title Area */}
+          <div className="text-center flex flex-col items-center mb-8">
+            <div className="flex items-center gap-2 text-emerald-600 text-[10px] md:text-xs font-extrabold mb-2 uppercase tracking-widest">
+              <AlignLeft size={14} /> Tahun {brosur.tahun}
+            </div>
+            <h1 className="text-xl md:text-3xl font-extrabold tracking-tight leading-snug text-slate-900">
+              {brosur.judul}
+            </h1>
+          </div>
+
           <HighlightClient brosur={brosur} />
         </div>
       </div>

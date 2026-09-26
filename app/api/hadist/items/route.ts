@@ -53,6 +53,24 @@ export async function GET(request: NextRequest) {
 
     if (search) {
       query = query.or(`kutipan_arab.ilike.%${search}%,terjemahan.ilike.%${search}%,perawi_sumber.ilike.%${search}%,rawi_kitab.ilike.%${search}%,rawi_teratas.ilike.%${search}%`);
+      
+      // Async log search untuk melacak topik populer (non-blocking)
+      const cleanSearch = search.trim().toLowerCase();
+      if (cleanSearch.length > 2 && cleanSearch.length < 50) {
+        // Coba insert langsung dengan RPC jika sudah dibuatkan di Supabase,
+        // jika belum, kita pakai pendekatan JS query biasa.
+        supabase.rpc('increment_search_count', { search_keyword: cleanSearch }).then(async ({error}) => {
+          if (error) {
+            // Jika function tidak ditemukan atau error lain, fallback ke JS approach
+            const { data } = await supabase.from('pencarian_populer').select('id, search_count').eq('keyword', cleanSearch).single();
+            if (data) {
+              await supabase.from('pencarian_populer').update({ search_count: data.search_count + 1, last_searched_at: new Date().toISOString() }).eq('id', data.id);
+            } else {
+              await supabase.from('pencarian_populer').insert({ keyword: cleanSearch, search_count: 1 });
+            }
+          }
+        });
+      }
     }
 
     const { data, error } = await query;
