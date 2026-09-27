@@ -1,6 +1,11 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 
+function stripArabicHarakat(text: string) {
+  if (!text) return text;
+  return text.replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED]/g, '');
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -51,6 +56,7 @@ export async function GET(request: NextRequest) {
       query = query.eq('status_hadist', statusHadist);
     }
 
+    let executedSearchTerms: string[] = [];
     let finalSearch = search;
     let contextKeywords = '';
 
@@ -78,6 +84,9 @@ export async function GET(request: NextRequest) {
           // Abaikan jika bukan JSON
         }
         
+        (request as any)._aiData = cacheData;
+        (request as any)._aiStatus = 'cached';
+        
         // Update frekuensi (Background)
         supabase.from('search_intent_cache')
           .update({ 
@@ -94,12 +103,29 @@ export async function GET(request: NextRequest) {
           .eq('id', 1)
           .single();
           
-        if (settings) {
+        if (settings && (settings.openrouter_token || settings.google_ai_token)) {
           try {
+            // Ambil sedikit cuplikan dari database asli sebagai referensi (RAG ringan)
+            let dbContextStr = '';
+            const previewTerms = cleanSearch.split(' ').filter(w => w.length > 3);
+            if (previewTerms.length > 0) {
+              const orConds = previewTerms.map(t => `terjemahan.ilike.%${t}%`).join(',');
+              const { data: dbPreview } = await supabase
+                .from('hadist_brosur')
+                .select('terjemahan, brosur(judul)')
+                .or(orConds)
+                .limit(3);
+                
+              if (dbPreview && dbPreview.length > 0) {
+                const snippets = dbPreview.map((d: any) => `- Judul: ${d.brosur?.judul}. Teks: ${d.terjemahan ? d.terjemahan.substring(0, 150) : ''}...`).join('\n');
+                dbContextStr = `\n\nREFERENSI TEKS DATABASE:\n${snippets}\n\n(Gunakan referensi di atas untuk membuat saran_topik jika relevan)`;
+              }
+            }
+
             const isNativeGoogle = settings.chat_model?.endsWith('-native');
             let responseText = '{}';
             
-            const systemPromptText = 'Anda adalah mesin analisis intent pencarian Islami. Anda harus HANYA merespons format JSON murni: { "query_koreksi": "kata baku", "kategori_ditebak": "Fiqih/Aqidah/dll", "kata_kunci_konteks": ["kata1", "kata2"], "saran_topik": ["Topik A", "Topik B"] }. ATURAN PENTING: JIKA query berupa istilah Arab/sejarah (misal: Haditsul Ifki, Qadzaf), Anda WAJIB memasukkan TERJEMAHANNYA ke dalam kata_kunci_konteks (misal: "berita bohong", "dusta", "menuduh zina") karena database kami hanya berisi teks terjemahan bahasa Indonesia. Berikan saran_topik jika query rancu.';
+            const systemPromptText = 'Anda adalah mesin analisis intent pencarian Islami. HANYA respons JSON murni: { "query_koreksi": "kata baku", "kategori_ditebak": "kategori", "kata_kunci_konteks": ["kata1", "kata2"], "saran_topik": ["Frasa A", "Frasa B"] }. ATURAN: 1. JIKA query istilah Arab, WAJIB masukkan TERJEMAHANNYA ke kata_kunci_konteks. 2. SANGAT PENTING: Untuk "saran_topik", JANGAN mengarang atau merangkum kalimat sendiri! HARUS berisi potongan KUTIPAN LANGSUNG (kata-katanya sama persis) dari referensi teks database yang diberikan. Jika teks database tidak ada, kosongkan saran_topik ([]).';
 
             if (isNativeGoogle && settings.google_ai_token) {
               // GAYA NATIVE GOOGLE AI STUDIO
@@ -110,7 +136,7 @@ export async function GET(request: NextRequest) {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                  contents: [{ parts: [{ text: `${systemPromptText}\n\nQuery User: ${cleanSearch}` }] }],
+                  contents: [{ parts: [{ text: `${systemPromptText}\n\nQuery User: ${cleanSearch}${dbContextStr}` }] }],
                   generationConfig: { responseMimeType: "application/json" }
                 })
               });
@@ -135,7 +161,7 @@ export async function GET(request: NextRequest) {
                   response_format: { type: 'json_object' },
                   messages: [
                     { role: 'system', content: systemPromptText },
-                    { role: 'user', content: cleanSearch }
+                    { role: 'user', content: `Query User: ${cleanSearch}${dbContextStr}` }
                   ]
                 })
               });
@@ -172,11 +198,20 @@ export async function GET(request: NextRequest) {
             
             // Attach suggestions to request object temporarily to pass to the response later
             (request as any)._aiSuggestions = saranTopik;
+            (request as any)._aiData = {
+              query_koreksi: finalSearch,
+              kata_kunci_konteks: contextKeywords,
+              kategori_ditebak: parsed.kategori_ditebak
+            };
+            (request as any)._aiStatus = 'success';
             
           } catch (e) {
             console.error('AI Request Error:', e);
+            (request as any)._aiStatus = 'error';
             // Fallback ke pencarian asli jika error
           }
+        } else {
+          (request as any)._aiStatus = 'inactive';
         }
       }
 
@@ -188,13 +223,23 @@ export async function GET(request: NextRequest) {
         });
       }
       
+      // Selalu ikutkan query_asli (cleanSearch) sebagai term pencarian
+      // Ini mencegah hilangnya hasil jika user mencari kalimat kutipan yang persis, namun AI mengubahnya menjadi sekadar topik/judul.
+      if (cleanSearch && finalSearch !== cleanSearch) {
+        searchTerms.push(cleanSearch);
+      }
+      
+      executedSearchTerms = searchTerms;
+      
       if (searchTerms.length > 0) {
-        const orConditions = searchTerms.map(term => 
-          `kutipan_arab.ilike.%${term}%,terjemahan.ilike.%${term}%,perawi_sumber.ilike.%${term}%,rawi_kitab.ilike.%${term}%,rawi_teratas.ilike.%${term}%`
-        ).join(',');
+        const orConditions = searchTerms.map(term => {
+          const stripped = stripArabicHarakat(term);
+          return `kutipan_arab_gundul.ilike.%${stripped}%,kutipan_arab.ilike.%${term}%,terjemahan.ilike.%${term}%,perawi_sumber.ilike.%${term}%,rawi_kitab.ilike.%${term}%,rawi_teratas.ilike.%${term}%`;
+        }).join(',');
         query = query.or(orConditions);
       } else {
-        query = query.or(`kutipan_arab.ilike.%${finalSearch}%,terjemahan.ilike.%${finalSearch}%,perawi_sumber.ilike.%${finalSearch}%,rawi_kitab.ilike.%${finalSearch}%,rawi_teratas.ilike.%${finalSearch}%`);
+        const strippedFinalSearch = stripArabicHarakat(finalSearch || '');
+        query = query.or(`kutipan_arab_gundul.ilike.%${strippedFinalSearch}%,kutipan_arab.ilike.%${finalSearch}%,terjemahan.ilike.%${finalSearch}%,perawi_sumber.ilike.%${finalSearch}%,rawi_kitab.ilike.%${finalSearch}%,rawi_teratas.ilike.%${finalSearch}%`);
       }
       
       // Async log pencarian populer yang lama (Tetap dipertahankan)
@@ -233,9 +278,42 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    let sortedData = data || [];
+    
+    // Sort logic: Prioritaskan kalimat komplit (exact match) di urutan paling atas!
+    if (sortedData.length > 0 && executedSearchTerms.length > 0) {
+      const primaryTerm = finalSearch ? finalSearch.toLowerCase() : '';
+      const originalTerm = search ? search.trim().toLowerCase() : '';
+
+      sortedData.sort((a, b) => {
+        const aText = ((a.terjemahan || '') + ' ' + (a.kutipan_arab || '')).toLowerCase();
+        const bText = ((b.terjemahan || '') + ' ' + (b.kutipan_arab || '')).toLowerCase();
+
+        // 1. Prioritas Super: Mengandung kalimat utuh persis seperti yang dicari
+        const aExact = (primaryTerm && aText.includes(primaryTerm)) || (originalTerm && aText.includes(originalTerm)) ? 1000 : 0;
+        const bExact = (primaryTerm && bText.includes(primaryTerm)) || (originalTerm && bText.includes(originalTerm)) ? 1000 : 0;
+        
+        if (aExact !== bExact) return bExact - aExact;
+
+        // 2. Prioritas Tambahan: Hitung seberapa banyak kata kunci yang cocok (Scoring)
+        let aScore = 0;
+        let bScore = 0;
+        executedSearchTerms.forEach(term => {
+          const t = term.toLowerCase();
+          if (aText.includes(t)) aScore++;
+          if (bText.includes(t)) bScore++;
+        });
+
+        return bScore - aScore;
+      });
+    }
+
     return NextResponse.json({ 
-      items: data || [], 
-      suggestions: (request as any)._aiSuggestions || [] 
+      items: sortedData, 
+      suggestions: (request as any)._aiSuggestions || [],
+      ai_data: (request as any)._aiData || null,
+      ai_status: (request as any)._aiStatus || 'inactive',
+      search_terms_used: executedSearchTerms
     });
   } catch (err: any) {
     console.error('Error GET /api/hadist/items:', err);

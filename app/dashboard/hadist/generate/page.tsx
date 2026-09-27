@@ -103,12 +103,15 @@ export default function GenerateSQLPage() {
     fetchBrosurs();
   }, [filterTahunMulai, filterTahunAkhir]);
 
-  const extractHadistFromText = (teks: string, brosurId: string) => {
-    if (!teks) return [];
+  const extractHadistFromText = (rawTeks: string, brosurId: string) => {
+    if (!rawTeks) return [];
+
+    // Bersihkan HTML tags & entities jika teks mengandung raw HTML
+    let teks = rawTeks.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&quot;/g, '"');
 
     // Pola Regex untuk menangkap blok teks Arab 
-    // Memperbolehkan titik dua (:), titik koma Arab (؛), koma Arab (،), tanda kurung, angka Arab maupun Latin, dan batas karakter minimum lebih kecil (5 karakter).
-    const arabicRegex = /([\u0600-\u06FF][\u0600-\u06FF\s\d\.,\-\(\)"':;؛،؟﴾﴿«»]{5,}[\u0600-\u06FF])/g;
+    // Memperbolehkan titik dua (:), titik koma Arab (؛), koma Arab (،), tanda kurung, angka Arab maupun Latin, tanda kurung siku, karakter khusus Arab (seperti Sallallahu Alayhi Wasallam ﷺ)
+    const arabicRegex = /([\u0600-\u06FF\uFB50-\uFDFF\uFE70-\uFEFF][\u0600-\u06FF\uFB50-\uFDFF\uFE70-\uFEFF\s\d\.,\-\(\)"':;؛،؟﴾﴿«»\[\]]{5,}[\u0600-\u06FF\uFB50-\uFDFF\uFE70-\uFEFF])/g;
 
     // 1. Temukan SEMUA blok Arab terlebih dahulu
     const matches: { text: string; start: number; end: number }[] = [];

@@ -74,8 +74,8 @@ export default function ArsipPage() {
   const paginatedFiles = files.slice(startIndex, endIndex);
 
   const handlePreview = async (fileName: string) => {
-    if (!fileName.endsWith('.zip') && !fileName.endsWith('.chm') && !fileName.endsWith('.pdf')) {
-      alert('Hanya file berformat .zip, .chm, atau .pdf yang dapat diekstrak ke Database.');
+    if (!fileName.endsWith('.zip') && !fileName.endsWith('.chm') && !fileName.endsWith('.pdf') && !fileName.endsWith('.html') && !fileName.endsWith('.htm')) {
+      alert('Hanya file berformat .zip, .chm, .pdf, atau .html yang dapat diekstrak ke Database.');
       return;
     }
     
@@ -186,8 +186,8 @@ export default function ArsipPage() {
     const newName = prompt('Masukkan nama file baru (termasuk ekstensi .chm, .zip, atau .pdf):', oldName);
     if (!newName || newName === oldName) return;
 
-    if (!newName.endsWith('.chm') && !newName.endsWith('.zip') && !newName.endsWith('.pdf')) {
-      alert('Ekstensi file harus tetap .chm, .zip, atau .pdf');
+    if (!newName.endsWith('.chm') && !newName.endsWith('.zip') && !newName.endsWith('.pdf') && !newName.endsWith('.html') && !newName.endsWith('.htm')) {
+      alert('Ekstensi file harus tetap .chm, .zip, .pdf, atau .html');
       return;
     }
 
@@ -274,7 +274,7 @@ export default function ArsipPage() {
                     <td className="p-4 text-zinc-500 text-sm">{(file.metadata?.size / 1024 / 1024).toFixed(2)} MB</td>
                     <td className="p-4 text-zinc-500 text-sm">{new Date(file.created_at).toLocaleString('id-ID')}</td>
                     <td className="p-4 text-right flex items-center justify-end gap-2">
-                      {(file.name.endsWith('.zip') || file.name.endsWith('.chm') || file.name.endsWith('.pdf')) && (
+                      {(file.name.endsWith('.zip') || file.name.endsWith('.chm') || file.name.endsWith('.pdf') || file.name.endsWith('.html') || file.name.endsWith('.htm')) && (
                         <button 
                           onClick={() => handlePreview(file.name)}
                           disabled={isExtracting === file.name || isRenaming === file.name || isPreviewing}

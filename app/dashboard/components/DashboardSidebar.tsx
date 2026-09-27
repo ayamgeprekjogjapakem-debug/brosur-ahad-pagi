@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { 
   BookOpen, Upload, LogOut, Loader2, FileStack, Settings, 
   UserCog, Database, MessageSquare, Activity, ShieldBan,
-  ChevronLeft, ChevronRight, BookMarked, Sparkles, Key, Bot, Settings2, Search
+  ChevronLeft, ChevronRight, BookMarked, Sparkles, Key, Bot, Settings2, Search, Calendar
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 
@@ -61,6 +61,7 @@ export default function DashboardSidebar() {
         { name: 'Hadist dari API', href: '/dashboard/hadist-api', icon: BookOpen },
         { name: 'Data Quran', href: '/dashboard/quran', icon: BookOpen },
         { name: 'Kotak Masukan', href: '/dashboard/masukan', icon: MessageSquare },
+        { name: 'Kalender', href: '/dashboard/kalender', icon: Calendar },
       ],
     },
     {

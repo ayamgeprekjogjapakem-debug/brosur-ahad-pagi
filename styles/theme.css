@@ -1,0 +1,42 @@
+/* 
+  ===========================================
+  FILE PENGATURAN TEMA APLIKASI (THEME)
+  ===========================================
+  Silakan ubah variabel di bawah ini untuk 
+  mengganti warna utama atau ukuran font.
+*/
+
+@theme {
+  /* Mapping Warna untuk Tailwind v4 */
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-accent: hsl(var(--accent));
+  
+  /* Mapping Font untuk Tailwind v4 */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-arabic-primary: var(--font-amiri), serif;
+  --font-arabic-secondary: var(--font-trad-arabic), serif;
+}
+
+@layer base {
+  :root {
+    /* 
+      WARNA (Menggunakan format HSL tanpa fungsi hsl() untuk Tailwind)
+      Contoh: Hue Saturation Lightness -> 180 48% 33% 
+    */
+    --background: 0 0% 100%;       /* Warna Latar Belakang Utama (Putih) */
+    --foreground: 240 10% 3.9%;    /* Warna Teks Utama (Gelap) */
+    --accent: 180 48% 33%;         /* Warna Aksen / Brand (Teal Ulil Albab) */
+
+    /* PENGATURAN UKURAN FONT DEFAULT (Bisa ditimpa oleh SettingsContext) */
+    --base-font-size: 16px;
+    --arabic-font-size: 32px;
+  }
+
+  /* Mode Gelap (Dark Mode) - Opsional jika digunakan */
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 100%;
+    /* --accent: 180 48% 45%; */ /* Bisa diubah jika warna accent ingin beda di dark mode */
+  }
+}

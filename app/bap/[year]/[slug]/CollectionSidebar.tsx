@@ -143,7 +143,7 @@ export default function CollectionSidebar({ brosurList, activeSlug, folderSlug, 
         <div className="lg:hidden fixed bottom-6 right-6 z-50 flex flex-col gap-4 print:hidden">
           <Link
             href="/"
-            className="p-4 rounded-full bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 shadow-xl border border-black/5 dark:border-white/5 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors"
+            className="p-4 rounded-full bg-white text-zinc-600 shadow-xl border border-black/5 hover:bg-zinc-50 transition-colors"
             title="Kembali ke Beranda"
           >
             <Home />
@@ -185,7 +185,7 @@ export default function CollectionSidebar({ brosurList, activeSlug, folderSlug, 
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -350, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="w-full sm:w-[300px] lg:w-[300px] border-r border-black/5 dark:border-white/5 flex flex-col h-[100dvh] fixed lg:relative flex-shrink-0 z-40 bg-white dark:bg-[#0a0a0a] print:hidden shadow-2xl lg:shadow-none"
+            className="w-full sm:w-[300px] lg:w-[300px] border-r border-black/5 flex flex-col h-[100dvh] fixed lg:relative flex-shrink-0 z-40 bg-white print:hidden shadow-2xl lg:shadow-none"
           >
             {/* Header Sidebar */}
             <div className="p-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white/90 backdrop-blur-md z-10">
@@ -269,7 +269,7 @@ export default function CollectionSidebar({ brosurList, activeSlug, folderSlug, 
                             <span dangerouslySetInnerHTML={{
                               __html: b.snippet.replace(
                                 new RegExp(searchQuery.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&'), 'gi'),
-                                (match: string) => `<mark class="bg-yellow-300 dark:bg-yellow-500/80 text-black px-1 rounded-sm">${match}</mark>`
+                                (match: string) => `<mark class="bg-yellow-300 text-black px-1 rounded-sm">${match}</mark>`
                               )
                             }} />
                           </p>
@@ -300,11 +300,11 @@ export default function CollectionSidebar({ brosurList, activeSlug, folderSlug, 
                             exit={{ height: 0, opacity: 0 }}
                             className="overflow-hidden space-y-1"
                           >
-                            {(brosurs as any[]).map((b: any) => {
+                            {(brosurs as any[]).map((b: any, idx: number) => {
                               const isActive = b.slug === activeSlug;
                               return (
                                 <Link
-                                  key={b.slug}
+                                  key={b.id || `${b.slug}-${idx}`}
                                   href={`/bap/${b.tahun}/${b.judul.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`}
                                   onClick={() => window.innerWidth < 1024 && setIsSidebarOpen(false)}
                                   className={`w-full text-left px-3 py-2 rounded-lg transition-all duration-200 flex flex-col group relative ${isActive

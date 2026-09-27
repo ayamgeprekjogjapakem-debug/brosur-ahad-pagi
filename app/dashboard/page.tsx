@@ -16,12 +16,12 @@ export default function DashboardPage() {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       const ext = file.name.split('.').pop()?.toLowerCase();
-      if (ext === 'chm' || ext === 'zip' || ext === 'pdf') {
+      if (ext === 'chm' || ext === 'zip' || ext === 'pdf' || ext === 'html' || ext === 'htm') {
         setSelectedFile(file);
         setUploadStatus(null);
         setUploadProgress(0);
       } else {
-        setUploadStatus({ type: 'error', message: 'Hanya file .chm, .zip, atau .pdf yang diperbolehkan.' });
+        setUploadStatus({ type: 'error', message: 'Hanya file .chm, .zip, .pdf, atau .html yang diperbolehkan.' });
       }
     }
   };
@@ -103,7 +103,7 @@ export default function DashboardPage() {
         >
           <header className="mb-10">
             <h1 className="text-3xl font-extrabold mb-2 tracking-tight text-zinc-900 dark:text-zinc-100">Upload File</h1>
-            <p className="text-zinc-500 font-medium max-w-xl">Unggah file arsip brosur berformat CHM, ZIP, atau PDF untuk memproses dan menambahkannya ke dalam database secara otomatis.</p>
+            <p className="text-zinc-500 font-medium max-w-xl">Unggah file arsip brosur berformat CHM, ZIP, HTML, atau PDF untuk memproses dan menambahkannya ke dalam database secara otomatis.</p>
           </header>
 
           <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-2xl border border-black/[0.04] dark:border-white/[0.04] rounded-[32px] p-8 md:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
@@ -112,7 +112,7 @@ export default function DashboardPage() {
             <div className="border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-3xl p-12 flex flex-col items-center justify-center text-center hover:border-accent hover:bg-accent/5 transition-all duration-300 group relative">
               <input 
                 type="file" 
-                accept=".chm,.zip,.pdf"
+                accept=".chm,.zip,.pdf,.html,.htm"
                 onChange={handleFileChange}
                 disabled={isUploading}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed" 
@@ -121,7 +121,7 @@ export default function DashboardPage() {
                 <Upload size={32} className="text-zinc-400 group-hover:text-white transition-colors" />
               </div>
               <h3 className="font-extrabold text-xl mb-1.5 text-zinc-900 dark:text-zinc-100">Pilih atau letakkan file di sini</h3>
-              <p className="text-sm font-medium text-zinc-500">Mendukung file berformat .chm, .zip, atau .pdf</p>
+              <p className="text-sm font-medium text-zinc-500">Mendukung file berformat .chm, .zip, .pdf, atau .html</p>
             </div>
 
             {/* Selected File Details */}

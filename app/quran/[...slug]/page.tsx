@@ -77,6 +77,24 @@ export default function SurahPage({ params, searchParams }: { params: Promise<{ 
     showToast('Teks berhasil disalin');
   };
 
+  const [isCopyRangeModalOpen, setIsCopyRangeModalOpen] = useState(false);
+  const [copyRangeStart, setCopyRangeStart] = useState<number | ''>('');
+  const [copyRangeEnd, setCopyRangeEnd] = useState<number | ''>('');
+
+  const handleCopyRange = () => {
+    if (!copyRangeStart || !copyRangeEnd || Number(copyRangeStart) > Number(copyRangeEnd)) return showToast('Range tidak valid');
+    const start = Number(copyRangeStart);
+    const end = Number(copyRangeEnd);
+    
+    const ayatsToCopy = surah?.ayat.filter(a => a.nomorAyat >= start && a.nomorAyat <= end);
+    if (!ayatsToCopy || ayatsToCopy.length === 0) return showToast('Ayat tidak ditemukan');
+    
+    const textToCopy = ayatsToCopy.map(a => `${a.teksArab}\n\n${a.teksIndonesia}\n\n(QS. ${surah?.namaLatin} ${surah?.nomor}:${a.nomorAyat})`).join('\n\n---\n\n');
+    navigator.clipboard.writeText(textToCopy);
+    showToast(`Ayat ${start}-${end} berhasil disalin`);
+    setIsCopyRangeModalOpen(false);
+  };
+
   const handleEdit = () => {
     showToast('Anda belum login');
   };
@@ -416,7 +434,13 @@ export default function SurahPage({ params, searchParams }: { params: Promise<{ 
                     </div>
                     {/* Right Actions */}
                     <div className="flex items-center gap-4 text-zinc-400 relative">
-                      <button onClick={() => handleCopy(ayat)} className="hover:text-teal-600 transition" title="Salin"><Copy size={18} /></button>
+                      <button onClick={() => handleCopy(ayat)} className="hover:text-teal-600 transition" title="Salin 1 Ayat"><Copy size={18} /></button>
+                      <button onClick={() => {
+                        setCopyRangeStart(ayat.nomorAyat);
+                        setIsCopyRangeModalOpen(true);
+                      }} className="hover:text-teal-600 transition" title="Salin Banyak Ayat">
+                        <ClipboardList size={18} />
+                      </button>
                       <button onClick={() => setShareModalAyat(ayat)} className="hover:text-teal-600 transition" title="Bagikan"><Share2 size={18} /></button>
                     </div>
                   </div>
@@ -492,6 +516,63 @@ export default function SurahPage({ params, searchParams }: { params: Promise<{ 
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* COPY RANGE MODAL */}
+      {isCopyRangeModalOpen && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+          <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between p-4 border-b border-zinc-100">
+              <h3 className="font-bold text-lg text-zinc-800 flex items-center gap-2">
+                <CopyIcon size={18} className="text-emerald-600" />
+                Salin Banyak Ayat
+              </h3>
+              <button
+                onClick={() => setIsCopyRangeModalOpen(false)}
+                className="p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 rounded-full transition"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="flex-1">
+                  <label className="block text-xs font-bold text-zinc-500 mb-1.5 uppercase tracking-wider">Dari Ayat</label>
+                  <input 
+                    type="number" 
+                    min="1" 
+                    max={surah?.jumlahAyat}
+                    value={copyRangeStart}
+                    onChange={(e) => setCopyRangeStart(e.target.value === '' ? '' : Number(e.target.value))}
+                    className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-4 py-3 text-center font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                    placeholder="1"
+                  />
+                </div>
+                <div className="text-zinc-300 font-bold mt-5">-</div>
+                <div className="flex-1">
+                  <label className="block text-xs font-bold text-zinc-500 mb-1.5 uppercase tracking-wider">Sampai Ayat</label>
+                  <input 
+                    type="number" 
+                    min="1" 
+                    max={surah?.jumlahAyat}
+                    value={copyRangeEnd}
+                    onChange={(e) => setCopyRangeEnd(e.target.value === '' ? '' : Number(e.target.value))}
+                    className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-4 py-3 text-center font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                    placeholder={surah?.jumlahAyat.toString()}
+                  />
+                </div>
+              </div>
+              
+              <button
+                onClick={handleCopyRange}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition flex items-center justify-center gap-2 shadow-sm"
+              >
+                <CopyIcon size={18} /> Salin Sekarang
+              </button>
+            </div>
           </div>
         </div>
       )}

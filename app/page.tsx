@@ -8,18 +8,32 @@ import {
   Menu, MessageSquare, Settings, Sparkles, X,
   ArrowLeft, FileText, ChevronRight, Info,
   CheckCircle2, AlertTriangle, BookMarked, Copy, Check, Share2,
-  TrendingUp, Loader2, Users, ScrollText
+  TrendingUp, Loader2, Users, ScrollText, CalendarDays
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const HighlightText = ({ text, highlight }: { text: string; highlight: string }) => {
-  if (!highlight.trim()) return <>{text}</>;
-  const parts = text.split(new RegExp(`(${highlight})`, 'gi'));
+const HighlightText = ({ text, highlight }: { text: string; highlight: string | string[] }) => {
+  if (!text) return <>{text}</>;
+  
+  const highlights = Array.isArray(highlight) ? highlight : [highlight];
+  const validHighlights = highlights
+    .map(h => h?.trim())
+    .filter(h => h && h.length > 2)
+    .sort((a, b) => b.length - a.length);
+
+  if (validHighlights.length === 0) return <>{text}</>;
+
+  const escapedTerms = validHighlights.map(h => h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const pattern = escapedTerms.join('|').replace(/wudu|wudhu|wudlu/gi, '(?:wudu|wudhu|wudlu)');
+
+  const regex = new RegExp(`(${pattern})`, 'gi');
+  const parts = text.split(regex);
+  
   return (
     <>
       {parts.map((part, i) =>
-        part.toLowerCase() === highlight.toLowerCase() ? (
-          <span key={i} className="bg-emerald-200/60 text-emerald-900 rounded-[2px] px-0.5">{part}</span>
+        i % 2 !== 0 ? (
+          <span key={i} className="bg-emerald-200/60 text-emerald-900 rounded-[2px] font-medium">{part}</span>
         ) : (
           <span key={i}>{part}</span>
         )
@@ -35,6 +49,7 @@ export default function MakkahPortal() {
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [searchResults, setSearchResults] = useState<any[] | null>(null);
   const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
+  const [searchMeta, setSearchMeta] = useState<any>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [copiedId, setCopiedId] = useState<string | number | null>(null);
   const [savedItems, setSavedItems] = useState<any[]>([]);
@@ -116,14 +131,22 @@ export default function MakkahPortal() {
       if (res.ok) {
         setSearchResults(data.items || []);
         setSearchSuggestions(data.suggestions || []);
+        setSearchMeta({
+          originalQuery: query.trim(),
+          query_koreksi: data.ai_data?.query_koreksi || null,
+          kata_kunci_konteks: data.ai_data?.kata_kunci_konteks || null,
+          search_terms_used: data.search_terms_used || []
+        });
       } else {
         setSearchResults([]);
         setSearchSuggestions([]);
+        setSearchMeta(null);
       }
     } catch (e) {
       console.error('Error fetching search results:', e);
       setSearchResults([]);
       setSearchSuggestions([]);
+      setSearchMeta(null);
     } finally {
       setIsSearching(false);
     }
@@ -144,6 +167,7 @@ export default function MakkahPortal() {
     setSearchQuery('');
     setSearchResults(null);
     setSearchSuggestions([]);
+    setSearchMeta(null);
     setIsShowingSaved(false);
     setVisibleCount(10);
     if (typeof window !== 'undefined') {
@@ -228,6 +252,7 @@ export default function MakkahPortal() {
                 { id: 'tersimpan', label: 'Dalil Tersimpan', icon: Bookmark, onClick: () => { router.push('/tersimpan'); if (window.innerWidth < 1024) setIsSidebarOpen(false); }, isActive: pathname === '/tersimpan' || isShowingSaved, badge: savedItems.length > 0 ? savedItems.length : null },
                 { id: 'quran', label: 'Al-Qur\'an', icon: BookOpen, onClick: () => { router.push('/quran'); if (window.innerWidth < 1024) setIsSidebarOpen(false); }, isActive: pathname === '/quran', badge: null },
                 { id: 'bap', label: 'Brosur', icon: ScrollText, onClick: () => { router.push('/bap'); if (window.innerWidth < 1024) setIsSidebarOpen(false); }, isActive: pathname === '/bap', badge: null },
+                { id: 'kalender', label: 'Kalender Hijriah', icon: CalendarDays, onClick: () => { router.push('/kalender'); if (window.innerWidth < 1024) setIsSidebarOpen(false); }, isActive: pathname === '/kalender', badge: 'Baru' },
                 { id: 'perawi', label: 'Master Perawi', icon: Users, onClick: () => { router.push('/perawi'); if (window.innerWidth < 1024) setIsSidebarOpen(false); }, isActive: pathname === '/perawi', badge: 'Tahap Dev' },
               ].map((menu) => (
                 <button
@@ -456,8 +481,13 @@ export default function MakkahPortal() {
 
                 <div className="mt-6 text-center">
                   <h3 className="text-xl font-bold text-slate-800">
-                    {isShowingSaved ? "Dalil Tersimpan" : `Hasil untuk "${searchQuery}"`}
+                    {isShowingSaved ? "Dalil Tersimpan" : `Hasil untuk "${searchMeta?.query_koreksi || searchQuery}"`}
                   </h3>
+                  {searchMeta?.query_koreksi && searchMeta.query_koreksi.toLowerCase() !== searchMeta.originalQuery.toLowerCase() && (
+                    <p className="text-sm text-emerald-600 mt-1 font-medium">
+                      Menampilkan hasil untuk: <strong>{searchMeta.query_koreksi}</strong>
+                    </p>
+                  )}
                   <p className="text-sm text-slate-500 mt-1">
                     {isShowingSaved ? `Ada ${searchResults?.length || 0} dalil dalam koleksi Anda` : `Ditemukan ${searchResults?.length || 0} dalil yang relevan`}
                   </p>
@@ -548,14 +578,14 @@ export default function MakkahPortal() {
                       {item.kutipan_arab && (
                         <div className="mb-4 text-right" dir="rtl">
                           <p className="font-amiri text-[28px] leading-[2.5] text-slate-800" style={{ fontFamily: "'Amiri', serif" }}>
-                            <HighlightText text={item.kutipan_arab} highlight={searchQuery} />
+                            <HighlightText text={item.kutipan_arab} highlight={searchMeta ? [searchMeta.query_koreksi, searchMeta.originalQuery, searchQuery, ...(searchMeta.kata_kunci_konteks ? searchMeta.kata_kunci_konteks.split(' ') : [])] : searchQuery} />
                           </p>
                         </div>
                       )}
 
                       {item.terjemahan && (
                         <p className="text-[17px] text-slate-600 leading-relaxed font-medium">
-                          "<HighlightText text={item.terjemahan} highlight={searchQuery} />"
+                          "<HighlightText text={item.terjemahan} highlight={searchMeta ? [searchMeta.query_koreksi, searchMeta.originalQuery, searchQuery, ...(searchMeta.kata_kunci_konteks ? searchMeta.kata_kunci_konteks.split(' ') : [])] : searchQuery} />"
                         </p>
                       )}
 

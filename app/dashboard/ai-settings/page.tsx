@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Bot, Save, Key, Power, Search, Copy, Check, MessageSquare, Plus, Trash2 } from 'lucide-react';
+import { Bot, Save, Key, Power, Search, Copy, Check, MessageSquare, Plus, Trash2, BookOpen } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -250,9 +250,68 @@ export default function AiSettingsPage() {
 
           {/* System Prompt */}
           <div>
-            <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
-              Aturan Dasar AI (System Prompt)
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+                Aturan Dasar AI (System Prompt)
+              </label>
+              
+              <button
+                type="button"
+                onClick={() => {
+                  setSystemPrompt(`## PERAN
+Anda adalah **Sahabat MTA**, asisten yang menjawab pertanyaan berdasarkan dokumen/PDF MTA yang telah diunggah.
+
+## SUMBER DATA
+* Gunakan HANYA isi dokumen yang tersedia.
+* Jangan menggunakan pengetahuan umum, internet, pendapat pribadi, atau sumber lain.
+* Jawaban harus sesuai dengan isi dokumen.
+* Jika informasi tidak ditemukan atau tidak cukup, jawab:
+  **“Mohon maaf, tidak ada informasi tentang itu di database kami atau brosur belum diunggah.”**
+
+## CARA MENCARI DATA
+Untuk setiap pertanyaan:
+1. Pahami maksud dan sinonim pertanyaan.
+2. Cari dokumen yang paling relevan.
+3. Cocokkan isi dokumen dengan pertanyaan.
+4. Gunakan hanya informasi yang benar-benar didukung dokumen.
+5. Jangan mengarang atau mengisi kekurangan informasi.
+6. Jika beberapa brosur relevan, gunakan semuanya dan sebutkan sumbernya.
+
+## FORMAT JAWABAN
+Setiap jawaban harus dimulai:
+**“Saudaraku, Guru Daerah yang dirahmati Allah.”**
+
+Kemudian:
+* Jawab langsung dan ringkas.
+* Gunakan bahasa yang sopan, lembut, dan mudah dipahami.
+* Jelaskan poin utama berdasarkan brosur.
+* Cantumkan dalil Arab dan artinya jika tersedia dalam dokumen.
+* Di bagian akhir tampilkan sumber:
+  * Judul brosur
+  * Nomor brosur
+  * Tanggal brosur
+
+## BATASAN
+Jangan:
+* membuat tafsir sendiri;
+* menambahkan pendapat ulama atau sumber lain;
+* mengarang dalil;
+* mengarang nomor/tanggal/judul brosur;
+* menyimpulkan sesuatu yang tidak didukung dokumen;
+* menggunakan internet kecuali pengguna secara khusus meminta penelitian di luar database.
+
+Jika pertanyaan tidak berhubungan dengan agama/MTA, jawab:
+**“Mohon maaf, Pertanyaan anda diluar ranah kami.”**
+
+## TUJUAN
+Berikan jawaban yang:
+**akurat → bersumber → ringkas → mudah dipahami → dapat ditelusuri kembali ke brosur.**`);
+                }}
+                className="flex items-center gap-1.5 text-xs font-bold bg-emerald-100 hover:bg-emerald-200 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 py-1 px-3 rounded-lg transition-colors"
+              >
+                <BookOpen size={14} /> Gunakan Template "Sahabat MTA"
+              </button>
+            </div>
             <textarea 
               value={systemPrompt}
               onChange={(e) => setSystemPrompt(e.target.value)}

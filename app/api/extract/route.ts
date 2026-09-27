@@ -11,8 +11,8 @@ export async function POST(request: NextRequest) {
     const action = body.action || 'extract';
     const selectedFiles: string[] = body.selectedFiles || [];
 
-    if (!fileName || (!fileName.endsWith('.zip') && !fileName.endsWith('.chm') && !fileName.endsWith('.pdf'))) {
-      return NextResponse.json({ error: 'File tidak valid atau bukan file .zip / .chm / .pdf.' }, { status: 400 });
+    if (!fileName || (!fileName.endsWith('.zip') && !fileName.endsWith('.chm') && !fileName.endsWith('.pdf') && !fileName.endsWith('.html') && !fileName.endsWith('.htm'))) {
+      return NextResponse.json({ error: 'File tidak valid atau bukan file .zip / .chm / .pdf / .html.' }, { status: 400 });
     }
 
     const supabase = await createClient();
@@ -213,6 +213,15 @@ export async function POST(request: NextRequest) {
         console.error('PDF Extraction Error:', err);
         return NextResponse.json({ error: 'Gagal membongkar file PDF: ' + err.message }, { status: 500 });
       }
+    } else if (fileName.endsWith('.html') || fileName.endsWith('.htm')) {
+      if (action === 'preview') {
+        return NextResponse.json({ success: true, files: [fileName] });
+      }
+      
+      console.log(`🌐 Membaca file HTML langsung: ${fileName}`);
+      // Decoding as utf-8 (assuming HTML is utf-8, fallback if necessary)
+      const textContent = buffer.toString('utf-8');
+      pendingHtmls.push({ entryName: fileName, content: textContent });
     }
 
     // Fase 2: Proses HTML yang sudah dikumpulkan dengan Cheerio

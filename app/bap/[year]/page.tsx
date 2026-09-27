@@ -22,7 +22,7 @@ export default async function BrosurYearPage({ params }: { params: Promise<{ yea
     .from('brosur')
     .select('id, judul, slug, tahun')
     .eq('tahun', parseInt(year))
-    .order('judul', { ascending: true });
+    .order('judul', { ascending: false });
 
   return (
     <div className="flex h-screen bg-[#fafaf9] font-sans selection:bg-emerald-200 overflow-hidden">

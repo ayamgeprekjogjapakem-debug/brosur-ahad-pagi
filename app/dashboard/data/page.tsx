@@ -6,9 +6,10 @@ import { Loader2, Plus, Edit2, Trash2, Search, Database, FolderArchive, FileText
 import Link from 'next/link';
 
 export default function DataBrosurPage() {
-  const [activeTab, setActiveTab] = useState<'brosur' | 'folder'>('brosur');
+  const [activeTab, setActiveTab] = useState<'brosur' | 'folder' | 'vektor'>('brosur');
   const [brosurs, setBrosurs] = useState<any[]>([]);
   const [folders, setFolders] = useState<any[]>([]);
+  const [vektors, setVektors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -33,6 +34,8 @@ export default function DataBrosurPage() {
   // State untuk Generator Teks Bersih & Standarisasi
   const [isGeneratingTeks, setIsGeneratingTeks] = useState(false);
   const [isStandardizing, setIsStandardizing] = useState(false);
+  const [isVectorSyncing, setIsVectorSyncing] = useState(false);
+  const [syncStatus, setSyncStatus] = useState({ total: 0, synced: 0, unsynced: 0 });
   const [generateProgress, setGenerateProgress] = useState(0);
   const [generateLabel, setGenerateLabel] = useState('');
 
@@ -42,10 +45,12 @@ export default function DataBrosurPage() {
     const tab = params.get('tab');
     if (tab === 'folder') {
       setActiveTab('folder');
+    } else if (tab === 'vektor') {
+      setActiveTab('vektor');
     }
   }, []);
 
-  const changeTab = (tab: 'brosur' | 'folder') => {
+  const changeTab = (tab: 'brosur' | 'folder' | 'vektor') => {
     setActiveTab(tab);
     setSelectedBrosurs([]);
     window.history.pushState(null, '', `?tab=${tab}`);
@@ -111,6 +116,18 @@ export default function DataBrosurPage() {
     setLoading(false);
   };
 
+  const fetchSyncStatus = async () => {
+    try {
+      const res = await fetch('/api/ai/sync-status');
+      if (res.ok) {
+        const data = await res.json();
+        setSyncStatus(data);
+      }
+    } catch (e) {
+      console.error("Gagal memuat status sinkronisasi", e);
+    }
+  };
+
   const fetchFolders = async () => {
     try {
       const res = await fetch('/api/folders-stats');
@@ -121,6 +138,17 @@ export default function DataBrosurPage() {
     } catch (err) {
       console.error('Failed to fetch folders with stats', err);
     }
+  };
+
+  const fetchVektors = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('brosur_chunks')
+      .select('id, judul_brosur, content, embedding')
+      .limit(20)
+      .order('id', { ascending: false }); // asumsikan id uuid tidak urut waktu, tapi cukup untuk sampel
+    if (data) setVektors(data);
+    setLoading(false);
   };
 
   const fetchAvailableYears = async () => {
@@ -145,11 +173,14 @@ export default function DataBrosurPage() {
     fetchFolders();
     fetchAvailableYears();
     fetchCapacity();
+    fetchSyncStatus();
   }, []);
 
   useEffect(() => {
     if (activeTab === 'brosur') {
       fetchBrosurs();
+    } else if (activeTab === 'vektor') {
+      fetchVektors();
     }
   }, [currentPage, itemsPerPage, searchTerm, filterFolder, filterTahun, sortBy, activeTab]);
 
@@ -428,6 +459,30 @@ export default function DataBrosurPage() {
     }
   };
 
+  const handleVectorSync = async () => {
+    try {
+      if (!window.confirm('Proses ini akan membaca brosur terbaru dan mengubahnya menjadi vektor untuk AI. Lanjutkan?')) return;
+      
+      setIsVectorSyncing(true);
+      
+      const res = await fetch('/api/ai/generate-chunks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}), // tanpa ID berarti akan memproses batch (misal 5 terbaru)
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Terjadi kesalahan sinkronisasi');
+      
+      alert(data.message);
+    } catch (err: any) {
+      alert(`Gagal sinkronisasi vektor: ${err.message}`);
+    } finally {
+      setIsVectorSyncing(false);
+      fetchSyncStatus(); // refresh status setelah proses
+    }
+  };
+
   return (
     <main className="p-8 md:p-12 w-full max-w-7xl mx-auto">
       <header className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -439,12 +494,26 @@ export default function DataBrosurPage() {
         </div>
         
         {activeTab === 'brosur' ? (
-          <Link 
-            href="/dashboard/data/create" 
-            className="bg-accent text-white px-5 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-accent/90 transition-colors shrink-0"
-          >
-            <Plus size={18} /> Tambah Brosur
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={handleVectorSync}
+              disabled={isVectorSyncing || syncStatus.unsynced === 0}
+              className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-5 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-zinc-800 transition-colors disabled:opacity-50 shrink-0"
+            >
+              {isVectorSyncing ? <Loader2 size={18} className="animate-spin" /> : <Database size={18} />}
+              {isVectorSyncing 
+                ? 'Menyinkronkan...' 
+                : syncStatus.unsynced > 0 
+                  ? `Sinkron AI (${syncStatus.unsynced} tertinggal)` 
+                  : 'AI Tersinkron Penuh'}
+            </button>
+            <Link 
+              href="/dashboard/data/create" 
+              className="bg-accent text-white px-5 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-accent/90 transition-colors shrink-0"
+            >
+              <Plus size={18} /> Tambah Brosur
+            </Link>
+          </div>
         ) : (
           <Link 
             href="/dashboard/data/folder/create" 
@@ -498,7 +567,7 @@ export default function DataBrosurPage() {
       )}
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 mb-6 border-b border-black/5 dark:border-white/5 pb-2">
+      <div className="flex flex-wrap items-center gap-2 mb-6 border-b border-black/5 dark:border-white/5 pb-2">
         <button 
           onClick={() => changeTab('brosur')}
           className={`flex items-center gap-2 px-6 py-3 rounded-t-xl font-bold transition-colors ${activeTab === 'brosur' ? 'bg-white dark:bg-zinc-900 border-t border-l border-r border-black/5 dark:border-white/5 text-accent' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-black/5 dark:hover:bg-white/5'}`}
@@ -510,6 +579,12 @@ export default function DataBrosurPage() {
           className={`flex items-center gap-2 px-6 py-3 rounded-t-xl font-bold transition-colors ${activeTab === 'folder' ? 'bg-white dark:bg-zinc-900 border-t border-l border-r border-black/5 dark:border-white/5 text-blue-600' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-black/5 dark:hover:bg-white/5'}`}
         >
           <FolderArchive size={18} /> Master Koleksi ({folders.length})
+        </button>
+        <button 
+          onClick={() => changeTab('vektor')}
+          className={`flex items-center gap-2 px-6 py-3 rounded-t-xl font-bold transition-colors ${activeTab === 'vektor' ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-black/5 dark:hover:bg-white/5'}`}
+        >
+          <Database size={18} /> Vektor AI ({syncStatus.synced})
         </button>
       </div>
 
@@ -756,7 +831,7 @@ export default function DataBrosurPage() {
             </div>
             </>
           )
-        ) : (
+        ) : activeTab === 'folder' ? (
           /* TAB FOLDER */
           filteredFolders.length === 0 ? (
             <div className="py-20 text-center text-zinc-500 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl">
@@ -837,6 +912,25 @@ export default function DataBrosurPage() {
               ))}
             </div>
           )
+        ) : (
+          /* TAB VEKTOR */
+          <div className="space-y-4">
+             {vektors.length === 0 && !loading ? (
+                <div className="py-20 text-center text-zinc-500 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl">
+                  <p>Belum ada brosur yang disinkronisasi menjadi Vektor.</p>
+                </div>
+             ) : (
+                vektors.map(v => (
+                  <div key={v.id} className="p-5 border border-zinc-200 dark:border-zinc-800 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 hover:border-blue-500/30 transition-colors">
+                    <h3 className="font-bold text-lg mb-2 flex items-center gap-2"><Database size={16} className="text-blue-500" /> {v.judul_brosur}</h3>
+                    <p className="text-sm text-zinc-700 dark:text-zinc-300 mb-4">{v.content}</p>
+                    <div className="text-xs font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 p-2 rounded-lg truncate">
+                       Vektor: [ {v.embedding?.slice(0, 8).join(', ')} ... ] (Total 768 dimensi vektor tersimpan)
+                    </div>
+                  </div>
+                ))
+             )}
+          </div>
         )}
       </div>
 

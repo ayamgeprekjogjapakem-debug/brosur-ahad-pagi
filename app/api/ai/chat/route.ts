@@ -96,7 +96,7 @@ export async function POST(request: Request) {
     });
 
     if (!searchError && searchResults && searchResults.length > 0) {
-      contextText = searchResults.slice(0, 5).map((b: any) => {
+      contextText = searchResults.slice(0, 3).map((b: any) => {
         // Prioritaskan konten (HTML stripped) agar teks Arab (jika ada) tidak hilang,
         // karena teks_bersih seringkali difilter/strip arabic text untuk pencarian.
         const rawHtml = b.konten || '';
@@ -104,7 +104,29 @@ export async function POST(request: Request) {
         const text = strippedHtml || b.teks_bersih || '';
         
         retrievedDocs.push({ judul: b.judul_brosur, tahun: b.tahun });
-        return `[Brosur: ${b.judul_brosur} (Tahun ${b.tahun})]\n${text.substring(0, 15000)}`;
+        
+        let snippet = text;
+        if (searchQuery) {
+          const firstWord = searchQuery.split(' OR ')[0]?.trim().toLowerCase();
+          if (firstWord) {
+            const lowerText = text.toLowerCase();
+            const idx = lowerText.indexOf(firstWord);
+            if (idx !== -1) {
+              // Ambil sedikit ke belakang dan banyak ke depan (total ~4000)
+              const startIdx = Math.max(0, idx - 1000);
+              const endIdx = Math.min(text.length, idx + 3000);
+              snippet = text.substring(startIdx, endIdx);
+              if (startIdx > 0) snippet = '...' + snippet;
+              if (endIdx < text.length) snippet = snippet + '...';
+            } else {
+              snippet = text.substring(0, 4000);
+            }
+          }
+        } else {
+          snippet = text.substring(0, 4000);
+        }
+
+        return `[Brosur: ${b.judul_brosur} (Tahun ${b.tahun})]\n${snippet}`;
       }).join('\n\n');
     }
 
@@ -129,7 +151,7 @@ FORMAT & STRUKTUR JAWABAN:
 2. GAYA BAHASA: Lembut, santun, rendah hati, ringkas, tidak menggurui. Pertahankan istilah Arab/Agama.
 3. SUSUNAN: (1) Sapaan, (2) Jawaban Inti, (3) Penjelasan Brosur, (4) Dalil (PENTING: Wajib tulis ulang Teks Arab Asli dari brosur, Arti, dan Sumber), (5) Kesimpulan.
 4. FORMAT TEKS ARAB: Pastikan selalu memberikan jarak/baris kosong (Enter) SEBELUM dan SESUDAH menuliskan teks Arab. Jangan mencampur teks Arab dan Latin di baris yang sama.
-5. JIKA DATA KOSONG / TIDAK CUKUP: Jawab persis seperti ini: "Mohon maaf, tidak ada informasi tentang itu di database kami atau brosur belum diunggah." Lalu, TAWARKAN pencarian lanjutan yang relevan.
+5. JIKA DATA KOSONG / TIDAK CUKUP: Jawab: "Mohon maaf, tidak ada informasi tentang itu di database kami atau brosur belum diunggah." Kemudian secara sopan tambahkan penjelasan bahwa hal ini mungkin terjadi karena perbedaan ejaan Arab ke Latin (misal 'sholat' vs 'shalat', 'bidaah' vs 'bidah', atau salah ketik/typo seperti 'nhtah' untuk 'nikah'), atau karena teks asli di brosur ditulis menggunakan huruf Arab asli. Sarankan pengguna untuk mencoba sinonim atau ejaan lain.
 6. PERTANYAAN DI LUAR RANAH AGAMA: Jawab: "Mohon maaf, Pertanyaan anda diluar ranah kami."
 7. IDENTITAS REFERENSI: Di akhir jawaban, HANYA jika Anda berhasil mengutip brosur, tampilkan Judul, Nomor, dan Tanggal Brosur.
 8. PENGECEKAN AKHIR: Jangan pernah menampilkan artefak teknis (seperti JSON, token, dll). Periksa typo.
@@ -178,8 +200,8 @@ ${rulesText}
       retrieved_docs: retrievedDocs,
       system_prompt_length: finalSystemPrompt.length,
       config: {
-        max_docs: 5,
-        max_chars_per_doc: 15000
+        max_docs: 3,
+        max_chars_per_doc: 4000
       }
     };
 

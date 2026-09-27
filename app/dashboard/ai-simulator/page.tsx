@@ -239,382 +239,281 @@ export default function AiSimulatorPage() {
   }
 
   return (
-    <div className="p-8 max-w-6xl mx-auto">
+    <div className="fixed inset-0 z-50 flex h-screen w-screen bg-white dark:bg-zinc-950 font-[family-name:var(--font-geist-sans)] text-sm overflow-hidden">
       <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet" />
-      <h1 className="text-2xl font-bold mb-6 text-zinc-900 dark:text-white flex items-center gap-2">
-        <Bot size={24} className="text-accent" />
-        Simulator AI
-      </h1>
       
-      <p className="text-sm text-zinc-500 mb-8">
-        Uji coba respons asisten AI Anda menggunakan pengaturan yang sedang berjalan saat ini.
-      </p>
-
-      <div className="flex gap-4 mb-6 border-b border-zinc-200 dark:border-zinc-800 pb-2">
-        <button 
-          onClick={() => changeTab('chat')}
-          className={`flex items-center gap-2 font-semibold px-4 py-2 rounded-xl transition-colors ${activeTab === 'chat' ? 'bg-accent/10 text-accent' : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'}`}
-        >
-          <MessageSquare size={18} />
-          Simulator Chat
-        </button>
-        <button 
-          onClick={() => changeTab('memory')}
-          className={`flex items-center gap-2 font-semibold px-4 py-2 rounded-xl transition-colors ${activeTab === 'memory' ? 'bg-accent/10 text-accent' : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'}`}
-        >
-          <Brain size={18} />
-          Memori Khusus AI
-        </button>
+      {/* LEFT SIDEBAR (History) */}
+      <div className="w-64 bg-zinc-50 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 flex flex-col flex-shrink-0">
+        <div className="p-3">
+          <button
+            onClick={handleNewSession}
+            className="w-full flex items-center justify-start gap-2 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700 py-2.5 px-3 rounded-lg font-medium transition-colors"
+          >
+            <Plus size={16} /> Percakapan Baru
+          </button>
+        </div>
+        
+        <div className="flex-1 overflow-y-auto px-2 space-y-1">
+          <div className="text-xs font-semibold text-zinc-500 px-2 mb-2 mt-2">Riwayat Simulasi</div>
+          {sessions.map(s => (
+            <div 
+              key={s.id}
+              onClick={() => setActiveSessionId(s.id)}
+              className={`p-2 rounded-lg cursor-pointer flex justify-between items-center group transition-colors ${activeSessionId === s.id ? 'bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/50'}`}
+            >
+              <div className="truncate text-[13px] font-medium">{s.title}</div>
+              <button 
+                onClick={(e) => { e.stopPropagation(); handleDeleteSession(s.id); }}
+                className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-red-500 transition-opacity p-1 flex-shrink-0 ml-2"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
+          ))}
+        </div>
+        
+        <div className="p-3 border-t border-zinc-200 dark:border-zinc-800 space-y-1">
+          <button 
+            onClick={() => changeTab('memory')}
+            className={`w-full flex items-center gap-2 p-2 rounded-lg transition-colors text-[13px] font-medium ${activeTab === 'memory' ? 'bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white' : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
+          >
+            <Brain size={16} /> Kelola Memori AI
+          </button>
+          <button 
+            onClick={() => window.location.href = '/dashboard'}
+            className="w-full flex items-center gap-2 p-2 rounded-lg transition-colors text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-[13px] font-medium"
+          >
+            <ToggleLeft size={16} /> Keluar Simulator
+          </button>
+        </div>
       </div>
 
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 lg:p-8 shadow-sm">
-        {activeTab === 'chat' ? (
-          <div className="flex flex-col lg:flex-row gap-6 h-[600px]">
-          {/* Sidebar (Riwayat Obrolan) */}
-          <div className="w-full lg:w-1/4 border-r-0 lg:border-r border-zinc-200 dark:border-zinc-800 pr-0 lg:pr-6 flex flex-col h-48 lg:h-full">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-                <Bot size={20} className="text-accent" />
-                Sesi Chat
-              </h2>
-            </div>
-            
-            <button
-              onClick={handleNewSession}
-              className="w-full flex items-center justify-center gap-2 bg-accent/10 text-accent hover:bg-accent hover:text-white transition-colors py-2.5 rounded-xl font-semibold mb-4 text-sm"
-            >
-              <Plus size={16} />
-              Percakapan Baru
-            </button>
-            
-            <div className="flex-1 overflow-y-auto space-y-2 pr-2">
-              {sessions.map(s => (
-                <div 
-                  key={s.id}
-                  onClick={() => setActiveSessionId(s.id)}
-                  className={`p-3 rounded-xl cursor-pointer flex justify-between items-center group transition-colors ${activeSessionId === s.id ? 'bg-zinc-100 dark:bg-zinc-800' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}`}
-                >
-                  <div className="flex items-center gap-3 overflow-hidden">
-                    <MessageSquare size={16} className={activeSessionId === s.id ? 'text-accent' : 'text-zinc-400'} />
-                    <div className="truncate">
-                      <p className={`text-sm font-medium truncate ${activeSessionId === s.id ? 'text-zinc-900 dark:text-white' : 'text-zinc-700 dark:text-zinc-300'}`}>{s.title}</p>
-                      <p className="text-xs text-zinc-500 truncate">{s.messages[s.messages.length - 1]?.content}</p>
-                    </div>
-                  </div>
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); handleDeleteSession(s.id); }}
-                    className="text-zinc-400 hover:text-red-500 transition-colors flex-shrink-0 p-1"
-                    title="Hapus percakapan"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              ))}
-            </div>
+      {/* MAIN AREA */}
+      <div className="flex-1 flex flex-col h-full relative bg-white dark:bg-zinc-950">
+        
+        {/* Header */}
+        <div className="h-14 flex-shrink-0 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-6 z-10 bg-white dark:bg-zinc-950">
+          <div className="font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
+            <Bot size={18} className="text-emerald-600" />
+            {activeTab === 'memory' ? 'Memori Khusus AI' : activeSession.title}
           </div>
-
-          {/* Chat Area */}
-          <div className="w-full lg:w-2/4 flex flex-col bg-zinc-50 dark:bg-zinc-950/50 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 h-full">
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {activeSession.messages.map((msg, i) => (
-                <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[85%] p-4 ${
-                    msg.role === 'user' 
-                      ? 'bg-accent text-white rounded-tr-sm rounded-l-2xl rounded-br-2xl text-sm' 
-                      : 'bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-100 dark:border-zinc-700 shadow-sm rounded-tl-sm rounded-r-2xl rounded-bl-2xl text-sm'
-                  }`}>
-                    {msg.role === 'user' ? (
-                      msg.content
-                    ) : (
-                      <div className="text-[13px] leading-[1.6] space-y-2 markdown-content" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                        <ReactMarkdown
-                          remarkPlugins={[remarkGfm]}
-                          components={{
-                            p: ({ node, children, ...props }) => {
-                              const textContent = React.Children.toArray(children).join('');
-                              if (containsArabic(textContent)) {
-                                return (
-                                  <p 
-                                    {...props} 
-                                    className="text-[18px] leading-[1.8] text-right py-2 px-3 bg-white dark:bg-zinc-800/80 rounded-xl my-2 text-zinc-900 dark:text-white"
-                                    style={{ fontFamily: "'Scheherazade New', serif", direction: 'rtl' }}
-                                  >
-                                    {children}
-                                  </p>
-                                );
-                              }
-                              return <p {...props} className="mb-2 break-words">{children}</p>;
-                            },
-                            strong: ({ node, ...props }) => <strong {...props} className="font-bold text-zinc-900 dark:text-zinc-100" />,
-                            ul: ({ node, ...props }) => <ul {...props} className="list-disc pl-4 mb-2 space-y-1" />,
-                            ol: ({ node, ...props }) => <ol {...props} className="list-decimal pl-4 mb-2 space-y-1" />,
-                            li: ({ node, ...props }) => <li {...props} className="leading-[1.6]" />,
-                            h1: ({ node, ...props }) => <h1 {...props} className="text-lg font-bold mb-2 mt-4" />,
-                            h2: ({ node, ...props }) => <h2 {...props} className="text-md font-bold mb-2 mt-4" />,
-                            h3: ({ node, ...props }) => <h3 {...props} className="text-sm font-bold mb-2 mt-3" />,
-                          }}
-                        >
-                          {msg.content}
-                        </ReactMarkdown>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-              
-              {isSimulating !== 'idle' && (
-                <div className="flex justify-start">
-                  <div className="bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 rounded-2xl p-3 shadow-sm rounded-tl-sm flex items-center gap-2 text-zinc-500">
-                    <div className="animate-spin text-accent border-2 border-current border-t-transparent rounded-full w-4 h-4"></div>
-                    <span className="text-xs font-medium">Memproses...</span>
-                  </div>
-                </div>
-              )}
+          {activeTab === 'chat' && (
+            <div className="flex items-center gap-2 text-xs font-medium text-zinc-500">
+              <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Model Aktif
             </div>
-            
-            <div className="p-3 bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-700">
-              <form 
-                onSubmit={async (e) => {
-                  e.preventDefault();
-                  if (!simInput.trim() || isSimulating !== 'idle') return;
-                  
-                  const userMsg = simInput.trim();
-                  setSimInput('');
-                  
-                  const newMessages = [...activeSession.messages, { role: 'user', content: userMsg }];
-                  
-                  let updatedTitle = activeSession.title;
-                  if (activeSession.messages.length === 1) {
-                    updatedTitle = userMsg.substring(0, 30) + (userMsg.length > 30 ? '...' : '');
-                  }
+          )}
+        </div>
 
-                  setSessions(prev => prev.map(s => 
-                    s.id === activeSession.id 
-                      ? { ...s, title: updatedTitle, messages: newMessages, updatedAt: new Date() } 
-                      : s
-                  ));
-                  
-                  await supabase.from('ai_simulator_sessions').update({
-                    title: updatedTitle,
-                    messages: newMessages,
-                    updated_at: new Date().toISOString()
-                  }).eq('id', activeSession.id);
-                  
-                  try {
-                    setIsSimulating('generating');
-                    
-                    const res = await fetch('/api/ai/chat', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ messages: newMessages, wordCount: parseInt(wordCount) }),
-                    });
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data.error || 'Terjadi kesalahan');
-                    
-                    const finalMessages = [...newMessages, { role: 'assistant', content: data.text, debug: data.debug_log }];
-                    setSessions(prev => prev.map(s => 
-                      s.id === activeSession.id 
-                        ? { ...s, messages: finalMessages, updatedAt: new Date() } 
-                        : s
-                    ));
-                    
-                    await supabase.from('ai_simulator_sessions').update({
-                      messages: finalMessages,
-                      updated_at: new Date().toISOString()
-                    }).eq('id', activeSession.id);
-
-                  } catch (err: any) {
-                    const finalMessages = [...newMessages, { role: 'assistant', content: `Error: ${err.message}`, debug: { error: err.message } }];
-                    setSessions(prev => prev.map(s => 
-                      s.id === activeSession.id 
-                        ? { ...s, messages: finalMessages, updatedAt: new Date() } 
-                        : s
-                    ));
-                    
-                    await supabase.from('ai_simulator_sessions').update({
-                      messages: finalMessages,
-                      updated_at: new Date().toISOString()
-                    }).eq('id', activeSession.id);
-                  } finally {
-                    setIsSimulating('idle');
-                  }
-                }}
-                className="flex gap-2"
-              >
-                <select 
-                  value={wordCount}
-                  onChange={(e) => setWordCount(e.target.value)}
-                  className="bg-zinc-100 dark:bg-zinc-800 border-transparent rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent w-28 flex-shrink-0"
-                >
-                  <option value="100">100 Kata</option>
-                  <option value="500">500 Kata</option>
-                  <option value="1000">1000 Kata</option>
-                  <option value="2000">2000 Kata</option>
-                </select>
-                <input 
-                  type="text" 
-                  value={simInput}
-                  onChange={(e) => setSimInput(e.target.value)}
-                  placeholder="Ketik pertanyaan untuk simulasi..."
-                  className="flex-1 bg-zinc-100 dark:bg-zinc-800 border-transparent rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent min-w-[200px]"
-                />
-                <button 
-                  type="submit"
-                  disabled={!simInput.trim() || isSimulating !== 'idle'}
-                  className="bg-accent text-white px-4 py-2 rounded-xl text-sm font-bold disabled:opacity-50 hover:bg-accent/90"
-                >
-                  Kirim
-                </button>
+        {/* Content Area */}
+        {activeTab === 'memory' ? (
+          <div className="flex-1 overflow-y-auto p-8">
+            <div className="max-w-4xl mx-auto space-y-8">
+              <div className="bg-zinc-50 dark:bg-zinc-900 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800">
+                <h2 className="text-xl font-bold mb-2 flex items-center gap-2">
+                  <Plus size={20} className="text-emerald-600" />
+                  Tambah Aturan Baru
+                </h2>
+                <p className="text-sm text-zinc-500 mb-6">Ajari AI aturan khusus saat menganalisis brosur. AI akan membaca memori ini sebelum menjawab.</p>
+                
+                <form onSubmit={handleAddRule} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold mb-1">Kata Kunci (Opsional / Penanda)</label>
+                    <input type="text" value={newKeyword} onChange={e => setNewKeyword(e.target.value)} placeholder="Misal: aqiqah, puasa, umum..." className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold mb-1">Instruksi / Aturan Wajib</label>
+                    <textarea value={newInstruction} onChange={e => setNewInstruction(e.target.value)} placeholder="Misal: Jika ada pertanyaan tentang puasa senin kamis, sebutkan bahwa..." className="w-full p-3 h-24 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none resize-none"></textarea>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold mb-1">Sumber Data (Opsional)</label>
+                    <select value={newTargetFolderId} onChange={e => setNewTargetFolderId(e.target.value)} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
+                      <option value="">Semua Data / Referensi Bebas</option>
+                      {folders.map(f => (<option key={f.id} value={f.id}>{f.name}</option>))}
+                    </select>
+                  </div>
+                  <button type="submit" disabled={!newKeyword || !newInstruction} className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 disabled:opacity-50">
+                    <Save size={18} /> Simpan Aturan
+                  </button>
+                  {saveStatus && (
+                    <div className={`mt-4 p-3 rounded-xl border text-sm font-medium ${saveStatus.type === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'}`}>{saveStatus.message}</div>
+                  )}
                 </form>
               </div>
-            </div>
 
-            {/* Panel Log/Debug */}
-            <div className="w-full lg:w-1/4 border-l-0 lg:border-l border-zinc-200 dark:border-zinc-800 pl-0 lg:pl-6 flex flex-col h-64 lg:h-full bg-zinc-50/50 dark:bg-zinc-900/50 rounded-xl lg:rounded-none lg:bg-transparent lg:dark:bg-transparent p-4 lg:p-0 mt-6 lg:mt-0">
-              <div className="flex items-center gap-2 mb-4">
-                <Database size={18} className="text-zinc-400" />
-                <h3 className="font-bold text-sm text-zinc-700 dark:text-zinc-300">Log Pengambilan Data</h3>
-              </div>
-              <div className="flex-1 overflow-y-auto space-y-4">
-                {activeSession.messages.filter(m => m.debug).length === 0 ? (
-                  <p className="text-xs text-zinc-500 italic">Belum ada log pencarian. Ketik pesan untuk memulai.</p>
+              <div>
+                <h2 className="text-xl font-bold mb-4">Daftar Memori AI</h2>
+                {isRulesLoading ? (
+                  <p className="text-zinc-500">Memuat memori...</p>
+                ) : rules.length === 0 ? (
+                  <p className="text-zinc-500 italic">Belum ada aturan khusus yang disimpan.</p>
                 ) : (
-                  (() => {
-                    const lastDebugMsg = activeSession.messages.filter(m => m.debug).pop();
-                    const debug = lastDebugMsg?.debug;
-                    if (!debug) return null;
-
-                    return (
-                      <div className="text-xs space-y-3 font-mono text-zinc-600 dark:text-zinc-400 bg-black/5 dark:bg-black/20 p-3 rounded-lg">
-                        <div>
-                          <span className="font-bold text-zinc-800 dark:text-zinc-200">Aturan Aktif:</span>
-                          <span className="text-zinc-500 text-[10px] ml-2">(Total di DB: {debug.raw_rules_count || 0})</span>
-                          <ul className="list-disc pl-4 mt-1 space-y-1">
-                            {debug.active_rules?.length ? debug.active_rules.map((r: string, i: number) => (
-                              <li key={i} className="truncate">{r.substring(0, 50)}...</li>
-                            )) : <li className="text-zinc-400 italic">Tidak ada yang cocok dengan *keyword* pertanyaan ini.</li>}
-                          </ul>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {rules.map(rule => (
+                      <div key={rule.id} className={`p-5 rounded-2xl border ${rule.is_active ? 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800' : 'bg-zinc-100 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 opacity-60'} shadow-sm relative group`}>
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex gap-2">
+                            <span className="inline-block px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-bold rounded-lg uppercase">{rule.keyword}</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <button onClick={() => handleToggleRule(rule.id, rule.is_active)} className="text-zinc-400 hover:text-emerald-600 transition-colors">
+                              {rule.is_active ? <ToggleRight size={20} className="text-emerald-500" /> : <ToggleLeft size={20} />}
+                            </button>
+                            <button onClick={() => handleDeleteRule(rule.id)} className="text-zinc-400 hover:text-red-500 transition-colors">
+                              <Trash2 size={20} />
+                            </button>
+                          </div>
                         </div>
-                        <div>
-                          <span className="font-bold text-zinc-800 dark:text-zinc-200">Kata Kunci Diekstrak:</span>
-                          <p className="truncate mt-1 text-accent font-semibold">"{debug.extracted_keyword || '-'}"</p>
-                        </div>
-                        <div>
-                          <span className="font-bold text-zinc-800 dark:text-zinc-200">Filter Tahun ID:</span>
-                          <p className="truncate mt-1">{debug.search_filter_folder_id || 'Tidak ada (Semua)'}</p>
-                        </div>
-                        <div>
-                          <span className="font-bold text-zinc-800 dark:text-zinc-200">Brosur Ditemukan:</span>
-                          <ul className="list-disc pl-4 mt-1 space-y-1">
-                            {debug.retrieved_docs?.length ? debug.retrieved_docs.map((d: any, i: number) => (
-                              <li key={i} className="truncate" title={d.judul}>{d.judul} ({d.tahun})</li>
-                            )) : <li className="text-zinc-400 italic">Nihil</li>}
-                          </ul>
-                        </div>
-                        <div className="pt-2 border-t border-zinc-200 dark:border-zinc-700">
-                          <span className="font-bold text-zinc-800 dark:text-zinc-200">System Prompt Leng:</span> {debug.system_prompt_length} chars
-                        </div>
-                        <div className="pt-2 border-t border-zinc-200 dark:border-zinc-700">
-                          <span className="font-bold text-zinc-800 dark:text-zinc-200">Batas Baca AI (Config):</span>
-                          <ul className="list-disc pl-4 mt-1 space-y-1">
-                            <li>Maks. {debug.config?.max_docs || 5} Brosur</li>
-                            <li>Maks. {debug.config?.max_chars_per_doc?.toLocaleString('id-ID') || '15.000'} karakter / brosur</li>
-                          </ul>
-                        </div>
+                        <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200 leading-relaxed mt-3">{rule.instruction}</p>
                       </div>
-                    );
-                  })()
+                    ))}
+                  </div>
                 )}
               </div>
             </div>
           </div>
         ) : (
-          <div className="flex flex-col h-[600px] overflow-y-auto pr-2 space-y-6">
-            <div className="bg-zinc-50 dark:bg-zinc-800/50 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-700">
-              <h2 className="text-xl font-bold mb-2 flex items-center gap-2">
-                <Plus size={20} className="text-accent" />
-                Tambah Aturan Baru
-              </h2>
-              <p className="text-sm text-zinc-500 mb-4">Ajari AI aturan khusus saat menganalisis brosur. AI akan membaca memori ini sebelum menjawab.</p>
-              
-              <form onSubmit={handleAddRule} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold mb-1">Kata Kunci (Opsional / Penanda)</label>
-                  <input 
-                    type="text" 
-                    value={newKeyword}
-                    onChange={e => setNewKeyword(e.target.value)}
-                    placeholder="Misal: aqiqah, puasa, umum..."
-                    className="w-full p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-accent outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-1">Instruksi / Aturan Wajib</label>
-                  <textarea 
-                    value={newInstruction}
-                    onChange={e => setNewInstruction(e.target.value)}
-                    placeholder="Misal: Jika ada pertanyaan tentang puasa senin kamis, sebutkan bahwa..."
-                    className="w-full p-3 h-24 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-accent outline-none resize-none"
-                  ></textarea>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-1">Sumber Data (Opsional)</label>
-                  <select 
-                    value={newTargetFolderId}
-                    onChange={e => setNewTargetFolderId(e.target.value)}
-                    className="w-full p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-accent outline-none"
-                  >
-                    <option value="">Semua Data / Referensi Bebas</option>
-                    {folders.map(f => (
-                      <option key={f.id} value={f.id}>{f.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <button type="submit" disabled={!newKeyword || !newInstruction} className="flex items-center gap-2 px-6 py-3 bg-accent text-white rounded-xl font-bold hover:bg-accent/90 disabled:opacity-50">
-                  <Save size={18} /> Simpan Aturan
-                </button>
-                {saveStatus && (
-                  <div className={`mt-4 p-3 rounded-xl border text-sm font-medium ${saveStatus.type === 'success' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
-                    {saveStatus.message}
+          <div className="flex-1 flex flex-col overflow-hidden relative">
+            <div className="flex-1 overflow-y-auto pb-40 pt-10">
+              <div className="max-w-3xl mx-auto px-6 space-y-8">
+                {activeSession.messages.length <= 1 && (
+                  <div className="h-64 flex flex-col items-center justify-center text-zinc-400 space-y-4">
+                     <Bot size={48} className="opacity-20" />
+                     <p className="font-medium text-lg text-zinc-500">Ada yang bisa saya bantu hari ini?</p>
                   </div>
                 )}
-              </form>
+                {activeSession.messages.map((msg, i) => (
+                  <div key={i} className={`flex gap-4 ${msg.role === 'user' ? 'justify-end' : ''}`}>
+                    {msg.role !== 'user' && (
+                      <div className="w-8 h-8 rounded-full border border-zinc-200 dark:border-zinc-700 flex items-center justify-center flex-shrink-0 text-zinc-600 dark:text-zinc-300">
+                        <Bot size={16} />
+                      </div>
+                    )}
+                    <div className={`max-w-[85%] ${msg.role === 'user' ? 'bg-zinc-100 dark:bg-zinc-800 rounded-3xl py-3 px-5 text-[15px]' : 'py-1'}`}>
+                      {msg.role === 'user' ? (
+                         msg.content
+                      ) : (
+                         <div className="text-[15px] leading-relaxed markdown-content" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                           <ReactMarkdown
+                             remarkPlugins={[remarkGfm]}
+                             components={{
+                               p: ({ node, children, ...props }) => {
+                                 const textContent = React.Children.toArray(children).join('');
+                                 if (containsArabic(textContent)) {
+                                   return (
+                                     <p {...props} className="text-[20px] leading-[2.2] text-right py-3 px-4 bg-zinc-50 dark:bg-zinc-900 rounded-xl my-4 text-zinc-900 dark:text-white" style={{ fontFamily: "'Scheherazade New', serif", direction: 'rtl' }}>{children}</p>
+                                   );
+                                 }
+                                 return <p {...props} className="mb-4 break-words text-zinc-800 dark:text-zinc-200">{children}</p>;
+                               },
+                               strong: ({ node, ...props }) => <strong {...props} className="font-semibold text-zinc-950 dark:text-white" />,
+                               ul: ({ node, ...props }) => <ul {...props} className="list-disc pl-5 mb-4 space-y-1 text-zinc-800 dark:text-zinc-200" />,
+                               ol: ({ node, ...props }) => <ol {...props} className="list-decimal pl-5 mb-4 space-y-1 text-zinc-800 dark:text-zinc-200" />,
+                               li: ({ node, ...props }) => <li {...props} className="leading-relaxed" />,
+                               h1: ({ node, ...props }) => <h1 {...props} className="text-xl font-bold mb-3 mt-6 text-zinc-900 dark:text-white" />,
+                               h2: ({ node, ...props }) => <h2 {...props} className="text-lg font-bold mb-3 mt-6 text-zinc-900 dark:text-white" />,
+                               h3: ({ node, ...props }) => <h3 {...props} className="text-base font-bold mb-2 mt-4 text-zinc-900 dark:text-white" />,
+                             }}
+                           >
+                             {msg.content}
+                           </ReactMarkdown>
+                         </div>
+                      )}
+                      
+                      {msg.debug && (
+                         <details className="mt-4 border border-zinc-200 dark:border-zinc-800 rounded-xl p-3 text-xs bg-zinc-50 dark:bg-zinc-900/30">
+                           <summary className="cursor-pointer text-zinc-500 font-semibold select-none flex items-center gap-2">
+                             <Database size={14} /> Lihat Log Sistem RAG
+                           </summary>
+                           <div className="mt-3 space-y-2 text-zinc-600 dark:text-zinc-400 p-2 font-mono">
+                              <p><span className="font-bold">Kata Kunci Diekstrak:</span> {msg.debug.extracted_keyword}</p>
+                              <p><span className="font-bold">Prompt Length:</span> {msg.debug.system_prompt_length} chars</p>
+                              <p><span className="font-bold">Brosur Ditemukan:</span></p>
+                              <ul className="list-disc pl-4 space-y-1">
+                                {msg.debug.retrieved_docs?.map((d: any, i: number) => <li key={i}>{d.judul} ({d.tahun})</li>)}
+                              </ul>
+                           </div>
+                         </details>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {isSimulating !== 'idle' && (
+                  <div className="flex gap-4">
+                     <div className="w-8 h-8 rounded-full border border-zinc-200 dark:border-zinc-700 flex items-center justify-center flex-shrink-0">
+                        <div className="w-3 h-3 border-2 border-zinc-600 dark:border-zinc-400 border-t-transparent rounded-full animate-spin"></div>
+                     </div>
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div>
-              <h2 className="text-xl font-bold mb-4">Daftar Memori AI</h2>
-              {isRulesLoading ? (
-                <p className="text-zinc-500">Memuat memori...</p>
-              ) : rules.length === 0 ? (
-                <p className="text-zinc-500 italic">Belum ada aturan khusus yang disimpan.</p>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {rules.map(rule => (
-                    <div key={rule.id} className={`p-5 rounded-2xl border ${rule.is_active ? 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800' : 'bg-zinc-100 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 opacity-60'} shadow-sm relative group`}>
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="flex gap-2">
-                          <span className="inline-block px-3 py-1 bg-accent/10 text-accent text-xs font-bold rounded-lg uppercase">{rule.keyword}</span>
-                          {rule.target_folder_id && (
-                            <span className="inline-block px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-bold rounded-lg flex items-center gap-1">
-                              <Database size={12} />
-                              {folders.find(f => f.id === rule.target_folder_id)?.name || 'Tahun Tertentu'}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex gap-2">
-                          <button onClick={() => handleToggleRule(rule.id, rule.is_active)} className="text-zinc-400 hover:text-accent transition-colors" title={rule.is_active ? 'Nonaktifkan' : 'Aktifkan'}>
-                            {rule.is_active ? <ToggleRight size={20} className="text-green-500" /> : <ToggleLeft size={20} />}
-                          </button>
-                          <button onClick={() => handleDeleteRule(rule.id)} className="text-zinc-400 hover:text-red-500 transition-colors" title="Hapus Permanen">
-                            <Trash2 size={20} />
-                          </button>
-                        </div>
-                      </div>
-                      <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200 leading-relaxed mt-3">{rule.instruction}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
+            {/* Sticky Input Area */}
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white dark:from-zinc-950 dark:via-zinc-950 to-transparent pt-12 pb-6 px-6">
+              <div className="max-w-3xl mx-auto">
+                <form 
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    if (!simInput.trim() || isSimulating !== 'idle') return;
+                    
+                    const userMsg = simInput.trim();
+                    setSimInput('');
+                    
+                    const newMessages = [...activeSession.messages, { role: 'user', content: userMsg }];
+                    
+                    let updatedTitle = activeSession.title;
+                    if (activeSession.messages.length === 1) {
+                      updatedTitle = userMsg.substring(0, 30) + (userMsg.length > 30 ? '...' : '');
+                    }
+
+                    setSessions(prev => prev.map(s => s.id === activeSession.id ? { ...s, title: updatedTitle, messages: newMessages, updatedAt: new Date() } : s));
+                    await supabase.from('ai_simulator_sessions').update({ title: updatedTitle, messages: newMessages, updated_at: new Date().toISOString() }).eq('id', activeSession.id);
+                    
+                    try {
+                      setIsSimulating('generating');
+                      const res = await fetch('/api/ai/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ messages: newMessages, wordCount: 500 }),
+                      });
+                      const data = await res.json();
+                      if (!res.ok) throw new Error(data.error || 'Terjadi kesalahan');
+                      
+                      const finalMessages = [...newMessages, { role: 'assistant', content: data.text, debug: data.debug_log }];
+                      setSessions(prev => prev.map(s => s.id === activeSession.id ? { ...s, messages: finalMessages, updatedAt: new Date() } : s));
+                      await supabase.from('ai_simulator_sessions').update({ messages: finalMessages, updated_at: new Date().toISOString() }).eq('id', activeSession.id);
+                    } catch (err: any) {
+                      const finalMessages = [...newMessages, { role: 'assistant', content: `Error: ${err.message}`, debug: { error: err.message } }];
+                      setSessions(prev => prev.map(s => s.id === activeSession.id ? { ...s, messages: finalMessages, updatedAt: new Date() } : s));
+                      await supabase.from('ai_simulator_sessions').update({ messages: finalMessages, updated_at: new Date().toISOString() }).eq('id', activeSession.id);
+                    } finally {
+                      setIsSimulating('idle');
+                    }
+                  }}
+                  className="bg-zinc-100 dark:bg-zinc-800 rounded-3xl p-2 flex items-end gap-2"
+                >
+                  <textarea 
+                    value={simInput}
+                    onChange={(e) => setSimInput(e.target.value)}
+                    placeholder="Tanyakan ke Sahabat MTA..."
+                    className="flex-1 bg-transparent border-transparent px-4 py-3 text-[15px] text-zinc-900 dark:text-zinc-100 focus:outline-none resize-none max-h-48 min-h-[52px]"
+                    rows={1}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        if(simInput.trim() && isSimulating === 'idle') e.currentTarget.form?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                      }
+                    }}
+                  />
+                  <button 
+                    type="submit"
+                    disabled={!simInput.trim() || isSimulating !== 'idle'}
+                    className="w-10 h-10 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center flex-shrink-0 disabled:opacity-30 mb-1 mr-1 transition-transform active:scale-95"
+                  >
+                    <MessageSquare size={16} />
+                  </button>
+                </form>
+                <div className="text-center mt-3 text-xs text-zinc-400 dark:text-zinc-500">AI bisa berbuat kesalahan. Selalu periksa kembali hukum dan dalil dengan rujukan asli MTA.</div>
+              </div>
             </div>
           </div>
         )}

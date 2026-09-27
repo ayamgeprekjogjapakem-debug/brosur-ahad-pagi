@@ -73,7 +73,7 @@ export default async function BrosurPage({ params }: { params: Promise<{ slug: s
     return (
       <div className="h-full flex flex-col items-center justify-center p-12 text-center text-zinc-500 overflow-auto">
         <h2 className="text-2xl font-bold mb-4">Brosur tidak ditemukan</h2>
-        <div className="bg-zinc-100 dark:bg-zinc-900 p-6 rounded-xl text-left text-xs font-mono mb-8 max-w-full overflow-x-auto">
+        <div className="bg-zinc-100 p-6 rounded-xl text-left text-xs font-mono mb-8 max-w-full overflow-x-auto">
           <p className="text-red-500 font-bold mb-2">DEBUG INFO:</p>
           <p><strong>Target URL:</strong> {resolvedParams.slug}</p>
           <p><strong>Decoded URL:</strong> {slug}</p>
@@ -93,7 +93,7 @@ export default async function BrosurPage({ params }: { params: Promise<{ slug: s
   }
 
   return (
-    <main className="flex-1 h-[100dvh] print:h-auto flex flex-col relative bg-white dark:bg-[#111]">
+    <main className="flex-1 h-[100dvh] print:h-auto flex flex-col relative bg-white">
       <HeaderBar />
       
       <div className="flex-1 overflow-y-auto print:overflow-visible p-6 md:p-12 print:p-0 custom-scrollbar relative">
