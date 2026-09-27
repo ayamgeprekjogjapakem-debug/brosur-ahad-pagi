@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Clock, MapPin, ChevronLeft, ChevronRight, X, CalendarDays, ArrowLeft } from 'lucide-react';
+import { Clock, MapPin, ChevronLeft, ChevronRight, X, CalendarDays, ArrowLeft, Menu } from 'lucide-react';
 import { format, startOfMonth, getDay, getDaysInMonth } from 'date-fns';
 import { id } from 'date-fns/locale';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
+import MainSidebar from '@/app/components/MainSidebar';
 
 interface AladhanTiming {
   timings: {
@@ -197,15 +198,20 @@ export default function PublicKalenderPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#fafaf9] font-sans">
-      {/* Header Terpisah untuk Publik */}
-      <header className="sticky top-0 left-0 right-0 p-4 flex items-center justify-between z-20 bg-white/95 backdrop-blur-md border-b border-slate-200/50">
-        <button
-          onClick={() => router.push('/')}
-          className="p-2 text-slate-500 hover:text-slate-800 flex items-center gap-2 text-sm font-medium transition"
-        >
-          <ArrowLeft className="w-4 h-4" /> Kembali
-        </button>
+    <div className="flex h-screen bg-[#fafaf9] font-sans selection:bg-emerald-200 overflow-hidden">
+      {/* Sidebar Global */}
+      <MainSidebar />
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col relative h-full bg-white/50 overflow-y-auto">
+        {/* Header Terpisah untuk Publik */}
+        <header className="sticky top-0 left-0 right-0 p-4 flex items-center justify-between z-20 bg-white/95 backdrop-blur-md border-b border-slate-200/50">
+          <button
+            onClick={() => window.dispatchEvent(new Event('toggle-main-sidebar'))}
+            className="p-2 bg-white border border-slate-200 rounded-lg text-slate-500 hover:text-slate-800 shadow-sm transition"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
         
         {/* View Mode Switcher */}
         <div className="flex bg-slate-100 p-1 rounded-xl mx-auto shadow-inner">
@@ -581,6 +587,7 @@ export default function PublicKalenderPage() {
           </p>
         </div>
       </main>
+      </div>
     </div>
   );
 }

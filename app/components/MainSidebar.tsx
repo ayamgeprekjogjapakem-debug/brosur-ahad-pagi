@@ -1,16 +1,31 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Search, Bookmark, BookOpen, ScrollText, Users, X, Menu } from 'lucide-react';
+import Link from 'next/link';
+import { Search, Bookmark, BookOpen, ScrollText, Users, X, Menu, CalendarDays, BrainCircuit, Settings } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 
 export default function MainSidebar({
   savedItemsCount = 0,
   onSearchClick,
+  onHistoryClick,
+  aiMode = false,
+  aiSessions = [],
+  activeAiSessionId,
+  onNewAiSession,
+  onAiSessionClick,
+  onAiSessionDelete
 }: {
   savedItemsCount?: number;
   onSearchClick?: () => void;
+  onHistoryClick?: (query: string) => void;
+  aiMode?: boolean;
+  aiSessions?: { id: string; title: string }[];
+  activeAiSessionId?: string;
+  onNewAiSession?: () => void;
+  onAiSessionClick?: (id: string) => void;
+  onAiSessionDelete?: (id: string) => void;
 }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
@@ -82,12 +97,28 @@ export default function MainSidebar({
       badge: null
     },
     {
+      id: 'kalender',
+      label: 'Kalender Hijriah',
+      icon: CalendarDays,
+      onClick: () => { router.push('/kalender'); if (window.innerWidth < 1024) setIsSidebarOpen(false); },
+      isActive: pathname.startsWith('/kalender'),
+      badge: 'Baru'
+    },
+    {
       id: 'perawi',
       label: 'Master Perawi',
       icon: Users,
       onClick: () => { router.push('/perawi'); if (window.innerWidth < 1024) setIsSidebarOpen(false); },
       isActive: pathname === '/perawi',
       badge: 'Tahap Dev'
+    },
+    {
+      id: 'ai-pustaka',
+      label: 'AI Pustaka',
+      icon: BrainCircuit,
+      onClick: () => { router.push('/ai-pustaka'); if (window.innerWidth < 1024) setIsSidebarOpen(false); },
+      isActive: pathname.startsWith('/ai-pustaka'),
+      badge: 'Beta'
     },
   ];
 
@@ -160,46 +191,85 @@ export default function MainSidebar({
           </div>
           <div>
             <div className="flex items-center justify-between px-3 mb-2">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Riwayat Pencarian</p>
-              {searchHistory.length > 0 && (
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{aiMode ? 'Riwayat Percakapan' : 'Riwayat Pencarian'}</p>
+              {!aiMode && searchHistory.length > 0 && (
                 <button onClick={handleClearHistory} className="text-[9px] font-bold text-slate-400 hover:text-rose-500 uppercase transition-colors">Hapus</button>
+              )}
+              {aiMode && (
+                <button onClick={onNewAiSession} className="text-[9px] font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 uppercase transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg> Baru
+                </button>
               )}
             </div>
 
             <div className="space-y-1">
-              {searchHistory.length === 0 ? (
-                <p className="text-xs text-slate-400 italic px-3">Belum ada riwayat.</p>
+              {aiMode ? (
+                aiSessions.length === 0 ? (
+                  <p className="text-xs text-slate-400 italic px-3">Belum ada percakapan.</p>
+                ) : (
+                  aiSessions.map((session) => (
+                    <div key={session.id} className={`group relative w-full flex items-center justify-between px-3 py-2 rounded-lg transition cursor-pointer ${activeAiSessionId === session.id ? 'bg-emerald-50 text-emerald-800' : 'hover:bg-slate-50 text-slate-500 hover:text-slate-800'}`}>
+                      <button
+                        onClick={() => {
+                          onAiSessionClick?.(session.id);
+                          if (window.innerWidth < 1024) setIsSidebarOpen(false);
+                        }}
+                        className="flex-1 flex items-center gap-3 text-left text-sm truncate"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-50 group-hover:opacity-100 shrink-0"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        <span className="truncate">{session.title}</span>
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onAiSessionDelete?.(session.id); }}
+                        className="p-1.5 opacity-0 group-hover:opacity-100 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-md transition shrink-0 ml-2"
+                        title="Hapus percakapan"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))
+                )
               ) : (
-                searchHistory.map((history, i) => (
-                  <div key={i} className="group relative w-full flex items-center justify-between px-3 py-2 hover:bg-slate-50 rounded-lg transition">
-                    <button
-                      onClick={() => {
-                        // Jika ada onSearchClick (berarti di luar Makkah), kita bisa arahkan ke halaman utama dengan query params atau sekadar handle default.
-                        // Idealnya kita lempar event atau ke '/' dengan query string
-                        router.push('/?q=' + encodeURIComponent(history));
-                        if (window.innerWidth < 1024) setIsSidebarOpen(false);
-                      }}
-                      className="flex-1 flex items-center gap-3 text-left text-slate-500 hover:text-slate-800 text-sm truncate"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-50 group-hover:opacity-100 shrink-0"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" /></svg>
-                      <span className="truncate">{history}</span>
-                    </button>
-                    <button
-                      onClick={() => handleRemoveHistoryItem(i)}
-                      className="p-1.5 opacity-0 group-hover:opacity-100 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-md transition shrink-0 ml-2"
-                      title="Hapus riwayat"
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                ))
+                searchHistory.length === 0 ? (
+                  <p className="text-xs text-slate-400 italic px-3">Belum ada riwayat.</p>
+                ) : (
+                  searchHistory.map((history, i) => (
+                    <div key={i} className="group relative w-full flex items-center justify-between px-3 py-2 hover:bg-slate-50 rounded-lg transition">
+                      <button
+                        onClick={() => {
+                          if (onHistoryClick) {
+                            onHistoryClick(history);
+                          } else {
+                            router.push('/?q=' + encodeURIComponent(history));
+                          }
+                          if (window.innerWidth < 1024) setIsSidebarOpen(false);
+                        }}
+                        className="flex-1 flex items-center gap-3 text-left text-slate-500 hover:text-slate-800 text-sm truncate"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-50 group-hover:opacity-100 shrink-0"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" /></svg>
+                        <span className="truncate">{history}</span>
+                      </button>
+                      <button
+                        onClick={() => handleRemoveHistoryItem(i)}
+                        className="p-1.5 opacity-0 group-hover:opacity-100 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-md transition shrink-0 ml-2"
+                        title="Hapus riwayat"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))
+                )
               )}
             </div>
           </div>
         </div>
 
-        <div className="p-4 border-t border-slate-100 text-[10px] text-center text-slate-400 font-medium bg-slate-50">
-          Hak Cipta © {new Date().getFullYear()} MTA
+        <div className="p-4 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400 font-medium bg-slate-50">
+          <div>Hak Cipta © {new Date().getFullYear()} MTA</div>
+          <Link href="/settings" className="flex items-center gap-1.5 hover:text-slate-700 transition">
+            <span>v1.0.0</span>
+            <Settings size={12} />
+          </Link>
         </div>
       </aside>
     </>

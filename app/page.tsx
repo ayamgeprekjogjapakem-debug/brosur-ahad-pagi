@@ -11,6 +11,7 @@ import {
   TrendingUp, Loader2, Users, ScrollText, CalendarDays
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import MainSidebar from '@/app/components/MainSidebar';
 
 const HighlightText = ({ text, highlight }: { text: string; highlight: string | string[] }) => {
   if (!text) return <>{text}</>;
@@ -208,137 +209,12 @@ export default function MakkahPortal() {
   return (
     <div className="flex h-screen bg-[#fafaf9] font-sans selection:bg-emerald-200 overflow-hidden">
 
-      {/* Mobile Overlay */}
-      {isSidebarOpen && (
-        <div
-          className="lg:hidden fixed inset-0 bg-slate-900/50 z-30 backdrop-blur-sm transition-opacity"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <aside
-        className={`fixed inset-y-0 left-0 z-40 lg:relative bg-white border-r border-slate-200 transition-all duration-300 ease-in-out overflow-hidden flex flex-col shrink-0
-          ${isSidebarOpen ? 'w-[280px] sm:w-[300px] translate-x-0' : 'w-0 -translate-x-full lg:translate-x-0 lg:w-0'}
-        `}
-      >
-        <div className="p-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10 shrink-0">
-          <button
-            onClick={() => { resetSearch(); if (window.innerWidth < 1024) setIsSidebarOpen(false); }}
-            className="flex items-center gap-3 group text-left cursor-pointer outline-none"
-          >
-            <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white shadow-sm transition-transform group-hover:scale-105">
-              <BookOpen className="w-4 h-4" />
-            </div>
-            <div>
-              <h1 className="text-[13px] font-extrabold text-slate-900 leading-tight">Pustaka MTA</h1>
-              <p className="text-[9px] font-bold text-emerald-600 tracking-widest uppercase">v1.0 Makkah</p>
-            </div>
-          </button>
-          <button
-            className="lg:hidden p-1.5 rounded-lg border border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition"
-            onClick={() => setIsSidebarOpen(false)}
-          >
-            <X size={16} />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-3 space-y-6">
-          <div>
-            <p className="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Menu Utama</p>
-            <div className="relative flex flex-col space-y-1" style={{ position: 'relative' }}>
-              {[
-                { id: 'search', label: 'Pencarian Baru', icon: Search, onClick: () => { resetSearch(); if (window.innerWidth < 1024) setIsSidebarOpen(false); }, isActive: !isShowingSaved && searchResults === null, badge: null },
-                { id: 'tersimpan', label: 'Dalil Tersimpan', icon: Bookmark, onClick: () => { router.push('/tersimpan'); if (window.innerWidth < 1024) setIsSidebarOpen(false); }, isActive: pathname === '/tersimpan' || isShowingSaved, badge: savedItems.length > 0 ? savedItems.length : null },
-                { id: 'quran', label: 'Al-Qur\'an', icon: BookOpen, onClick: () => { router.push('/quran'); if (window.innerWidth < 1024) setIsSidebarOpen(false); }, isActive: pathname === '/quran', badge: null },
-                { id: 'bap', label: 'Brosur', icon: ScrollText, onClick: () => { router.push('/bap'); if (window.innerWidth < 1024) setIsSidebarOpen(false); }, isActive: pathname === '/bap', badge: null },
-                { id: 'kalender', label: 'Kalender Hijriah', icon: CalendarDays, onClick: () => { router.push('/kalender'); if (window.innerWidth < 1024) setIsSidebarOpen(false); }, isActive: pathname === '/kalender', badge: 'Baru' },
-                { id: 'perawi', label: 'Master Perawi', icon: Users, onClick: () => { router.push('/perawi'); if (window.innerWidth < 1024) setIsSidebarOpen(false); }, isActive: pathname === '/perawi', badge: 'Tahap Dev' },
-              ].map((menu) => (
-                <button
-                  key={menu.id}
-                  onClick={menu.onClick}
-                  className={`relative w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors z-10 ${menu.isActive ? 'text-emerald-800 font-semibold' : 'text-slate-600 hover:text-slate-900 font-medium hover:bg-slate-50'}`}
-                >
-                  <div className="flex items-center gap-3">
-                    <menu.icon className="w-4 h-4" /> {menu.label}
-                  </div>
-                  {menu.badge && (
-                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider ${menu.isActive ? 'bg-emerald-200/50 text-emerald-800' : 'bg-slate-100 text-slate-500'}`}>
-                      {menu.badge}
-                    </span>
-                  )}
-                  {menu.isActive && (
-                    <motion.div
-                      layoutId="active-sidebar-menu"
-                      className="absolute inset-0 bg-emerald-50 rounded-lg -z-10"
-                      initial={false}
-                      transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                    />
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between px-3 mb-2">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Riwayat Pencarian</p>
-              {searchHistory.length > 0 && (
-                <button onClick={handleClearHistory} className="text-[9px] font-bold text-slate-400 hover:text-rose-500 uppercase">Hapus</button>
-              )}
-            </div>
-
-            <div className="space-y-1">
-              {searchHistory.length === 0 ? (
-                <p className="text-xs text-slate-400 italic px-3">Belum ada riwayat.</p>
-              ) : (
-                searchHistory.map((history, i) => (
-                  <div key={i} className="group relative w-full flex items-center justify-between px-3 py-2 hover:bg-slate-50 rounded-lg transition">
-                    <button
-                      onClick={() => {
-                        handleSearch(history);
-                        if (window.innerWidth < 1024) setIsSidebarOpen(false);
-                      }}
-                      className="flex-1 flex items-center gap-3 text-left text-slate-500 hover:text-slate-800 text-sm truncate"
-                    >
-                      <MessageSquare className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 shrink-0" />
-                      <span className="truncate">{history}</span>
-                    </button>
-                    <button
-                      onClick={() => handleRemoveHistoryItem(i)}
-                      className="p-1.5 opacity-0 group-hover:opacity-100 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-md transition shrink-0 ml-2"
-                      title="Hapus riwayat"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* SETTINGS & VERSION */}
-        <div className="p-4 border-t border-slate-100 bg-slate-50/30 shrink-0">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-slate-200/50 flex items-center justify-center text-slate-500">
-                <Settings size={14} />
-              </div>
-              <div>
-                <p className="text-[11px] font-bold text-slate-700 leading-tight">Pengaturan</p>
-                <button
-                  // onClick={() => setIsChangelogOpen(true)}
-                  className="text-[10px] text-slate-500 hover:text-emerald-600 font-medium transition-colors cursor-pointer"
-                >
-                  Versi 1.0 Makkah &bull; Changelog
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </aside>
+      {/* Sidebar Global */}
+      <MainSidebar 
+        savedItemsCount={savedItems.length} 
+        onSearchClick={resetSearch} 
+        onHistoryClick={(history) => handleSearch(history)} 
+      />
 
       {/* Main Canvas */}
       <main className="flex-1 flex flex-col relative h-full bg-white/50 overflow-y-auto">
