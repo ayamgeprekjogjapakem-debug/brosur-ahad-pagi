@@ -33,14 +33,19 @@ export async function GET(request: NextRequest) {
       .from('hadist_brosur')
       .select('rawi_kitab, rawi_teratas, perawi_sumber');
 
+    // PRE-PROCESS (Optimasi performa agar tidak melakukan trim/toLowerCase M*N kali)
+    const normalizedItems = (itemsCount || []).map(row => ({
+      rk: (row.rawi_kitab || '').trim().toLowerCase(),
+      rt: (row.rawi_teratas || '').trim().toLowerCase(),
+      ps: (row.perawi_sumber || '').trim().toLowerCase()
+    }));
+
     const rawiWithStats = (rawiList || []).map((rw) => {
       const name = (rw.nama_rawi || '').trim().toLowerCase();
       let count = 0;
-      if (!countErr && itemsCount && name) {
-        for (const row of itemsCount) {
-          const rk = (row.rawi_kitab || '').trim().toLowerCase();
-          const rt = (row.rawi_teratas || '').trim().toLowerCase();
-          const ps = (row.perawi_sumber || '').trim().toLowerCase();
+      if (!countErr && name) {
+        for (const row of normalizedItems) {
+          const { rk, rt, ps } = row;
           if (
             (rk && (rk === name || rk.includes(name) || name.includes(rk))) ||
             (rt && (rt === name || rt.includes(name) || name.includes(rt))) ||

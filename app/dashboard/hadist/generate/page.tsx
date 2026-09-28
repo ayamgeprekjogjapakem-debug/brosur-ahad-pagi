@@ -480,6 +480,45 @@ export default function GenerateSQLPage() {
           </div>
         </div>
 
+        {/* Global Stats Cards */}
+        {!loading && brosurs.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/70 shadow-sm flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-1">Total Brosur</p>
+                <h3 className="text-2xl font-black text-slate-900">{brosurs.length}</h3>
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                <BookOpen className="w-6 h-6" />
+              </div>
+            </div>
+            
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/70 shadow-sm flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-emerald-600 uppercase tracking-widest mb-1">Sudah Diekstrak</p>
+                <h3 className="text-2xl font-black text-emerald-700">
+                  {brosurs.filter(b => b.hadist_brosur && b.hadist_brosur.length > 0).length}
+                </h3>
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                <CheckCircle className="w-6 h-6" />
+              </div>
+            </div>
+            
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/70 shadow-sm flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-amber-600 uppercase tracking-widest mb-1">Belum Diekstrak</p>
+                <h3 className="text-2xl font-black text-amber-700">
+                  {brosurs.filter(b => !b.hadist_brosur || b.hadist_brosur.length === 0).length}
+                </h3>
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                <Loader2 className="w-6 h-6" />
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* KOLOM KIRI: DAFTAR BROSUR UNTUK DIPILIH */}
           <div className="lg:col-span-1 bg-white rounded-2xl border border-slate-200/70 shadow-sm overflow-hidden flex flex-col h-[700px]">

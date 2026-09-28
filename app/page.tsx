@@ -46,7 +46,6 @@ const HighlightText = ({ text, highlight }: { text: string; highlight: string | 
 export default function MakkahPortal() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [searchResults, setSearchResults] = useState<any[] | null>(null);
   const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
@@ -219,13 +218,14 @@ export default function MakkahPortal() {
       {/* Main Canvas */}
       <main className="flex-1 flex flex-col relative h-full bg-white/50 overflow-y-auto">
         {/* Header Toggle */}
-        <header className="sticky top-0 left-0 right-0 p-4 flex items-center justify-between z-20 bg-white/95 backdrop-blur-md border-b border-slate-200/50">
-          <div className="flex items-center gap-3">
+        <header className="h-16 sticky top-0 left-0 right-0 px-4 flex items-center justify-between z-20 bg-white/95 backdrop-blur-md border-b border-slate-200/50 shrink-0">
+          <div className="flex items-center gap-4">
             <button
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-2 bg-white border border-slate-200 rounded-lg text-slate-500 hover:text-slate-800 shadow-sm transition"
+              onClick={() => window.dispatchEvent(new Event('toggle-main-sidebar'))}
+              className="w-10 h-10 border border-slate-200 rounded-xl flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition shadow-sm"
+              title="Toggle Sidebar"
             >
-              <Menu className="w-5 h-5" />
+              <Menu size={18} />
             </button>
             {searchResults !== null && (
               <button

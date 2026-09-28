@@ -12,7 +12,7 @@ export default function HeaderBar() {
         {/* Menu Button to toggle collection sidebar */}
         <button 
           onClick={() => window.dispatchEvent(new Event('toggle-collection-sidebar'))}
-          className="lg:hidden w-10 h-10 border border-slate-200 rounded-xl flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition"
+          className="w-10 h-10 border border-slate-200 rounded-xl flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition"
           title="Buka Daftar Brosur"
         >
           <Menu size={18} />

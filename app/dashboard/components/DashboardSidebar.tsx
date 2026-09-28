@@ -15,6 +15,7 @@ export default function DashboardSidebar() {
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const supabase = createClient();
 
   useEffect(() => {
@@ -23,6 +24,8 @@ export default function DashboardSidebar() {
       setIsMinimized(true);
       window.dispatchEvent(new CustomEvent('sidebar_minimized_changed', { detail: true }));
     }
+    // Delay mounting slightly to allow state to settle without transition
+    setTimeout(() => setIsMounted(true), 10);
   }, []);
 
   useEffect(() => {
@@ -96,7 +99,7 @@ export default function DashboardSidebar() {
     <aside 
       className={`${
         isMinimized ? 'w-20' : 'w-64'
-      } bg-white/85 dark:bg-zinc-900/85 backdrop-blur-3xl md:rounded-3xl border border-black/5 dark:border-white/10 hidden md:flex flex-col shrink-0 h-full relative z-20 shadow-sm transition-all duration-300 overflow-hidden`}
+      } bg-white/85 dark:bg-zinc-900/85 backdrop-blur-3xl md:rounded-3xl border border-black/5 dark:border-white/10 hidden md:flex flex-col shrink-0 h-full relative z-20 shadow-sm ${isMounted ? 'transition-all duration-300' : ''} overflow-hidden`}
     >
       <div className={`p-6 flex items-center ${isMinimized ? 'justify-center' : 'justify-start'} border-b border-black/[0.04] dark:border-white/[0.04]`}>
         <Link href="/" className="flex items-center gap-3 group" title="Ke Beranda">

@@ -11,12 +11,15 @@ import {
 export default function HadistSidebar() {
   const pathname = usePathname();
   const [isMinimized, setIsMinimized] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem('hadist_sidebar_minimized');
     if (saved === 'true') {
       setIsMinimized(true);
     }
+    // Delay mounting slightly to allow state to settle without transition
+    setTimeout(() => setIsMounted(true), 10);
   }, []);
 
   const toggleSidebar = () => {
@@ -27,7 +30,7 @@ export default function HadistSidebar() {
 
   const menuItems = [
     { name: 'Hadist Sumber Brosur', href: '/dashboard/hadist', icon: FileText, exact: true },
-    { name: 'Master Kitab (Rawi)', href: '/dashboard/hadist/rawi', icon: BookOpen, exact: false },
+    { name: 'Master Kitab', href: '/dashboard/hadist/kitab', icon: BookOpen, exact: false },
     { name: 'Master Sahabat', href: '/dashboard/hadist/sahabat', icon: BookOpen, exact: false },
     { name: 'Master Sanad (Rijal)', href: '/dashboard/hadist/rijal', icon: BookOpen, exact: false },
     { name: 'Kelompok / Tema', href: '/dashboard/hadist/kelompok', icon: Layers, exact: false },
@@ -39,7 +42,7 @@ export default function HadistSidebar() {
     <aside 
       className={`${
         isMinimized ? 'w-20' : 'w-64'
-      } bg-white/85 dark:bg-zinc-900/85 backdrop-blur-3xl md:rounded-3xl border-r md:border border-black/[0.04] dark:border-white/[0.04] hidden md:flex flex-col shrink-0 h-full relative z-20 shadow-sm transition-all duration-300 ease-[0.19,1,0.22,1] group/sidebar`}
+      } bg-white/85 dark:bg-zinc-900/85 backdrop-blur-3xl md:rounded-3xl border-r md:border border-black/[0.04] dark:border-white/[0.04] hidden md:flex flex-col shrink-0 h-full relative z-20 shadow-sm ${isMounted ? 'transition-all duration-300 ease-[0.19,1,0.22,1]' : ''} group/sidebar`}
     >
       {/* Toggle Button (Visible on Hover) */}
       <button 

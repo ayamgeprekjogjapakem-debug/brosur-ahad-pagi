@@ -69,10 +69,30 @@ export default function AiSimulatorPage() {
 
   // Sync sessions to localStorage whenever they change
   useEffect(() => {
-    if (sessions.length > 0 && typeof window !== 'undefined') {
-      localStorage.setItem('makkah_ai_sessions', JSON.stringify(sessions));
+    if (!isLoading && typeof window !== 'undefined') {
+      const validSessions = sessions.filter(s => s.messages.length > 1);
+      if (validSessions.length > 0) {
+        localStorage.setItem('makkah_ai_sessions', JSON.stringify(validSessions));
+      } else {
+        localStorage.removeItem('makkah_ai_sessions');
+      }
     }
-  }, [sessions]);
+  }, [sessions, isLoading]);
+
+  // Sync URL with active session
+  useEffect(() => {
+    if (activeSessionId && typeof window !== 'undefined') {
+      const session = sessions.find(s => s.id === activeSessionId);
+      const url = new URL(window.location.href);
+      if (session && session.messages.length > 1) {
+        url.searchParams.set('id', activeSessionId);
+        window.history.replaceState(null, '', url.toString());
+      } else {
+        url.searchParams.delete('id');
+        window.history.replaceState(null, '', url.toString());
+      }
+    }
+  }, [activeSessionId, sessions]);
 
   const fetchFolders = async () => {
     const { data } = await supabase.from('folders').select('id, name').order('name', { ascending: false });
@@ -159,24 +179,43 @@ export default function AiSimulatorPage() {
 
   const fetchSessions = () => {
     setIsLoading(true);
+    let loadedSessions: ChatSession[] = [];
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('makkah_ai_sessions');
       if (stored) {
         try {
           const data = JSON.parse(stored);
           if (data && data.length > 0) {
-            setSessions(data);
-            setActiveSessionId(data[0].id);
-            setIsLoading(false);
-            return;
+            loadedSessions = data;
           }
         } catch (e) {
           console.error('Gagal membaca sesi lokal', e);
         }
       }
+      
+      const params = new URLSearchParams(window.location.search);
+      const urlId = params.get('id');
+
+      if (urlId && loadedSessions.some(s => s.id === urlId)) {
+        setSessions(loadedSessions);
+        setActiveSessionId(urlId);
+        setIsLoading(false);
+      } else {
+        // Start new session
+        const newSessionId = crypto.randomUUID();
+        const newSession = {
+          id: newSessionId,
+          title: 'Percakapan Baru',
+          messages: [defaultGreeting],
+          updatedAt: new Date()
+        };
+        setSessions([newSession, ...loadedSessions]);
+        setActiveSessionId(newSessionId);
+        setIsLoading(false);
+      }
+    } else {
+      setIsLoading(false);
     }
-    handleNewSession();
-    setIsLoading(false);
   };
 
   const containsArabic = (text: string) => {
@@ -184,15 +223,19 @@ export default function AiSimulatorPage() {
   };
 
   const handleNewSession = () => {
+    const newSessionId = crypto.randomUUID();
     const newSession = {
-      id: crypto.randomUUID(),
+      id: newSessionId,
       title: 'Percakapan Baru',
       messages: [defaultGreeting],
       updatedAt: new Date()
     };
     
-    setSessions(prev => [newSession, ...prev]);
-    setActiveSessionId(newSession.id);
+    setSessions(prev => {
+      const cleanPrev = prev.filter(s => s.messages.length > 1);
+      return [newSession, ...cleanPrev];
+    });
+    setActiveSessionId(newSessionId);
     setInitError(null);
   };
 
@@ -251,13 +294,14 @@ export default function AiSimulatorPage() {
       <div className="flex-1 flex flex-col h-full relative bg-white dark:bg-zinc-950">
         
         {/* Header */}
-        <div className="h-14 flex-shrink-0 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-6 z-10 bg-white dark:bg-zinc-950">
-          <div className="flex items-center gap-3">
+        <div className="h-16 flex-shrink-0 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-4 z-10 bg-white dark:bg-zinc-950">
+          <div className="flex items-center gap-4">
             <button
               onClick={() => window.dispatchEvent(new Event('toggle-main-sidebar'))}
-              className="lg:hidden p-2 -ml-2 text-zinc-500 hover:text-zinc-800 transition"
+              className="w-10 h-10 border border-zinc-200 dark:border-zinc-800 rounded-xl flex items-center justify-center text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-900 hover:text-zinc-700 dark:hover:text-zinc-300 transition"
+              title="Toggle Sidebar"
             >
-              <Menu size={20} />
+              <Menu size={18} />
             </button>
             <div className="font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
               <Bot size={18} className="text-emerald-600" />
