@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import MainSidebar from '@/app/components/MainSidebar';
+import HeaderUserDropdown from '@/app/components/HeaderUserDropdown';
 
 const HighlightText = ({ text, highlight }: { text: string; highlight: string | string[] }) => {
   if (!text) return <>{text}</>;
@@ -237,12 +238,7 @@ export default function MakkahPortal() {
             )}
           </div>
 
-          <div className="flex items-center gap-3 bg-white border border-slate-200 py-1.5 px-3 rounded-full shadow-sm">
-            <span className="text-xs font-semibold text-slate-600">Guru Daerah MTA</span>
-            <div className="w-6 h-6 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center text-[10px] font-bold">
-              GD
-            </div>
-          </div>
+          <HeaderUserDropdown />
         </header>
 
         {/* Content Area */}

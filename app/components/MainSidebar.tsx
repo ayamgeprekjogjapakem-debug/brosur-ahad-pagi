@@ -177,11 +177,11 @@ export default function MainSidebar({
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-[70] lg:relative bg-[#f0f4f9] transition-all duration-300 ease-in-out overflow-hidden flex flex-col shrink-0
-          ${isSidebarOpen ? 'w-[280px] sm:w-[300px] translate-x-0' : 'w-0 -translate-x-full lg:translate-x-0 lg:w-[80px]'}
+        className={`fixed inset-y-0 left-0 z-[70] lg:relative transition-all duration-300 ease-in-out overflow-hidden flex flex-col shrink-0
+          ${isSidebarOpen ? 'w-[280px] sm:w-[300px] translate-x-0 bg-[#f0f4f9]' : 'w-0 -translate-x-full lg:translate-x-0 lg:w-[80px] bg-white'}
         `}
       >
-        <div className={`h-16 p-4 flex items-center ${!isSidebarOpen ? 'justify-center' : 'justify-between'} sticky top-0 bg-[#f0f4f9] z-10 shrink-0`}>
+        <div className={`h-16 p-4 flex items-center ${!isSidebarOpen ? 'justify-center' : 'justify-between'} sticky top-0 ${isSidebarOpen ? 'bg-[#f0f4f9]' : 'bg-white'} z-10 shrink-0`}>
           <Link
             href="/"
             onClick={(e: React.MouseEvent) => {
@@ -244,22 +244,22 @@ export default function MainSidebar({
                   key={menu.id}
                   href={menu.href}
                   onClick={menu.onClick}
-                  className={`relative w-full flex items-center ${!isSidebarOpen ? 'justify-center p-3' : 'justify-between px-4 py-2.5'} rounded-full text-[14px] transition-colors z-10 ${menu.isActive ? 'text-emerald-800 font-semibold' : 'text-slate-700 hover:text-slate-900 font-medium hover:bg-black/5'}`}
+                  className={`relative w-full flex items-center ${!isSidebarOpen ? 'justify-center p-3' : 'justify-between px-4 py-2.5'} rounded-full text-[14px] transition-colors z-10 ${menu.isActive ? 'text-emerald-700 font-semibold' : 'text-slate-500 hover:text-slate-800 font-medium hover:bg-slate-100/80'}`}
                   title={!isSidebarOpen ? menu.label : undefined}
                 >
                   <div className={`flex items-center ${!isSidebarOpen ? 'justify-center' : 'gap-4'}`}>
-                    <menu.icon className={`${!isSidebarOpen ? 'w-5 h-5' : 'w-[18px] h-[18px]'} shrink-0 transition-all`} />
+                    <menu.icon strokeWidth={1.5} className={`${!isSidebarOpen ? 'w-5 h-5' : 'w-[18px] h-[18px]'} shrink-0 transition-all`} />
                     {isSidebarOpen && <span className="truncate">{menu.label}</span>}
                   </div>
                   {isSidebarOpen && menu.badge && (
-                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider shrink-0 ${menu.isActive ? 'bg-emerald-200/50 text-emerald-800' : 'bg-slate-200/50 text-slate-500'}`}>
+                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider shrink-0 ${menu.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'}`}>
                       {menu.badge}
                     </span>
                   )}
                   {menu.isActive && (
                     <motion.div
                       layoutId="active-sidebar-menu-global"
-                      className="absolute inset-0 bg-emerald-200/40 rounded-full -z-10"
+                      className="absolute inset-0 bg-emerald-50 rounded-full -z-10"
                       initial={false}
                       transition={{ type: "spring", stiffness: 400, damping: 30 }}
                     />

@@ -7,6 +7,7 @@ import { createSlug } from './utils';
 import { Book, Search, Loader2, Library, BookOpen, Bookmark, Menu, X, ScrollText, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 import MainSidebar from '@/app/components/MainSidebar';
+import HeaderUserDropdown from '@/app/components/HeaderUserDropdown';
 
 import Image from 'next/image';
 
@@ -83,11 +84,7 @@ export default function QuranPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="px-3 py-1.5 border border-slate-200 rounded-full flex items-center gap-2">
-              <span className="text-xs font-bold text-slate-600 hidden sm:inline-block">Guru Daerah MTA</span>
-              <span className="text-xs font-bold text-slate-600 sm:hidden">Guru MTA</span>
-              <div className="w-5 h-5 bg-emerald-100 rounded-full flex items-center justify-center text-[8px] font-bold text-emerald-700">GD</div>
-            </div>
+            <HeaderUserDropdown />
           </div>
         </header>
 
