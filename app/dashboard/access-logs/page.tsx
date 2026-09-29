@@ -107,17 +107,17 @@ export default function AccessLogsPage() {
     <div className="p-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-white flex items-center gap-2 mb-4">
+          <h1 className="text-2xl font-bold text-zinc-900  flex items-center gap-2 mb-4">
             <Activity size={24} className="text-accent" />
             Log Akses Pengguna
           </h1>
-          <div className="flex bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl w-fit">
+          <div className="flex bg-zinc-100  p-1 rounded-xl w-fit">
             <button
               onClick={() => setActiveTab('app')}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 activeTab === 'app' 
-                  ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm' 
-                  : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'
+                  ? 'bg-white  text-zinc-900  shadow-sm' 
+                  : 'text-zinc-500 hover:text-zinc-700  '
               }`}
             >
               <Smartphone size={16} /> Aplikasi Mobile
@@ -126,8 +126,8 @@ export default function AccessLogsPage() {
               onClick={() => setActiveTab('web')}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 activeTab === 'web' 
-                  ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm' 
-                  : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'
+                  ? 'bg-white  text-zinc-900  shadow-sm' 
+                  : 'text-zinc-500 hover:text-zinc-700  '
               }`}
             >
               <Globe size={16} /> Pengunjung Web
@@ -138,7 +138,7 @@ export default function AccessLogsPage() {
           <select 
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value)}
-            className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white px-4 py-2.5 rounded-xl text-sm outline-none focus:border-accent font-medium"
+            className="bg-white  border border-zinc-200  text-zinc-900  px-4 py-2.5 rounded-xl text-sm outline-none focus:border-accent font-medium"
           >
             <option value="today">Hari Ini</option>
             <option value="yesterday">Kemarin</option>
@@ -148,22 +148,22 @@ export default function AccessLogsPage() {
           </select>
           <Link 
             href="/dashboard/blocked-ips"
-            className="flex items-center gap-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-4 py-2.5 rounded-xl font-bold hover:opacity-90 transition-opacity text-sm"
+            className="flex items-center gap-2 bg-zinc-900  text-white  px-4 py-2.5 rounded-xl font-bold hover:opacity-90 transition-opacity text-sm"
           >
             <ShieldBan size={16} /> Kelola Blokir IP
           </Link>
         </div>
       </div>
       
-      <div className="bg-white dark:bg-zinc-900 rounded-3xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col">
+      <div className="bg-white  rounded-3xl overflow-hidden border border-zinc-200  shadow-sm flex flex-col">
         <div className="overflow-x-auto flex-1">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-zinc-50 dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800">
-                <th className="p-4 font-semibold text-sm text-zinc-600 dark:text-zinc-400">Pengunjung (IP)</th>
-                <th className="p-4 font-semibold text-sm text-zinc-600 dark:text-zinc-400">Lokasi</th>
-                <th className="p-4 font-semibold text-sm text-zinc-600 dark:text-zinc-400 text-center">Total Akses</th>
-                <th className="p-4 font-semibold text-sm text-zinc-600 dark:text-zinc-400"></th>
+              <tr className="bg-zinc-50  border-b border-zinc-200 ">
+                <th className="p-4 font-semibold text-sm text-zinc-600 ">Pengunjung (IP)</th>
+                <th className="p-4 font-semibold text-sm text-zinc-600 ">Lokasi</th>
+                <th className="p-4 font-semibold text-sm text-zinc-600  text-center">Total Akses</th>
+                <th className="p-4 font-semibold text-sm text-zinc-600 "></th>
               </tr>
             </thead>
             <tbody>
@@ -184,17 +184,17 @@ export default function AccessLogsPage() {
                   <tr 
                     key={group.ip}
                     onClick={() => router.push(`/dashboard/access-logs/${group.ip}`)}
-                    className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/20 transition-colors cursor-pointer group"
+                    className="border-b border-zinc-100  hover:bg-zinc-50  transition-colors cursor-pointer group"
                   >
                     <td className="p-4 text-sm font-semibold flex items-center gap-3">
-                      <div className="bg-zinc-100 dark:bg-zinc-800 p-2 rounded-lg text-zinc-500 dark:text-zinc-400 group-hover:bg-accent/10 group-hover:text-accent transition-colors">
+                      <div className="bg-zinc-100  p-2 rounded-lg text-zinc-500  group-hover:bg-accent/10 group-hover:text-accent transition-colors">
                         <User size={16} />
                       </div>
                       <div className="flex flex-col">
-                        <span className="font-mono text-zinc-900 dark:text-zinc-100">{group.ip}</span>
+                        <span className="font-mono text-zinc-900 ">{group.ip}</span>
                       </div>
                     </td>
-                    <td className="p-4 text-sm text-zinc-700 dark:text-zinc-300">
+                    <td className="p-4 text-sm text-zinc-700 ">
                       {group.location || 'Unknown'}
                     </td>
                     <td className="p-4 text-sm font-bold text-accent text-center">
@@ -217,14 +217,14 @@ export default function AccessLogsPage() {
 
         {/* Footer Pagination Bar */}
         {!isLoading && totalItems > 0 && (
-          <div className="p-4 bg-zinc-50 dark:bg-zinc-950/80 border-t border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3 text-xs md:text-sm font-medium text-zinc-600 dark:text-zinc-400">
+          <div className="p-4 bg-zinc-50  border-t border-zinc-200  flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3 text-xs md:text-sm font-medium text-zinc-600 ">
               <div className="flex items-center gap-2">
                 <span>Tampilkan:</span>
                 <select
                   value={pageSize}
                   onChange={(e) => setPageSize(Number(e.target.value))}
-                  className="bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 rounded-xl px-3 py-1.5 text-xs md:text-sm font-bold focus:outline-none focus:ring-2 focus:ring-accent/50"
+                  className="bg-white  border border-zinc-300  text-zinc-900  rounded-xl px-3 py-1.5 text-xs md:text-sm font-bold focus:outline-none focus:ring-2 focus:ring-accent/50"
                 >
                   <option value={10}>10</option>
                   <option value={20}>20</option>
@@ -235,9 +235,9 @@ export default function AccessLogsPage() {
               </div>
               <span className="text-zinc-400">|</span>
               <span>
-                Menampilkan <strong className="text-zinc-900 dark:text-zinc-100">{startIndex + 1}</strong> -{' '}
-                <strong className="text-zinc-900 dark:text-zinc-100">{endIndex}</strong> dari{' '}
-                <strong className="text-zinc-900 dark:text-zinc-100">{totalItems}</strong> IP
+                Menampilkan <strong className="text-zinc-900 ">{startIndex + 1}</strong> -{' '}
+                <strong className="text-zinc-900 ">{endIndex}</strong> dari{' '}
+                <strong className="text-zinc-900 ">{totalItems}</strong> IP
               </span>
             </div>
 
@@ -246,7 +246,7 @@ export default function AccessLogsPage() {
                 onClick={() => setCurrentPage(1)}
                 disabled={currentPage === 1}
                 title="Halaman Pertama"
-                className="p-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="p-2 rounded-xl bg-white  border border-zinc-200  text-zinc-600  hover:bg-zinc-100  disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronsLeft size={16} />
               </button>
@@ -254,12 +254,12 @@ export default function AccessLogsPage() {
                 onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}
                 title="Halaman Sebelumnya"
-                className="p-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="p-2 rounded-xl bg-white  border border-zinc-200  text-zinc-600  hover:bg-zinc-100  disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronLeft size={16} />
               </button>
 
-              <div className="px-3 py-1.5 text-xs md:text-sm font-bold bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl">
+              <div className="px-3 py-1.5 text-xs md:text-sm font-bold bg-white  border border-zinc-200  rounded-xl">
                 {currentPage} / {totalPages}
               </div>
 
@@ -267,7 +267,7 @@ export default function AccessLogsPage() {
                 onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
                 disabled={currentPage === totalPages}
                 title="Halaman Selanjutnya"
-                className="p-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="p-2 rounded-xl bg-white  border border-zinc-200  text-zinc-600  hover:bg-zinc-100  disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronRight size={16} />
               </button>
@@ -275,7 +275,7 @@ export default function AccessLogsPage() {
                 onClick={() => setCurrentPage(totalPages)}
                 disabled={currentPage === totalPages}
                 title="Halaman Terakhir"
-                className="p-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="p-2 rounded-xl bg-white  border border-zinc-200  text-zinc-600  hover:bg-zinc-100  disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronsRight size={16} />
               </button>

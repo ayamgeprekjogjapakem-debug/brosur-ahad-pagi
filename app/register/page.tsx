@@ -45,7 +45,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fafafa] dark:bg-[#0a0a0a] flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-[#fafafa] [#0a0a0a] flex items-center justify-center p-4 relative overflow-hidden">
       {/* Background Decor */}
       <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent/20 blur-[120px] rounded-full pointer-events-none" />
       <div className="absolute bottom-[-10%] left-[-10%] w-[30%] h-[30%] bg-accent/10 blur-[100px] rounded-full pointer-events-none" />
@@ -62,7 +62,7 @@ export default function RegisterPage() {
           <span className="font-extrabold text-2xl tracking-tight">Brosur Ahad Pagi</span>
         </Link>
 
-        <div className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl border border-black/5 dark:border-white/5 rounded-3xl p-8 shadow-2xl">
+        <div className="bg-white/70  backdrop-blur-xl border border-black/5  rounded-3xl p-8 shadow-2xl">
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold mb-2">Daftar Akun Admin</h1>
             <p className="text-zinc-500 text-sm">Buat akun untuk mengelola arsip brosur.</p>
@@ -75,7 +75,7 @@ export default function RegisterPage() {
               </div>
             )}
             {successMsg && (
-              <div className="p-3 bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400 text-sm rounded-xl text-center font-medium">
+              <div className="p-3 bg-green-500/10 border border-green-500/20 text-green-600  text-sm rounded-xl text-center font-medium">
                 {successMsg}
               </div>
             )}
@@ -89,7 +89,7 @@ export default function RegisterPage() {
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Nama Admin"
                   required
-                  className="w-full bg-black/5 dark:bg-white/5 border border-transparent focus:border-accent/50 focus:bg-white dark:focus:bg-black rounded-xl pl-12 pr-4 py-3.5 text-sm outline-none transition-all"
+                  className="w-full bg-black/5  border border-transparent focus:border-accent/50 focus:bg-white  rounded-xl pl-12 pr-4 py-3.5 text-sm outline-none transition-all"
                 />
               </div>
             </div>
@@ -104,7 +104,7 @@ export default function RegisterPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="admin@admin.com"
                   required
-                  className="w-full bg-black/5 dark:bg-white/5 border border-transparent focus:border-accent/50 focus:bg-white dark:focus:bg-black rounded-xl pl-12 pr-4 py-3.5 text-sm outline-none transition-all"
+                  className="w-full bg-black/5  border border-transparent focus:border-accent/50 focus:bg-white  rounded-xl pl-12 pr-4 py-3.5 text-sm outline-none transition-all"
                 />
               </div>
             </div>
@@ -120,7 +120,7 @@ export default function RegisterPage() {
                   placeholder="Minimal 8 karakter"
                   required
                   minLength={8}
-                  className="w-full bg-black/5 dark:bg-white/5 border border-transparent focus:border-accent/50 focus:bg-white dark:focus:bg-black rounded-xl pl-12 pr-4 py-3.5 text-sm outline-none transition-all"
+                  className="w-full bg-black/5  border border-transparent focus:border-accent/50 focus:bg-white  rounded-xl pl-12 pr-4 py-3.5 text-sm outline-none transition-all"
                 />
               </div>
             </div>

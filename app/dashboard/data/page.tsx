@@ -197,12 +197,67 @@ export default function DataBrosurPage() {
   };
 
   const handleDeleteFolder = async (id: string, name: string) => {
-    if (!window.confirm(`Yakin ingin menghapus folder "${name}"?\nPERINGATAN: Pastikan tidak ada brosur di dalam folder ini atau brosur tersebut akan ikut terhapus / kehilangan referensi!`)) return;
+    if (!window.confirm(`Yakin ingin menghapus folder "${name}" beserta SELURUH data brosur di dalamnya secara permanen? Data tidak dapat dikembalikan.`)) return;
+    
+    // Kita ubah state menghapus menjadi ID ini, tapi jika lama kita bisa tunjukkan progress
     setDeletingId(id);
-    const { error } = await supabase.from('folders').delete().eq('id', id);
-    if (error) alert(`Gagal menghapus: ${error.message}`);
-    else setFolders(folders.filter(f => f.id !== id));
-    setDeletingId(null);
+    
+    try {
+      let isDeletingBrosur = true;
+      let totalDeletedBrosur = 0;
+
+      // Hapus brosur secara bertahap (batch) untuk menghindari limit Supabase 1000 baris
+      while (isDeletingBrosur) {
+        // Ambil ID brosur yang akan dihapus terlebih dahulu
+        const { data: brosursToDel, error: fetchErr } = await supabase
+          .from('brosur')
+          .select('id')
+          .eq('folder_id', id)
+          .limit(1000);
+          
+        if (fetchErr) throw new Error(`Gagal mengambil brosur: ${fetchErr.message}`);
+
+        if (brosursToDel && brosursToDel.length > 0) {
+          const ids = brosursToDel.map(b => b.id);
+          
+          // Hapus anak-anak datanya (vektor/chunks) terlebih dahulu untuk menghindari Foreign Key Constraint error
+          await supabase.from('brosur_chunks').delete().in('brosur_id', ids);
+          
+          // Baru hapus induk brosurnya
+          const { data: deletedBrosurs, error: brosurError } = await supabase.from('brosur').delete().in('id', ids).select('id');
+          
+          if (brosurError) {
+            throw new Error(`Gagal menghapus batch brosur: ${brosurError.message}`);
+          }
+          if (!deletedBrosurs || deletedBrosurs.length === 0) {
+            throw new Error("Penghapusan diblokir oleh sistem database (kemungkinan aturan RLS/Hak Akses Anda tidak memiliki izin untuk menghapus data ini).");
+          }
+
+          totalDeletedBrosur += deletedBrosurs.length;
+          // Kasih jeda sedikit agar server tidak menolak (rate-limit)
+          await new Promise(resolve => setTimeout(resolve, 300));
+        } else {
+          // Jika data yang terhapus 0, artinya brosur di folder ini sudah habis.
+          isDeletingBrosur = false;
+        }
+      }
+
+      // Setelah dipastikan seluruh brosur (mungkin ribuan) terhapus, baru hapus foldernya
+      const { error: folderError } = await supabase.from('folders').delete().eq('id', id);
+      
+      if (folderError) {
+        throw new Error(`Gagal menghapus folder: ${folderError.message}`);
+      }
+      
+      alert(`Berhasil menghapus folder beserta ${totalDeletedBrosur} brosur di dalamnya!`);
+      setFolders(folders.filter(f => f.id !== id));
+      fetchBrosurs();
+      fetchCapacity();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const handleDownloadBrosur = async (id: string, judul: string) => {
@@ -287,13 +342,19 @@ export default function DataBrosurPage() {
     if (!window.confirm(`PERINGATAN: Yakin ingin menghapus ${selectedBrosurs.length} brosur secara permanen? Data yang dihapus tidak bisa dikembalikan.`)) return;
     
     setIsUpdatingBulk(true);
-    const { error } = await supabase
+    // Hapus data vektor (chunks) terlebih dahulu agar tidak error Foreign Key Constraint
+    await supabase.from('brosur_chunks').delete().in('brosur_id', selectedBrosurs);
+    
+    const { data: deletedRows, error } = await supabase
       .from('brosur')
       .delete()
-      .in('id', selectedBrosurs);
+      .in('id', selectedBrosurs)
+      .select('id');
 
     if (error) {
       alert(`Gagal menghapus brosur: ${error.message}`);
+    } else if (!deletedRows || deletedRows.length === 0) {
+      alert("Gagal menghapus: Akses ditolak oleh database (aturan RLS tidak mengizinkan Anda menghapus data ini).");
     } else {
       setSelectedBrosurs([]);
       fetchBrosurs();
@@ -324,26 +385,58 @@ export default function DataBrosurPage() {
     }
 
     setIsEmptyingTable(true);
-    let query = supabase.from('brosur').delete();
     
-    if (filterFolder && filterFolder !== 'none') {
-      query = query.eq('folder_id', filterFolder);
-    } else if (filterFolder === 'none') {
-      query = query.is('folder_id', null);
-    } else {
-      query = query.neq('id', '0');
-    }
+    try {
+      let isDeleting = true;
+      let totalDeleted = 0;
 
-    const { error } = await query;
+      while (isDeleting) {
+        let query = supabase.from('brosur').select('id').limit(1000);
+        
+        if (filterFolder && filterFolder !== 'none') {
+          query = query.eq('folder_id', filterFolder);
+        } else if (filterFolder === 'none') {
+          query = query.is('folder_id', null);
+        } else {
+          query = query.neq('id', '0'); // Hapus semua
+        }
 
-    if (error) {
-      alert(`Gagal menghapus: ${error.message}`);
-    } else {
-      alert('Penghapusan berhasil!');
+        const { data: brosursToDel, error: fetchErr } = await query;
+        
+        if (fetchErr) {
+          throw new Error(`Gagal mengambil batch data brosur: ${fetchErr.message}`);
+        }
+
+        if (brosursToDel && brosursToDel.length > 0) {
+          const ids = brosursToDel.map(b => b.id);
+          
+          // Hapus vektor AI / chunks terlebih dahulu untuk mencegah FK constraint error
+          await supabase.from('brosur_chunks').delete().in('brosur_id', ids);
+          
+          const { data: deletedRows, error } = await supabase.from('brosur').delete().in('id', ids).select('id');
+          if (error) throw new Error(`Gagal menghapus brosur: ${error.message}`);
+          if (!deletedRows || deletedRows.length === 0) {
+             throw new Error("Akses ditolak: Database mencegah penghapusan (aturan RLS tidak mengizinkan Anda menghapus data ini).");
+          }
+
+          totalDeleted += deletedRows.length;
+          // Kasih jeda sedikit agar server tidak menolak (rate-limit)
+          await new Promise(resolve => setTimeout(resolve, 300));
+        } else {
+          // Jika tidak ada lagi yang terhapus, hentikan loop
+          isDeleting = false;
+        }
+      }
+
+      alert(`Penghapusan berhasil! Total ${totalDeleted} brosur telah dihapus.`);
       fetchBrosurs();
       fetchFolders();
+      fetchCapacity();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setIsEmptyingTable(false);
     }
-    setIsEmptyingTable(false);
   };
 
   const handleGenerateTeks = async (folderId: string, folderName: string) => {
@@ -498,7 +591,7 @@ export default function DataBrosurPage() {
             <button
               onClick={handleVectorSync}
               disabled={isVectorSyncing || syncStatus.unsynced === 0}
-              className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-5 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-zinc-800 transition-colors disabled:opacity-50 shrink-0"
+              className="bg-zinc-900  text-white  px-5 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-zinc-800 transition-colors disabled:opacity-50 shrink-0"
             >
               {isVectorSyncing ? <Loader2 size={18} className="animate-spin" /> : <Database size={18} />}
               {isVectorSyncing 
@@ -526,7 +619,7 @@ export default function DataBrosurPage() {
 
       {/* Kapasitas Database Widget */}
       {capacity && (
-        <div className="mb-8 bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-2xl p-5 flex flex-col md:flex-row items-center gap-6 shadow-sm">
+        <div className="mb-8 bg-white  border border-black/5  rounded-2xl p-5 flex flex-col md:flex-row items-center gap-6 shadow-sm">
           <div className="flex-1 w-full">
             <div className="flex justify-between items-end mb-2">
               <div>
@@ -541,7 +634,7 @@ export default function DataBrosurPage() {
                 {capacity.percentageUsed.toFixed(2)}%
               </div>
             </div>
-            <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-2.5 overflow-hidden">
+            <div className="w-full bg-zinc-100  rounded-full h-2.5 overflow-hidden">
               <div 
                 className={`h-full rounded-full transition-all duration-1000 ${capacity.percentageUsed > 90 ? 'bg-red-500' : capacity.percentageUsed > 75 ? 'bg-amber-500' : 'bg-accent'}`}
                 style={{ width: `${Math.min(100, capacity.percentageUsed)}%` }}
@@ -549,46 +642,49 @@ export default function DataBrosurPage() {
             </div>
           </div>
           
-          <div className="flex gap-4 md:border-l md:border-black/5 md:dark:border-white/5 md:pl-6 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
-            <div className="flex flex-col text-center min-w-[80px]">
-              <span className="text-xl font-black text-zinc-800 dark:text-zinc-200">{capacity.tables.brosur}</span>
+          <div className="flex gap-4 md:border-l md:border-black/5 md: md:pl-6 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
+            <button onClick={() => changeTab('brosur')} className="flex flex-col text-center min-w-[80px] hover:bg-black/5 p-2 rounded-xl transition-colors cursor-pointer group">
+              <span className="text-xl font-black text-zinc-800 group-hover:text-accent transition-colors">{capacity.tables.brosur}</span>
               <span className="text-xs font-bold text-zinc-500">Brosur</span>
-            </div>
-            <div className="flex flex-col text-center min-w-[80px]">
-              <span className="text-xl font-black text-zinc-800 dark:text-zinc-200">{capacity.tables.hadist}</span>
+              <span className="text-[10px] text-zinc-400 mt-1">Tab di bawah</span>
+            </button>
+            <Link href="/dashboard/hadist-api" className="flex flex-col text-center min-w-[80px] hover:bg-black/5 p-2 rounded-xl transition-colors cursor-pointer group">
+              <span className="text-xl font-black text-zinc-800 group-hover:text-amber-600 transition-colors">{capacity.tables.hadist}</span>
               <span className="text-xs font-bold text-zinc-500">Hadist</span>
-            </div>
-            <div className="flex flex-col text-center min-w-[80px]">
-              <span className="text-xl font-black text-zinc-800 dark:text-zinc-200">{capacity.totalRecords}</span>
+              <span className="text-[10px] text-zinc-400 mt-1">Menu Tarik API</span>
+            </Link>
+            <div className="flex flex-col text-center min-w-[80px] p-2">
+              <span className="text-xl font-black text-zinc-800 ">{capacity.totalRecords}</span>
               <span className="text-xs font-bold text-zinc-500">Total Baris</span>
+              <span className="text-[10px] text-zinc-400 mt-1">Seluruh DB</span>
             </div>
           </div>
         </div>
       )}
 
       {/* Tabs */}
-      <div className="flex flex-wrap items-center gap-2 mb-6 border-b border-black/5 dark:border-white/5 pb-2">
+      <div className="flex flex-wrap items-center gap-2 mb-6 border-b border-black/5  pb-2">
         <button 
           onClick={() => changeTab('brosur')}
-          className={`flex items-center gap-2 px-6 py-3 rounded-t-xl font-bold transition-colors ${activeTab === 'brosur' ? 'bg-white dark:bg-zinc-900 border-t border-l border-r border-black/5 dark:border-white/5 text-accent' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-black/5 dark:hover:bg-white/5'}`}
+          className={`flex items-center gap-2 px-6 py-3 rounded-t-xl font-bold transition-colors ${activeTab === 'brosur' ? 'bg-white  border-t border-l border-r border-black/5  text-accent' : 'text-zinc-500 hover:text-zinc-900  hover:bg-black/5 '}`}
         >
           <FileText size={18} /> Brosur Terisi ({activeTab === 'brosur' ? totalBrosurs : '...'})
         </button>
         <button 
           onClick={() => changeTab('folder')}
-          className={`flex items-center gap-2 px-6 py-3 rounded-t-xl font-bold transition-colors ${activeTab === 'folder' ? 'bg-white dark:bg-zinc-900 border-t border-l border-r border-black/5 dark:border-white/5 text-blue-600' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-black/5 dark:hover:bg-white/5'}`}
+          className={`flex items-center gap-2 px-6 py-3 rounded-t-xl font-bold transition-colors ${activeTab === 'folder' ? 'bg-white  border-t border-l border-r border-black/5  text-blue-600' : 'text-zinc-500 hover:text-zinc-900  hover:bg-black/5 '}`}
         >
           <FolderArchive size={18} /> Master Koleksi ({folders.length})
         </button>
         <button 
           onClick={() => changeTab('vektor')}
-          className={`flex items-center gap-2 px-6 py-3 rounded-t-xl font-bold transition-colors ${activeTab === 'vektor' ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-black/5 dark:hover:bg-white/5'}`}
+          className={`flex items-center gap-2 px-6 py-3 rounded-t-xl font-bold transition-colors ${activeTab === 'vektor' ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-zinc-900  hover:bg-black/5 '}`}
         >
           <Database size={18} /> Vektor AI ({syncStatus.synced})
         </button>
       </div>
 
-      <div className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-3xl p-6 shadow-sm rounded-tl-none">
+      <div className="bg-white  border border-black/5  rounded-3xl p-6 shadow-sm rounded-tl-none">
         
         <div className="mb-6 flex flex-col md:flex-row items-center gap-4">
           <div className="relative flex-1 w-full">
@@ -598,7 +694,7 @@ export default function DataBrosurPage() {
               placeholder={activeTab === 'brosur' ? "Cari judul atau tahun brosur..." : "Cari nama koleksi..."}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 pl-12 pr-4 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
+              className="w-full bg-zinc-50  border border-zinc-200  rounded-xl py-3 pl-12 pr-4 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
             />
           </div>
           
@@ -610,12 +706,12 @@ export default function DataBrosurPage() {
                   setFilterFolder(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full md:w-auto bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 px-4 focus:outline-none focus:border-accent transition-all text-sm"
+                className="w-full md:w-auto bg-zinc-50  border border-zinc-200  rounded-xl py-3 px-4 focus:outline-none focus:border-accent transition-all text-sm"
               >
                 <option value="">Semua Koleksi</option>
                 <option value="none">Tanpa Koleksi</option>
                 {folders.map(f => (
-                  <option key={f.id} value={f.id}>{f.name}</option>
+                  <option key={f.id} value={f.id}>{f.name} ({f.stats?.total || 0} data)</option>
                 ))}
               </select>
               
@@ -625,7 +721,7 @@ export default function DataBrosurPage() {
                   setFilterTahun(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full md:w-auto bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 px-4 focus:outline-none focus:border-accent transition-all text-sm"
+                className="w-full md:w-auto bg-zinc-50  border border-zinc-200  rounded-xl py-3 px-4 focus:outline-none focus:border-accent transition-all text-sm"
               >
                 <option value="">Semua Tahun</option>
                 {availableYears.map(year => (
@@ -639,7 +735,7 @@ export default function DataBrosurPage() {
                   setSortBy(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full md:w-auto bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 px-4 focus:outline-none focus:border-accent transition-all text-sm"
+                className="w-full md:w-auto bg-zinc-50  border border-zinc-200  rounded-xl py-3 px-4 focus:outline-none focus:border-accent transition-all text-sm"
               >
                 <option value="tahun_desc">Tahun (Terbaru)</option>
                 <option value="tahun_asc">Tahun (Terlama)</option>
@@ -653,12 +749,14 @@ export default function DataBrosurPage() {
                   setItemsPerPage(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="w-full md:w-auto bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 px-4 focus:outline-none focus:border-accent transition-all text-sm"
+                className="w-full md:w-auto bg-zinc-50  border border-zinc-200  rounded-xl py-3 px-4 focus:outline-none focus:border-accent transition-all text-sm"
               >
                 <option value={10}>10 per hal</option>
                 <option value={20}>20 per hal</option>
                 <option value={50}>50 per hal</option>
                 <option value={100}>100 per hal</option>
+                <option value={500}>500 per hal</option>
+                <option value={1000}>1000 per hal</option>
               </select>
             </>
           )}
@@ -667,7 +765,7 @@ export default function DataBrosurPage() {
             <button 
               onClick={handleDeleteFiltered}
               disabled={isEmptyingTable}
-              className="w-full md:w-auto bg-red-500/10 text-red-600 dark:text-red-400 px-5 py-3 rounded-xl font-bold text-sm hover:bg-red-500 hover:text-white disabled:opacity-50 transition-colors shrink-0 flex items-center justify-center gap-2 border border-red-500/20"
+              className="w-full md:w-auto bg-red-500/10 text-red-600  px-5 py-3 rounded-xl font-bold text-sm hover:bg-red-500 hover:text-white disabled:opacity-50 transition-colors shrink-0 flex items-center justify-center gap-2 border border-red-500/20"
             >
               {isEmptyingTable ? <Loader2 className="animate-spin" size={16} /> : <><Trash2 size={16} /> {filterFolder ? (filterFolder === 'none' ? 'Hapus Tanpa Koleksi' : 'Hapus Koleksi') : 'Hapus Semua'}</>}
             </button>
@@ -686,11 +784,11 @@ export default function DataBrosurPage() {
               <select 
                 value={bulkFolderId}
                 onChange={(e) => setBulkFolderId(e.target.value)}
-                className="bg-white dark:bg-zinc-900 border border-black/10 dark:border-white/10 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-accent flex-1 md:w-48"
+                className="bg-white  border border-black/10  rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-accent flex-1 md:w-48"
               >
                 <option value="" disabled>-- Pindah ke Koleksi --</option>
                 {folders.map(f => (
-                  <option key={f.id} value={f.id}>{f.name}</option>
+                  <option key={f.id} value={f.id}>{f.name} ({f.stats?.total || 0} data)</option>
                 ))}
               </select>
               
@@ -705,7 +803,7 @@ export default function DataBrosurPage() {
               <button 
                 onClick={handleBulkDelete}
                 disabled={isUpdatingBulk}
-                className="bg-red-500/10 text-red-600 dark:text-red-400 px-4 py-2 rounded-lg font-bold text-sm hover:bg-red-500 hover:text-white disabled:opacity-50 transition-colors shrink-0 flex items-center gap-2"
+                className="bg-red-500/10 text-red-600  px-4 py-2 rounded-lg font-bold text-sm hover:bg-red-500 hover:text-white disabled:opacity-50 transition-colors shrink-0 flex items-center gap-2"
               >
                 {isUpdatingBulk ? <Loader2 className="animate-spin" size={16} /> : <><Trash2 size={16} /> Hapus Terpilih</>}
               </button>
@@ -724,7 +822,7 @@ export default function DataBrosurPage() {
         ) : activeTab === 'brosur' ? (
           /* TAB BROSUR */
           brosurs.length === 0 ? (
-            <div className="py-20 text-center text-zinc-500 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl">
+            <div className="py-20 text-center text-zinc-500 border-2 border-dashed border-zinc-200  rounded-2xl">
               <p>Tidak ada brosur yang ditemukan.</p>
             </div>
           ) : (
@@ -732,7 +830,7 @@ export default function DataBrosurPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                 <thead>
-                  <tr className="border-b border-black/5 dark:border-white/5 text-zinc-500 text-sm">
+                  <tr className="border-b border-black/5  text-zinc-500 text-sm">
                     <th className="p-4 w-12">
                       <input 
                         type="checkbox" 
@@ -749,7 +847,7 @@ export default function DataBrosurPage() {
                 </thead>
                 <tbody>
                   {brosurs.map((brosur) => (
-                    <tr key={brosur.id} className={`border-b border-black/5 dark:border-white/5 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors ${selectedBrosurs.includes(brosur.id) ? 'bg-accent/5 dark:bg-accent/10' : ''}`}>
+                    <tr key={brosur.id} className={`border-b border-black/5  hover:bg-black/[0.02] [0.02] transition-colors ${selectedBrosurs.includes(brosur.id) ? 'bg-accent/5 ' : ''}`}>
                       <td className="p-4">
                         <input 
                           type="checkbox" 
@@ -777,14 +875,14 @@ export default function DataBrosurPage() {
                         <button
                           onClick={() => handleDownloadBrosur(brosur.id, brosur.judul)}
                           disabled={downloadingId === brosur.id}
-                          className="p-2 bg-green-500/10 text-green-600 dark:text-green-400 hover:bg-green-500 hover:text-white rounded-lg transition-colors disabled:opacity-50"
+                          className="p-2 bg-green-500/10 text-green-600  hover:bg-green-500 hover:text-white rounded-lg transition-colors disabled:opacity-50"
                           title="Download Teks Brosur"
                         >
                           {downloadingId === brosur.id ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />}
                         </button>
                         <Link 
                           href={`/dashboard/data/edit/${brosur.id}`}
-                          className="p-2 bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500 hover:text-white rounded-lg transition-colors"
+                          className="p-2 bg-blue-500/10 text-blue-600  hover:bg-blue-500 hover:text-white rounded-lg transition-colors"
                           title="Edit Brosur"
                         >
                           <Edit2 size={16} />
@@ -792,7 +890,7 @@ export default function DataBrosurPage() {
                         <button 
                           onClick={() => handleDeleteBrosur(brosur.id, brosur.judul)}
                           disabled={deletingId === brosur.id}
-                          className="p-2 bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500 hover:text-white rounded-lg transition-colors disabled:opacity-50"
+                          className="p-2 bg-red-500/10 text-red-600  hover:bg-red-500 hover:text-white rounded-lg transition-colors disabled:opacity-50"
                           title="Hapus Brosur"
                         >
                           {deletingId === brosur.id ? <Loader2 className="animate-spin" size={16} /> : <Trash2 size={16} />}
@@ -805,15 +903,15 @@ export default function DataBrosurPage() {
             </div>
             
             {/* PAGINATION CONTROLS */}
-            <div className="mt-6 flex flex-col md:flex-row items-center justify-between gap-4 border-t border-black/5 dark:border-white/5 pt-6">
+            <div className="mt-6 flex flex-col md:flex-row items-center justify-between gap-4 border-t border-black/5  pt-6">
               <div className="text-sm text-zinc-500 font-medium">
-                Menampilkan <span className="font-bold text-zinc-900 dark:text-zinc-100">{brosurs.length > 0 ? ((currentPage - 1) * itemsPerPage) + 1 : 0}</span> - <span className="font-bold text-zinc-900 dark:text-zinc-100">{Math.min(currentPage * itemsPerPage, totalBrosurs)}</span> dari <span className="font-bold text-zinc-900 dark:text-zinc-100">{totalBrosurs}</span> brosur
+                Menampilkan <span className="font-bold text-zinc-900 ">{brosurs.length > 0 ? ((currentPage - 1) * itemsPerPage) + 1 : 0}</span> - <span className="font-bold text-zinc-900 ">{Math.min(currentPage * itemsPerPage, totalBrosurs)}</span> dari <span className="font-bold text-zinc-900 ">{totalBrosurs}</span> brosur
               </div>
               <div className="flex items-center gap-2">
                 <button 
                   disabled={currentPage === 1 || loading}
                   onClick={() => setCurrentPage(prev => prev - 1)}
-                  className="px-4 py-2 border border-zinc-200 dark:border-zinc-800 rounded-xl disabled:opacity-50 hover:bg-black/5 dark:hover:bg-white/5 transition-colors font-medium text-sm"
+                  className="px-4 py-2 border border-zinc-200  rounded-xl disabled:opacity-50 hover:bg-black/5  transition-colors font-medium text-sm"
                 >
                   Sebelumnya
                 </button>
@@ -823,7 +921,7 @@ export default function DataBrosurPage() {
                 <button 
                   disabled={currentPage * itemsPerPage >= totalBrosurs || loading}
                   onClick={() => setCurrentPage(prev => prev + 1)}
-                  className="px-4 py-2 border border-zinc-200 dark:border-zinc-800 rounded-xl disabled:opacity-50 hover:bg-black/5 dark:hover:bg-white/5 transition-colors font-medium text-sm"
+                  className="px-4 py-2 border border-zinc-200  rounded-xl disabled:opacity-50 hover:bg-black/5  transition-colors font-medium text-sm"
                 >
                   Selanjutnya
                 </button>
@@ -834,40 +932,43 @@ export default function DataBrosurPage() {
         ) : activeTab === 'folder' ? (
           /* TAB FOLDER */
           filteredFolders.length === 0 ? (
-            <div className="py-20 text-center text-zinc-500 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl">
+            <div className="py-20 text-center text-zinc-500 border-2 border-dashed border-zinc-200  rounded-2xl">
               <p>Tidak ada koleksi yang ditemukan.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {filteredFolders.map((folder) => (
-                <div key={folder.id} className="border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 flex flex-col hover:border-blue-500/50 transition-colors group bg-zinc-50 dark:bg-zinc-800/50">
+                <div key={folder.id} className="border border-zinc-200  rounded-2xl p-6 flex flex-col hover:border-blue-500/50 transition-colors group bg-zinc-50 ">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-colors">
                         <FolderArchive size={24} />
                       </div>
                       <div>
-                        <h3 className="font-bold text-lg">{folder.name}</h3>
+                        <h3 className="font-bold text-lg flex items-center gap-2">
+                          {folder.name}
+                          <span className="text-xs font-bold text-zinc-600 bg-zinc-200 px-2 py-0.5 rounded-full">{folder.stats?.total || 0} Brosur</span>
+                        </h3>
                         <p className="text-xs text-zinc-500 font-mono">/{folder.slug}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Link 
                         href={`/dashboard/data/folder/edit/${folder.id}`}
-                        className="p-2 bg-black/5 dark:bg-white/5 hover:bg-blue-500 hover:text-white rounded-lg transition-colors"
+                        className="p-2 bg-black/5  hover:bg-blue-500 hover:text-white rounded-lg transition-colors"
                       >
                         <Edit2 size={16} />
                       </Link>
                       <button 
                         onClick={() => handleDeleteFolder(folder.id, folder.name)}
                         disabled={deletingId === folder.id}
-                        className="p-2 bg-black/5 dark:bg-white/5 hover:bg-red-500 hover:text-white rounded-lg transition-colors"
+                        className="p-2 bg-black/5  hover:bg-red-500 hover:text-white rounded-lg transition-colors"
                       >
                         {deletingId === folder.id ? <Loader2 className="animate-spin" size={16} /> : <Trash2 size={16} />}
                       </button>
                     </div>
                   </div>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400 line-clamp-2 flex-1 mb-4">
+                  <p className="text-sm text-zinc-600  line-clamp-2 flex-1 mb-4">
                     {folder.description || <span className="italic opacity-50">Tidak ada deskripsi</span>}
                   </p>
                   
@@ -879,7 +980,7 @@ export default function DataBrosurPage() {
                           {folder.stats.clean} / {folder.stats.total}
                         </span>
                       </div>
-                      <div className="w-full bg-zinc-200 dark:bg-zinc-700 rounded-full h-1.5 overflow-hidden">
+                      <div className="w-full bg-zinc-200  rounded-full h-1.5 overflow-hidden">
                         <div 
                           className={`h-full rounded-full transition-all ${folder.stats.clean === folder.stats.total && folder.stats.total > 0 ? "bg-emerald-500" : "bg-amber-500"}`}
                           style={{ width: `${folder.stats.total > 0 ? (folder.stats.clean / folder.stats.total) * 100 : 0}%` }}
@@ -893,8 +994,8 @@ export default function DataBrosurPage() {
                       onClick={() => handleGenerateTeks(folder.id, folder.name)}
                       className={`w-full py-2 font-bold rounded-xl transition-colors flex items-center justify-center gap-2 text-sm ${
                         folder.stats?.clean === folder.stats?.total && folder.stats?.total > 0 
-                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500 hover:text-white'
-                          : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500 hover:text-white'
+                          ? 'bg-emerald-500/10 text-emerald-600  hover:bg-emerald-500 hover:text-white'
+                          : 'bg-blue-500/10 text-blue-600  hover:bg-blue-500 hover:text-white'
                       }`}
                     >
                       <Settings size={16} /> 
@@ -903,7 +1004,7 @@ export default function DataBrosurPage() {
                     
                     <button
                       onClick={() => handleStandardizeArabic(folder.id, folder.name)}
-                      className="w-full py-2 font-bold rounded-xl transition-colors flex items-center justify-center gap-2 text-sm bg-purple-500/10 text-purple-600 dark:text-purple-400 hover:bg-purple-500 hover:text-white"
+                      className="w-full py-2 font-bold rounded-xl transition-colors flex items-center justify-center gap-2 text-sm bg-purple-500/10 text-purple-600  hover:bg-purple-500 hover:text-white"
                     >
                       <Settings size={16} /> Standarisasi Arabic
                     </button>
@@ -916,15 +1017,15 @@ export default function DataBrosurPage() {
           /* TAB VEKTOR */
           <div className="space-y-4">
              {vektors.length === 0 && !loading ? (
-                <div className="py-20 text-center text-zinc-500 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl">
+                <div className="py-20 text-center text-zinc-500 border-2 border-dashed border-zinc-200  rounded-2xl">
                   <p>Belum ada brosur yang disinkronisasi menjadi Vektor.</p>
                 </div>
              ) : (
                 vektors.map(v => (
-                  <div key={v.id} className="p-5 border border-zinc-200 dark:border-zinc-800 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 hover:border-blue-500/30 transition-colors">
+                  <div key={v.id} className="p-5 border border-zinc-200  rounded-xl bg-zinc-50  hover:border-blue-500/30 transition-colors">
                     <h3 className="font-bold text-lg mb-2 flex items-center gap-2"><Database size={16} className="text-blue-500" /> {v.judul_brosur}</h3>
-                    <p className="text-sm text-zinc-700 dark:text-zinc-300 mb-4">{v.content}</p>
-                    <div className="text-xs font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 p-2 rounded-lg truncate">
+                    <p className="text-sm text-zinc-700  mb-4">{v.content}</p>
+                    <div className="text-xs font-mono text-emerald-600  bg-emerald-500/10 p-2 rounded-lg truncate">
                        Vektor: [ {v.embedding?.slice(0, 8).join(', ')} ... ] (Total 768 dimensi vektor tersimpan)
                     </div>
                   </div>
@@ -937,13 +1038,13 @@ export default function DataBrosurPage() {
       {/* FULL SCREEN LOADER GENERATOR TEKS & STANDARISASI */}
       {(isGeneratingTeks || isStandardizing) && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
-          <div className="bg-white dark:bg-zinc-900 p-10 rounded-3xl max-w-sm w-full text-center shadow-2xl flex flex-col items-center">
+          <div className="bg-white  p-10 rounded-3xl max-w-sm w-full text-center shadow-2xl flex flex-col items-center">
             <Loader2 className="w-16 h-16 text-blue-500 animate-spin mb-6" />
             <h2 className="text-2xl font-black mb-2">Memproses Teks</h2>
             <p className="text-zinc-500 mb-6 font-medium leading-relaxed">
               {generateLabel}
             </p>
-            <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-4 mb-2 overflow-hidden border border-black/5 dark:border-white/5">
+            <div className="w-full bg-zinc-100  rounded-full h-4 mb-2 overflow-hidden border border-black/5 ">
               <div 
                 className="bg-blue-500 h-full rounded-full transition-all duration-300 ease-out"
                 style={{ width: `${generateProgress}%` }}

@@ -14,7 +14,7 @@ export default function PerawiPage() {
   }, []);
 
   return (
-    <div className="flex h-[100dvh] overflow-hidden bg-[#fafafa] dark:bg-[#0a0a0a] text-zinc-900 font-sans">
+    <div className="flex h-[100dvh] overflow-hidden bg-[#fafafa] [#0a0a0a] text-zinc-900 font-sans">
       <MainSidebar />
 
       <main className="flex-1 flex flex-col relative overflow-hidden bg-white/50">

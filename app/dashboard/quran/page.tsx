@@ -69,25 +69,25 @@ export default function DataQuranPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 p-6 rounded-3xl shadow-sm flex flex-col">
+          <div className="bg-white  border border-black/5  p-6 rounded-3xl shadow-sm flex flex-col">
             <h3 className="text-zinc-500 font-bold text-sm uppercase tracking-wider mb-2">Total Surah</h3>
-            <div className="text-5xl font-black text-zinc-900 dark:text-zinc-100 mb-4">{stats.totalSurah}</div>
+            <div className="text-5xl font-black text-zinc-900  mb-4">{stats.totalSurah}</div>
             <p className="text-xs text-zinc-500 mt-auto">Dari total 114 Surah</p>
           </div>
           
-          <div className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 p-6 rounded-3xl shadow-sm flex flex-col">
+          <div className="bg-white  border border-black/5  p-6 rounded-3xl shadow-sm flex flex-col">
             <h3 className="text-zinc-500 font-bold text-sm uppercase tracking-wider mb-2">Total Ayat</h3>
-            <div className="text-5xl font-black text-zinc-900 dark:text-zinc-100 mb-4">{stats.totalAyat}</div>
+            <div className="text-5xl font-black text-zinc-900  mb-4">{stats.totalAyat}</div>
             <p className="text-xs text-zinc-500 mt-auto">Dari total 6236 Ayat</p>
           </div>
 
-          <div className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 p-6 rounded-3xl shadow-sm flex flex-col">
+          <div className="bg-white  border border-black/5  p-6 rounded-3xl shadow-sm flex flex-col">
             <h3 className="text-zinc-500 font-bold text-sm uppercase tracking-wider mb-2 flex items-center gap-2">
               <ServerCog size={16} /> Sinkronisasi Terakhir
             </h3>
             {stats.lastSync ? (
               <>
-                <div className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mb-1">
+                <div className="text-lg font-bold text-zinc-900  mb-1">
                   {new Date(stats.lastSync.sync_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </div>
                 <div className={`text-sm font-bold mt-2 ${stats.lastSync.status === 'SUCCESS' ? 'text-emerald-500' : 'text-amber-500'}`}>
@@ -109,11 +109,11 @@ export default function DataQuranPage() {
       )}
 
       {/* Info Tambahan */}
-      <div className="mt-8 bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 rounded-2xl p-5 flex items-start gap-4">
+      <div className="mt-8 bg-blue-50  border border-blue-100  rounded-2xl p-5 flex items-start gap-4">
         <BookOpen className="text-blue-500 shrink-0 mt-1" />
         <div>
-          <h4 className="font-bold text-blue-900 dark:text-blue-300 mb-1">Sumber Data (EQuran API)</h4>
-          <p className="text-sm text-blue-700/80 dark:text-blue-400/80 leading-relaxed">
+          <h4 className="font-bold text-blue-900  mb-1">Sumber Data (EQuran API)</h4>
+          <p className="text-sm text-blue-700/80  leading-relaxed">
             Data ayat, terjemahan, dan latin bersumber dari API pihak ketiga yang mengambil data resmi dari Kemenag RI (Kementerian Agama). 
             Proses sinkronisasi akan membandingkan data di database lokal Anda dengan data dari API untuk memastikan selalu update.
           </p>

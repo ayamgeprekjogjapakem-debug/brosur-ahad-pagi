@@ -56,7 +56,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fafafa] dark:bg-[#0a0a0a] flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-[#fafafa] [#0a0a0a] flex items-center justify-center p-4 relative overflow-hidden">
       {/* Background Decor */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-accent/20 blur-[120px] rounded-full pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-accent/10 blur-[100px] rounded-full pointer-events-none" />
@@ -73,7 +73,7 @@ export default function LoginPage() {
           <span className="font-extrabold text-2xl tracking-tight">Brosur Ahad Pagi</span>
         </Link>
 
-        <div className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl border border-black/5 dark:border-white/5 rounded-3xl p-8 shadow-2xl">
+        <div className="bg-white/70  backdrop-blur-xl border border-black/5  rounded-3xl p-8 shadow-2xl">
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold mb-2">Selamat Datang</h1>
             <p className="text-zinc-500 text-sm">Masuk untuk mengelola arsip brosur.</p>
@@ -95,7 +95,7 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="admin@admin.com"
                   required
-                  className="w-full bg-black/5 dark:bg-white/5 border border-transparent focus:border-accent/50 focus:bg-white dark:focus:bg-black rounded-xl pl-12 pr-4 py-3.5 text-sm outline-none transition-all"
+                  className="w-full bg-black/5  border border-transparent focus:border-accent/50 focus:bg-white  rounded-xl pl-12 pr-4 py-3.5 text-sm outline-none transition-all"
                 />
               </div>
             </div>
@@ -110,7 +110,7 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full bg-black/5 dark:bg-white/5 border border-transparent focus:border-accent/50 focus:bg-white dark:focus:bg-black rounded-xl pl-12 pr-4 py-3.5 text-sm outline-none transition-all"
+                  className="w-full bg-black/5  border border-transparent focus:border-accent/50 focus:bg-white  rounded-xl pl-12 pr-4 py-3.5 text-sm outline-none transition-all"
                 />
               </div>
             </div>

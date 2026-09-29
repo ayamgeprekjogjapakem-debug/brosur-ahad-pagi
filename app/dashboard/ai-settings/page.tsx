@@ -32,7 +32,7 @@ export default function AiSettingsPage() {
         return (
           <p 
             key={idx} 
-            className="font-arabic text-[18px] leading-[1.8] text-right py-2 px-4 bg-zinc-50 dark:bg-zinc-800/40 rounded-xl my-3 text-zinc-900 dark:text-white"
+            className="font-arabic text-[18px] leading-[1.8] text-right py-2 px-4 bg-zinc-50  rounded-xl my-3 text-zinc-900 "
             style={{ fontFamily: "'Scheherazade New', serif", direction: 'rtl' }}
           >
             {trimmed}
@@ -42,7 +42,7 @@ export default function AiSettingsPage() {
       return (
         <p 
           key={idx} 
-          className="text-[12px] leading-[1.5] mb-2.5 text-zinc-800 dark:text-zinc-200 text-justify"
+          className="text-[12px] leading-[1.5] mb-2.5 text-zinc-800  text-justify"
           style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
         >
           {trimmed}
@@ -135,12 +135,12 @@ export default function AiSettingsPage() {
   return (
     <div className="p-8 max-w-4xl">
       <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet" />
-      <h1 className="text-2xl font-bold mb-6 text-zinc-900 dark:text-white flex items-center gap-2">
+      <h1 className="text-2xl font-bold mb-6 text-zinc-900  flex items-center gap-2">
         <Bot size={24} className="text-accent" />
         Pengaturan AI (OpenRouter)
       </h1>
       
-      <div className="bg-white dark:bg-zinc-900 rounded-3xl p-8 border border-zinc-200 dark:border-zinc-800 shadow-sm">
+      <div className="bg-white  rounded-3xl p-8 border border-zinc-200  shadow-sm">
         <p className="text-sm text-zinc-500 mb-8">
           Konfigurasi asisten AI untuk menjawab pertanyaan seputar Al-Quran dan Brosur MTA di dalam aplikasi Pustaka.
         </p>
@@ -148,9 +148,9 @@ export default function AiSettingsPage() {
         <form onSubmit={handleSave} className="space-y-6">
           
           {/* Toggle AI */}
-          <div className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl border border-zinc-200 dark:border-zinc-700">
+          <div className="flex items-center justify-between p-4 bg-zinc-50  rounded-2xl border border-zinc-200 ">
             <div>
-              <h3 className="font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
+              <h3 className="font-bold text-zinc-800  flex items-center gap-2">
                 <Power size={18} className={aiEnabled ? "text-emerald-500" : "text-zinc-400"} />
                 Status Fitur AI
               </h3>
@@ -165,13 +165,13 @@ export default function AiSettingsPage() {
                 checked={aiEnabled}
                 onChange={() => setAiEnabled(!aiEnabled)}
               />
-              <div className="w-14 h-7 bg-zinc-200 peer-focus:outline-none rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all dark:border-zinc-600 peer-checked:bg-emerald-500"></div>
+              <div className="w-14 h-7 bg-zinc-200 peer-focus:outline-none rounded-full peer  peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all  peer-checked:bg-emerald-500"></div>
             </label>
           </div>
 
           {/* API Key Google AI */}
           <div className="pt-4">
-            <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2 flex items-center gap-2">
+            <label className="block text-sm font-semibold text-zinc-700  mb-2 flex items-center gap-2">
               <Key size={16} /> API Key Google AI Studio (Disarankan)
             </label>
             <div className="relative flex items-center">
@@ -180,7 +180,7 @@ export default function AiSettingsPage() {
                 value={googleAiToken}
                 onChange={(e) => setGoogleAiToken(e.target.value)}
                 placeholder="AIzaSy..."
-                className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent text-sm font-mono"
+                className="w-full bg-zinc-50  border border-zinc-200  rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent text-sm font-mono"
               />
             </div>
             <p className="text-xs text-zinc-500 mt-2">
@@ -190,7 +190,7 @@ export default function AiSettingsPage() {
 
           {/* API Key OpenRouter */}
           <div>
-            <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2 flex items-center gap-2">
+            <label className="block text-sm font-semibold text-zinc-700  mb-2 flex items-center gap-2">
               <Key size={16} /> API Key OpenRouter (Opsional)
             </label>
             <div className="relative flex items-center">
@@ -199,7 +199,7 @@ export default function AiSettingsPage() {
                 value={openrouterToken}
                 onChange={(e) => setOpenrouterToken(e.target.value)}
                 placeholder="sk-or-v1-..."
-                className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-accent text-sm font-mono"
+                className="w-full bg-zinc-50  border border-zinc-200  rounded-xl px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-accent text-sm font-mono"
               />
               <button 
                 type="button"
@@ -209,7 +209,7 @@ export default function AiSettingsPage() {
                   setIsCopied(true);
                   setTimeout(() => setIsCopied(false), 2000);
                 }}
-                className="absolute right-2 p-1.5 text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-md transition-colors"
+                className="absolute right-2 p-1.5 text-zinc-500 hover:text-zinc-800   hover:bg-zinc-200  rounded-md transition-colors"
                 title="Salin API Key"
               >
                 {isCopied ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
@@ -222,7 +222,7 @@ export default function AiSettingsPage() {
 
           {/* Model AI */}
           <div>
-            <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
+            <label className="block text-sm font-semibold text-zinc-700  mb-2">
               Model AI Utama (Pilih Sesuai Key Anda)
             </label>
             <select 
@@ -231,7 +231,7 @@ export default function AiSettingsPage() {
                 setChatModel(e.target.value);
                 setMaterialModel(e.target.value);
               }}
-              className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent text-sm appearance-none"
+              className="w-full bg-zinc-50  border border-zinc-200  rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent text-sm appearance-none"
             >
               <optgroup label="🌐 Native Google AI Studio (Gratis 100%)">
                 <option value="gemini-3.8-flash-native">Google Gemini 3.8 Flash (Paling Baru & Stabil)</option>
@@ -251,7 +251,7 @@ export default function AiSettingsPage() {
           {/* System Prompt */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+              <label className="block text-sm font-semibold text-zinc-700 ">
                 Aturan Dasar AI (System Prompt)
               </label>
               
@@ -307,7 +307,7 @@ Jika pertanyaan tidak berhubungan dengan agama/MTA, jawab:
 Berikan jawaban yang:
 **akurat → bersumber → ringkas → mudah dipahami → dapat ditelusuri kembali ke brosur.**`);
                 }}
-                className="flex items-center gap-1.5 text-xs font-bold bg-emerald-100 hover:bg-emerald-200 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 py-1 px-3 rounded-lg transition-colors"
+                className="flex items-center gap-1.5 text-xs font-bold bg-emerald-100 hover:bg-emerald-200 text-emerald-800   py-1 px-3 rounded-lg transition-colors"
               >
                 <BookOpen size={14} /> Gunakan Template "Sahabat MTA"
               </button>
@@ -317,7 +317,7 @@ Berikan jawaban yang:
               onChange={(e) => setSystemPrompt(e.target.value)}
               rows={4}
               placeholder="Instruksi untuk AI..."
-              className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent text-sm"
+              className="w-full bg-zinc-50  border border-zinc-200  rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent text-sm"
             />
             <p className="text-xs text-zinc-500 mt-2">
               Instruksi ini akan dikirimkan secara otomatis di latar belakang untuk mengatur gaya bicara AI (misal: hilangkan markdown, gunakan kapital untuk judul, wajib sertakan sumber brosur).
@@ -325,7 +325,7 @@ Berikan jawaban yang:
           </div>
 
 
-          <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800">
+          <div className="pt-4 border-t border-zinc-100 ">
             <div className="flex flex-wrap items-center gap-4">
               <button 
                 type="submit" 

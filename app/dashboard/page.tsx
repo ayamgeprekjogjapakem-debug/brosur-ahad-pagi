@@ -8,6 +8,7 @@ import { createClient } from '@/utils/supabase/client';
 
 export default function DashboardPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadType, setUploadType] = useState<'brosur' | 'hadist'>('brosur');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState<{type: 'success' | 'error', message: string} | null>(null);
@@ -41,8 +42,8 @@ export default function DashboardPage() {
         throw new Error('Sesi tidak valid, silakan login ulang.');
       }
 
-      const fileExt = selectedFile.name.split('.').pop();
-      const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const safeName = selectedFile.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+      const fileName = `${uploadType.toUpperCase()}_${Date.now()}-${safeName}`;
       const bucketName = 'chm-uploads';
       
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -102,14 +103,37 @@ export default function DashboardPage() {
           animate={{ opacity: 1, y: 0 }}
         >
           <header className="mb-10">
-            <h1 className="text-3xl font-extrabold mb-2 tracking-tight text-zinc-900 dark:text-zinc-100">Upload File</h1>
+            <h1 className="text-3xl font-extrabold mb-2 tracking-tight text-zinc-900 ">Upload File</h1>
             <p className="text-zinc-500 font-medium max-w-xl">Unggah file arsip brosur berformat CHM, ZIP, HTML, atau PDF untuk memproses dan menambahkannya ke dalam database secara otomatis.</p>
           </header>
 
-          <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-2xl border border-black/[0.04] dark:border-white/[0.04] rounded-[32px] p-8 md:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
+          <div className="bg-white/80  backdrop-blur-2xl border border-black/[0.04] [0.04] rounded-[32px] p-8 md:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
             
+            {/* Tipe Upload Selector */}
+            <div className="mb-8">
+              <label className="block text-sm font-bold text-zinc-700 mb-3">Pilih Kategori File yang Akan Diunggah:</label>
+              <div className="flex gap-4">
+                <button 
+                  onClick={() => setUploadType('brosur')}
+                  className={`flex-1 py-4 px-6 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${uploadType === 'brosur' ? 'border-accent bg-accent/5 text-accent' : 'border-zinc-200 text-zinc-500 hover:border-zinc-300 hover:bg-zinc-50'}`}
+                >
+                  <FileText size={28} />
+                  <span className="font-bold text-lg">Brosur CHM</span>
+                  <span className="text-xs opacity-70">Untuk arsip brosur Ahad Pagi</span>
+                </button>
+                <button 
+                  onClick={() => setUploadType('hadist')}
+                  className={`flex-1 py-4 px-6 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${uploadType === 'hadist' ? 'border-indigo-500 bg-indigo-500/5 text-indigo-600' : 'border-zinc-200 text-zinc-500 hover:border-zinc-300 hover:bg-zinc-50'}`}
+                >
+                  <FileText size={28} />
+                  <span className="font-bold text-lg">Hadist CHM</span>
+                  <span className="text-xs opacity-70">Untuk kitab referensi Hadist</span>
+                </button>
+              </div>
+            </div>
+
             {/* Drag & Drop Area */}
-            <div className="border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-3xl p-12 flex flex-col items-center justify-center text-center hover:border-accent hover:bg-accent/5 transition-all duration-300 group relative">
+            <div className="border-2 border-dashed border-zinc-200  rounded-3xl p-12 flex flex-col items-center justify-center text-center hover:border-accent hover:bg-accent/5 transition-all duration-300 group relative">
               <input 
                 type="file" 
                 accept=".chm,.zip,.pdf,.html,.htm"
@@ -117,16 +141,16 @@ export default function DashboardPage() {
                 disabled={isUploading}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed" 
               />
-              <div className="w-20 h-20 bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl flex items-center justify-center mb-5 group-hover:bg-accent group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-accent/30 transition-all duration-300">
+              <div className="w-20 h-20 bg-zinc-50  rounded-2xl flex items-center justify-center mb-5 group-hover:bg-accent group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-accent/30 transition-all duration-300">
                 <Upload size={32} className="text-zinc-400 group-hover:text-white transition-colors" />
               </div>
-              <h3 className="font-extrabold text-xl mb-1.5 text-zinc-900 dark:text-zinc-100">Pilih atau letakkan file di sini</h3>
+              <h3 className="font-extrabold text-xl mb-1.5 text-zinc-900 ">Pilih atau letakkan file di sini</h3>
               <p className="text-sm font-medium text-zinc-500">Mendukung file berformat .chm, .zip, .pdf, atau .html</p>
             </div>
 
             {/* Selected File Details */}
             {selectedFile && (
-              <div className="mt-8 flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl border border-black/[0.04] dark:border-white/[0.04] gap-4">
+              <div className="mt-8 flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 bg-zinc-50  rounded-2xl border border-black/[0.04] [0.04] gap-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-accent/20 rounded-lg">
                     <FileText className="text-accent" size={24} />
@@ -153,8 +177,8 @@ export default function DashboardPage() {
                 animate={{ opacity: 1, y: 0 }}
                 className={`mt-6 p-4 rounded-xl flex items-center gap-3 font-medium text-sm border ${
                   uploadStatus.type === 'success' 
-                    ? 'bg-green-500/10 border-green-500/20 text-green-600 dark:text-green-400' 
-                    : 'bg-red-500/10 border-red-500/20 text-red-600 dark:text-red-400'
+                    ? 'bg-green-500/10 border-green-500/20 text-green-600 ' 
+                    : 'bg-red-500/10 border-red-500/20 text-red-600 '
                 }`}
               >
                 {uploadStatus.type === 'success' ? <CheckCircle size={18} /> : <div className="w-2 h-2 rounded-full bg-red-500 shrink-0" />}
@@ -162,7 +186,7 @@ export default function DashboardPage() {
               </motion.div>
             )}
             
-            <div className="mt-8 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl text-sm text-blue-700 dark:text-blue-400">
+            <div className="mt-8 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl text-sm text-blue-700 ">
               <strong className="block mb-1">ℹ️ Penyimpanan Cloud Aktif</strong>
               File yang Anda unggah kini langsung disimpan dengan aman di Supabase Storage, membuatnya dapat diakses dari mana saja tanpa bergantung pada sistem file lokal server.
             </div>
@@ -176,7 +200,7 @@ export default function DashboardPage() {
           <motion.div 
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white dark:bg-zinc-900 rounded-3xl p-8 max-w-md w-full shadow-2xl flex flex-col items-center text-center"
+            className="bg-white  rounded-3xl p-8 max-w-md w-full shadow-2xl flex flex-col items-center text-center"
           >
             <div className="w-20 h-20 bg-accent/10 rounded-full flex items-center justify-center mb-6 relative">
               <Loader2 className="animate-spin text-accent" size={40} />
@@ -188,7 +212,7 @@ export default function DashboardPage() {
               Mohon jangan menutup halaman ini. File {selectedFile?.name} sedang diunggah ke Cloud.
             </p>
 
-            <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-4 mb-3 overflow-hidden relative">
+            <div className="w-full bg-zinc-100  rounded-full h-4 mb-3 overflow-hidden relative">
               <div 
                 className="bg-accent h-full transition-all duration-300 ease-out absolute left-0 top-0"
                 style={{ width: `${uploadProgress}%` }}

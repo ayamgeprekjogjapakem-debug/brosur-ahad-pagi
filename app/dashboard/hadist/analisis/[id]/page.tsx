@@ -98,7 +98,7 @@ export default function AnalisisHadistPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F9FAFB] dark:bg-zinc-950">
+      <div className="min-h-screen flex items-center justify-center bg-[#F9FAFB] ">
         <Loader2 className="animate-spin text-accent" size={32} />
       </div>
     );
@@ -106,7 +106,7 @@ export default function AnalisisHadistPage() {
 
   if (!data) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F9FAFB] dark:bg-zinc-950 text-zinc-500">
+      <div className="min-h-screen flex items-center justify-center bg-[#F9FAFB]  text-zinc-500">
         Data hadist tidak ditemukan.
       </div>
     );
@@ -115,18 +115,18 @@ export default function AnalisisHadistPage() {
   const isQuran = data.sumber_jenis === 'quran' || data.nama_surat;
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB] dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-sans pb-20">
-      <header className="sticky top-0 z-10 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-b border-black/5 dark:border-white/5">
+    <div className="min-h-screen bg-[#F9FAFB]  text-zinc-900  font-sans pb-20">
+      <header className="sticky top-0 z-10 bg-white/80  backdrop-blur-xl border-b border-black/5 ">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button 
               onClick={() => router.back()}
-              className="p-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+              className="p-2 rounded-xl bg-black/5  hover:bg-black/10  transition-colors"
             >
               <ArrowLeft size={20} />
             </button>
             <div>
-              <h1 className="font-extrabold text-lg md:text-xl text-zinc-900 dark:text-white">Analisis Mendalam</h1>
+              <h1 className="font-extrabold text-lg md:text-xl text-zinc-900 ">Analisis Mendalam</h1>
               <p className="text-xs text-zinc-500 font-medium">ID: {data.id.split('-')[0]}...</p>
             </div>
           </div>
@@ -152,9 +152,9 @@ export default function AnalisisHadistPage() {
             </div>
           )}
 
-          <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 md:p-8 border border-black/5 dark:border-white/5 shadow-sm space-y-6">
-            <div className="flex items-center justify-between mb-4 border-b border-black/5 dark:border-white/5 pb-4">
-              <span className="px-3 py-1 bg-black/5 dark:bg-white/5 text-zinc-600 dark:text-zinc-400 font-bold text-xs rounded-full">
+          <div className="bg-white  rounded-3xl p-6 md:p-8 border border-black/5  shadow-sm space-y-6">
+            <div className="flex items-center justify-between mb-4 border-b border-black/5  pb-4">
+              <span className="px-3 py-1 bg-black/5  text-zinc-600  font-bold text-xs rounded-full">
                 {isQuran ? 'Ayat Al-Qur\'an' : 'Hadist / Atsar'}
               </span>
               {data.brosur && (
@@ -165,17 +165,17 @@ export default function AnalisisHadistPage() {
               )}
             </div>
 
-            <p className="text-right font-serif text-2xl md:text-3xl leading-loose text-zinc-900 dark:text-zinc-100" dir="rtl">
+            <p className="text-right font-serif text-2xl md:text-3xl leading-loose text-zinc-900 " dir="rtl">
               {data.kutipan_arab}
             </p>
-            <div className="w-16 h-1 bg-black/10 dark:bg-white/10 rounded-full my-6"></div>
-            <p className="text-base md:text-lg text-zinc-700 dark:text-zinc-300 leading-relaxed font-medium">
+            <div className="w-16 h-1 bg-black/10  rounded-full my-6"></div>
+            <p className="text-base md:text-lg text-zinc-700  leading-relaxed font-medium">
               "{data.terjemahan}"
             </p>
           </div>
 
-          <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 md:p-8 border border-black/5 dark:border-white/5 shadow-sm space-y-4">
-            <h2 className="flex items-center gap-2 font-bold text-lg border-b border-black/5 dark:border-white/5 pb-3">
+          <div className="bg-white  rounded-3xl p-6 md:p-8 border border-black/5  shadow-sm space-y-4">
+            <h2 className="flex items-center gap-2 font-bold text-lg border-b border-black/5  pb-3">
               <ScrollText size={20} className="text-accent" />
               Syarah & Catatan Analisis
             </h2>
@@ -186,15 +186,15 @@ export default function AnalisisHadistPage() {
               value={catatanAnalisis}
               onChange={(e) => setCatatanAnalisis(e.target.value)}
               placeholder="Tulis catatan analisis di sini..."
-              className="w-full h-64 p-4 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 focus:border-accent outline-none transition-colors text-sm font-medium leading-relaxed resize-y"
+              className="w-full h-64 p-4 rounded-2xl bg-black/5  border border-black/5  focus:border-accent outline-none transition-colors text-sm font-medium leading-relaxed resize-y"
             ></textarea>
           </div>
         </div>
 
         {/* KOLOM KANAN: FORM TAKHRIJ & STATUS */}
         <div className="space-y-6">
-          <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-black/5 dark:border-white/5 shadow-sm space-y-5">
-            <h2 className="flex items-center gap-2 font-bold text-lg border-b border-black/5 dark:border-white/5 pb-3">
+          <div className="bg-white  rounded-3xl p-6 border border-black/5  shadow-sm space-y-5">
+            <h2 className="flex items-center gap-2 font-bold text-lg border-b border-black/5  pb-3">
               <Database size={20} className="text-accent" />
               Data Takhrij
             </h2>
@@ -205,7 +205,7 @@ export default function AnalisisHadistPage() {
                 <select 
                   value={statusHadist}
                   onChange={(e) => setStatusHadist(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 text-sm font-bold focus:outline-none"
+                  className="w-full px-4 py-2.5 rounded-xl bg-black/5  border border-black/5  text-sm font-bold focus:outline-none"
                 >
                   <option value="mentah">Mentah (Belum Dicek)</option>
                   <option value="terverifikasi">Shahih / Terverifikasi</option>
@@ -223,7 +223,7 @@ export default function AnalisisHadistPage() {
                       type="text" 
                       value={rawiKitab}
                       onChange={(e) => setRawiKitab(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 text-sm font-bold focus:outline-none"
+                      className="w-full px-4 py-2.5 rounded-xl bg-black/5  border border-black/5  text-sm font-bold focus:outline-none"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
@@ -233,7 +233,7 @@ export default function AnalisisHadistPage() {
                         type="text" 
                         value={noHadist}
                         onChange={(e) => setNoHadist(e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 text-sm font-bold focus:outline-none"
+                        className="w-full px-4 py-2.5 rounded-xl bg-black/5  border border-black/5  text-sm font-bold focus:outline-none"
                       />
                     </div>
                     <div>
@@ -242,7 +242,7 @@ export default function AnalisisHadistPage() {
                         type="text" 
                         value={juz}
                         onChange={(e) => setJuz(e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 text-sm font-bold focus:outline-none"
+                        className="w-full px-4 py-2.5 rounded-xl bg-black/5  border border-black/5  text-sm font-bold focus:outline-none"
                       />
                     </div>
                   </div>
@@ -252,7 +252,7 @@ export default function AnalisisHadistPage() {
                       type="text" 
                       value={halaman}
                       onChange={(e) => setHalaman(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 text-sm font-bold focus:outline-none"
+                      className="w-full px-4 py-2.5 rounded-xl bg-black/5  border border-black/5  text-sm font-bold focus:outline-none"
                     />
                   </div>
                   <div>
@@ -262,7 +262,7 @@ export default function AnalisisHadistPage() {
                       value={rawiTeratas}
                       onChange={(e) => setRawiTeratas(e.target.value)}
                       placeholder="Misal: Abu Hurairah r.a."
-                      className="w-full px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 text-sm font-bold focus:outline-none"
+                      className="w-full px-4 py-2.5 rounded-xl bg-black/5  border border-black/5  text-sm font-bold focus:outline-none"
                     />
                   </div>
                 </>

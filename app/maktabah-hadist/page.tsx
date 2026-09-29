@@ -22,7 +22,7 @@ function HighlightedText({ text, highlight }: { text: string; highlight: string 
     <>
       {parts.map((part, i) => {
         if (words.some(w => w.toLowerCase() === part.toLowerCase())) {
-          return <mark key={i} className="bg-emerald-200 dark:bg-emerald-900/60 text-black dark:text-emerald-100 px-1 rounded-sm font-semibold">{part}</mark>;
+          return <mark key={i} className="bg-emerald-200  text-black  px-1 rounded-sm font-semibold">{part}</mark>;
         }
         return <span key={i}>{part}</span>;
       })}
@@ -62,11 +62,11 @@ export default function HadistSearchPage() {
   }, [initialQuery]);
 
   return (
-    <div className="min-h-screen bg-[#fafafa] dark:bg-[#0a0a0a] text-zinc-900 dark:text-zinc-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#fafafa] [#0a0a0a] text-zinc-900  flex flex-col font-sans">
       
       {/* HEADER */}
-      <header className="px-6 py-4 border-b border-black/5 dark:border-white/5 bg-white/80 dark:bg-black/80 backdrop-blur-xl sticky top-0 z-20 flex items-center gap-4">
-        <Link href="/" className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-xl transition-colors">
+      <header className="px-6 py-4 border-b border-black/5  bg-white/80  backdrop-blur-xl sticky top-0 z-20 flex items-center gap-4">
+        <Link href="/" className="p-2 hover:bg-black/5  rounded-xl transition-colors">
           <ArrowLeft size={24} />
         </Link>
         <div className="font-extrabold text-xl tracking-tight flex items-center gap-2">
@@ -98,7 +98,7 @@ export default function HadistSearchPage() {
           </div>
         ) : results.length === 0 ? (
           <div className="text-center py-20 text-zinc-500">
-            <div className="w-20 h-20 bg-black/5 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
+            <div className="w-20 h-20 bg-black/5  rounded-full flex items-center justify-center mx-auto mb-6">
               <Search size={32} className="opacity-40" />
             </div>
             <h2 className="text-2xl font-bold mb-2">Tidak Ada Hasil</h2>
@@ -108,14 +108,14 @@ export default function HadistSearchPage() {
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="text-sm font-bold text-zinc-500 mb-6 uppercase tracking-widest border-b border-black/5 dark:border-white/5 pb-4">
+            <div className="text-sm font-bold text-zinc-500 mb-6 uppercase tracking-widest border-b border-black/5  pb-4">
               Ditemukan {results.length} hadist
             </div>
             
             {results.map((item, i) => (
               <div 
                 key={i}
-                className="block bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 p-6 rounded-2xl hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-500/5 transition-all group"
+                className="block bg-white  border border-black/5  p-6 rounded-2xl hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-500/5 transition-all group"
               >
                 <div className="flex flex-col gap-4">
                   <div className="flex justify-between items-start mb-2 border-b border-black/5 pb-3">
@@ -135,8 +135,8 @@ export default function HadistSearchPage() {
                     </p>
                   </div>
                   
-                  <div className="mt-4 pt-4 border-t border-black/5 dark:border-white/5">
-                    <p className="text-[15px] text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                  <div className="mt-4 pt-4 border-t border-black/5 ">
+                    <p className="text-[15px] text-zinc-700  leading-relaxed">
                       <HighlightedText text={item.terjemahan || ''} highlight={initialQuery} />
                     </p>
                   </div>

@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @import "../styles/theme.css";
 
+/* Nonaktifkan automatic dark mode (prefers-color-scheme) dengan override variant dark
+   hanya bisa aktif jika class .dark ditambahkan secara manual */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @layer utilities {
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;

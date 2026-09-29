@@ -28,6 +28,7 @@ export default function ArsipPage() {
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const [currentArchiveName, setCurrentArchiveName] = useState<string>('');
   const [collapsedFolders, setCollapsedFolders] = useState<Record<string, boolean>>({});
+  const [extractDestination, setExtractDestination] = useState<'brosur' | 'hadist_chm'>('brosur');
 
   // Fake Progress Bar Simulation
   useEffect(() => {
@@ -50,7 +51,7 @@ export default function ArsipPage() {
 
   const fetchFiles = async () => {
     setIsLoading(true);
-    const { data, error } = await supabase.storage.from('chm-uploads').list();
+    const { data, error } = await supabase.storage.from('chm-uploads').list('', { sortBy: { column: 'created_at', order: 'desc' } });
     if (!error && data) {
       // Hilangkan file .emptyFolderPlaceholder
       setFiles(data.filter(f => f.name !== '.emptyFolderPlaceholder'));
@@ -124,7 +125,8 @@ export default function ArsipPage() {
         body: JSON.stringify({ 
           fileName: currentArchiveName, 
           action: 'extract',
-          selectedFiles: selectedFiles 
+          selectedFiles: selectedFiles,
+          destination: extractDestination
         })
       });
       
@@ -246,7 +248,7 @@ export default function ArsipPage() {
         </div>
       </header>
 
-      <div className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-3xl shadow-sm overflow-hidden">
+      <div className="bg-white  border border-black/5  rounded-3xl shadow-sm overflow-hidden">
         {isLoading ? (
           <div className="p-12 flex flex-col items-center justify-center text-zinc-400">
             <Loader2 className="animate-spin mb-4" size={32} />
@@ -260,7 +262,7 @@ export default function ArsipPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-zinc-50 dark:bg-zinc-800/50 border-b border-black/5 dark:border-white/5 text-sm">
+                <tr className="bg-zinc-50  border-b border-black/5  text-sm">
                   <th className="p-4 font-bold">Nama File</th>
                   <th className="p-4 font-bold">Ukuran</th>
                   <th className="p-4 font-bold">Tanggal Unggah</th>
@@ -269,7 +271,7 @@ export default function ArsipPage() {
               </thead>
               <tbody>
                 {paginatedFiles.map((file) => (
-                  <tr key={file.id} className="border-b border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                  <tr key={file.name} className="border-b border-black/5  hover:bg-black/5  transition-colors">
                     <td className="p-4 font-medium">{file.name}</td>
                     <td className="p-4 text-zinc-500 text-sm">{(file.metadata?.size / 1024 / 1024).toFixed(2)} MB</td>
                     <td className="p-4 text-zinc-500 text-sm">{new Date(file.created_at).toLocaleString('id-ID')}</td>
@@ -287,7 +289,7 @@ export default function ArsipPage() {
                       {file.name.endsWith('.pdf') && (
                         <button 
                           onClick={() => router.push(`/dashboard/data/create?pdf=${encodeURIComponent(file.name)}`)}
-                          className="px-3 py-2 bg-purple-500/10 text-purple-600 dark:text-purple-400 hover:bg-purple-500 hover:text-white rounded-lg transition-colors flex items-center justify-center font-bold text-xs"
+                          className="px-3 py-2 bg-purple-500/10 text-purple-600  hover:bg-purple-500 hover:text-white rounded-lg transition-colors flex items-center justify-center font-bold text-xs"
                           title="Edit / Lengkapi Teks PDF di Form"
                         >
                           Lengkapi Data
@@ -296,7 +298,7 @@ export default function ArsipPage() {
                       <button 
                         onClick={() => handleRename(file.name)}
                         disabled={isRenaming === file.name}
-                        className="p-2 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-500 hover:text-white rounded-lg transition-colors flex items-center justify-center disabled:opacity-50"
+                        className="p-2 bg-yellow-500/10 text-yellow-600  hover:bg-yellow-500 hover:text-white rounded-lg transition-colors flex items-center justify-center disabled:opacity-50"
                         title="Ubah Nama File"
                       >
                         {isRenaming === file.name ? <Loader2 className="animate-spin" size={18} /> : <Edit2 size={18} />}
@@ -327,14 +329,14 @@ export default function ArsipPage() {
 
             {/* Footer Pagination Bar */}
             {!isLoading && totalItems > 0 && (
-              <div className="p-4 bg-zinc-50 dark:bg-zinc-950/80 border-t border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-3 text-xs md:text-sm font-medium text-zinc-600 dark:text-zinc-400">
+              <div className="p-4 bg-zinc-50  border-t border-zinc-200  flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3 text-xs md:text-sm font-medium text-zinc-600 ">
                   <div className="flex items-center gap-2">
                     <span>Tampilkan:</span>
                     <select
                       value={pageSize}
                       onChange={(e) => setPageSize(Number(e.target.value))}
-                      className="bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 rounded-xl px-3 py-1.5 text-xs md:text-sm font-bold focus:outline-none focus:ring-2 focus:ring-accent/50"
+                      className="bg-white  border border-zinc-300  text-zinc-900  rounded-xl px-3 py-1.5 text-xs md:text-sm font-bold focus:outline-none focus:ring-2 focus:ring-accent/50"
                     >
                       <option value={10}>10</option>
                       <option value={20}>20</option>
@@ -345,9 +347,9 @@ export default function ArsipPage() {
                   </div>
                   <span className="text-zinc-400">|</span>
                   <span>
-                    Menampilkan <strong className="text-zinc-900 dark:text-zinc-100">{startIndex + 1}</strong> -{' '}
-                    <strong className="text-zinc-900 dark:text-zinc-100">{endIndex}</strong> dari{' '}
-                    <strong className="text-zinc-900 dark:text-zinc-100">{totalItems}</strong> file
+                    Menampilkan <strong className="text-zinc-900 ">{startIndex + 1}</strong> -{' '}
+                    <strong className="text-zinc-900 ">{endIndex}</strong> dari{' '}
+                    <strong className="text-zinc-900 ">{totalItems}</strong> file
                   </span>
                 </div>
 
@@ -356,7 +358,7 @@ export default function ArsipPage() {
                     onClick={() => setCurrentPage(1)}
                     disabled={currentPage === 1}
                     title="Halaman Pertama"
-                    className="p-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    className="p-2 rounded-xl bg-white  border border-zinc-200  text-zinc-600  hover:bg-zinc-100  disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   >
                     <ChevronsLeft size={16} />
                   </button>
@@ -364,12 +366,12 @@ export default function ArsipPage() {
                     onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                     disabled={currentPage === 1}
                     title="Halaman Sebelumnya"
-                    className="p-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    className="p-2 rounded-xl bg-white  border border-zinc-200  text-zinc-600  hover:bg-zinc-100  disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   >
                     <ChevronLeft size={16} />
                   </button>
 
-                  <div className="px-3 py-1.5 text-xs md:text-sm font-bold bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl">
+                  <div className="px-3 py-1.5 text-xs md:text-sm font-bold bg-white  border border-zinc-200  rounded-xl">
                     {currentPage} / {totalPages}
                   </div>
 
@@ -377,7 +379,7 @@ export default function ArsipPage() {
                     onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
                     disabled={currentPage === totalPages}
                     title="Halaman Selanjutnya"
-                    className="p-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    className="p-2 rounded-xl bg-white  border border-zinc-200  text-zinc-600  hover:bg-zinc-100  disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   >
                     <ChevronRight size={16} />
                   </button>
@@ -385,7 +387,7 @@ export default function ArsipPage() {
                     onClick={() => setCurrentPage(totalPages)}
                     disabled={currentPage === totalPages}
                     title="Halaman Terakhir"
-                    className="p-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    className="p-2 rounded-xl bg-white  border border-zinc-200  text-zinc-600  hover:bg-zinc-100  disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   >
                     <ChevronsRight size={16} />
                   </button>
@@ -399,12 +401,12 @@ export default function ArsipPage() {
       {/* Selective Extraction Modal */}
       {isExtractModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-3xl shadow-xl w-full max-w-3xl flex flex-col max-h-[85vh] overflow-hidden animate-in fade-in zoom-in-95">
-            <div className="p-6 border-b border-black/5 dark:border-white/5 flex justify-between items-center bg-zinc-50 dark:bg-zinc-800/50">
+          <div className="bg-white  border border-black/5  rounded-3xl shadow-xl w-full max-w-3xl flex flex-col max-h-[85vh] overflow-hidden animate-in fade-in zoom-in-95">
+            <div className="p-6 border-b border-black/5  flex justify-between items-center bg-zinc-50 ">
               <div>
                 <h3 className="text-xl font-bold">Pilih File untuk Diekstrak</h3>
                 <p className="text-sm text-zinc-500 mt-1">
-                  Arsip: <span className="font-semibold text-zinc-900 dark:text-zinc-100">{currentArchiveName}</span>
+                  Arsip: <span className="font-semibold text-zinc-900 ">{currentArchiveName}</span>
                 </p>
               </div>
               <div className="bg-accent/10 text-accent px-3 py-1.5 rounded-lg text-sm font-bold">
@@ -413,7 +415,7 @@ export default function ArsipPage() {
             </div>
             
             <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
-              <div className="mb-4 pb-4 border-b border-black/5 dark:border-white/5 flex flex-wrap gap-2">
+              <div className="mb-4 pb-4 border-b border-black/5  flex flex-wrap gap-2">
                 <button 
                   onClick={() => handleToggleSelectAll(true)}
                   className="px-4 py-2 text-sm font-bold bg-accent/10 text-accent hover:bg-accent hover:text-white rounded-lg transition-colors flex-1 min-w-[140px]"
@@ -422,19 +424,19 @@ export default function ArsipPage() {
                 </button>
                 <button 
                   onClick={() => handleToggleSelectAll(false)}
-                  className="px-4 py-2 text-sm font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg transition-colors flex-1 min-w-[140px]"
+                  className="px-4 py-2 text-sm font-bold bg-zinc-100  text-zinc-600  hover:bg-zinc-200  rounded-lg transition-colors flex-1 min-w-[140px]"
                 >
                   Bersihkan Centang
                 </button>
                 <button 
                   onClick={() => handleCollapseAll(true)}
-                  className="px-4 py-2 text-sm font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500 hover:text-white rounded-lg transition-colors flex-1 min-w-[140px]"
+                  className="px-4 py-2 text-sm font-bold bg-blue-500/10 text-blue-600  hover:bg-blue-500 hover:text-white rounded-lg transition-colors flex-1 min-w-[140px]"
                 >
                   Tutup Semua Folder
                 </button>
                 <button 
                   onClick={() => handleCollapseAll(false)}
-                  className="px-4 py-2 text-sm font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500 hover:text-white rounded-lg transition-colors flex-1 min-w-[140px]"
+                  className="px-4 py-2 text-sm font-bold bg-emerald-500/10 text-emerald-600  hover:bg-emerald-500 hover:text-white rounded-lg transition-colors flex-1 min-w-[140px]"
                 >
                   Buka Semua Folder
                 </button>
@@ -447,8 +449,8 @@ export default function ArsipPage() {
                   const isCollapsed = collapsedFolders[folder] || false;
                   
                   return (
-                    <div key={folder} className="border border-black/5 dark:border-white/5 rounded-2xl overflow-hidden">
-                      <div className="bg-black/5 dark:bg-white/5 px-4 py-3 flex items-center justify-between">
+                    <div key={folder} className="border border-black/5  rounded-2xl overflow-hidden">
+                      <div className="bg-black/5  px-4 py-3 flex items-center justify-between">
                         <label className="flex items-center gap-3 cursor-pointer">
                           <input 
                             type="checkbox"
@@ -457,18 +459,18 @@ export default function ArsipPage() {
                             ref={(input) => { if (input) input.indeterminate = isSomeFolderSelected; }}
                             onChange={(e) => handleToggleFolder(folderFiles, e.target.checked)}
                           />
-                          <span className="font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-2 select-none">
+                          <span className="font-bold text-zinc-800  flex items-center gap-2 select-none">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path></svg>
                             {folder}
                           </span>
                         </label>
                         <div className="flex items-center gap-3">
-                          <span className="text-xs font-bold text-zinc-500 bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md">
+                          <span className="text-xs font-bold text-zinc-500 bg-black/5  px-2 py-1 rounded-md">
                             {folderFiles.length} file
                           </span>
                           <button 
                             onClick={() => setCollapsedFolders(prev => ({ ...prev, [folder]: !isCollapsed }))}
-                            className="p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded transition-colors text-zinc-500"
+                            className="p-1 hover:bg-black/10  rounded transition-colors text-zinc-500"
                             title={isCollapsed ? "Tampilkan File" : "Sembunyikan File"}
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${isCollapsed ? '' : 'rotate-180'}`}><polyline points="6 9 12 15 18 9"></polyline></svg>
@@ -477,16 +479,16 @@ export default function ArsipPage() {
                       </div>
                       
                       {!isCollapsed && (
-                        <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-2 bg-white dark:bg-zinc-900/50">
+                        <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-2 bg-white ">
                           {folderFiles.map((file, idx) => (
-                            <label key={idx} className="flex items-start gap-3 cursor-pointer p-2.5 border border-black/5 dark:border-white/5 hover:border-accent/50 hover:bg-accent/5 rounded-xl transition-all">
+                            <label key={idx} className="flex items-start gap-3 cursor-pointer p-2.5 border border-black/5  hover:border-accent/50 hover:bg-accent/5 rounded-xl transition-all">
                               <input 
                                 type="checkbox"
                                 className="w-5 h-5 accent-accent mt-0.5 shrink-0"
                                 checked={selectedFiles.includes(file)}
                                 onChange={(e) => handleToggleFile(file, e.target.checked)}
                               />
-                              <span className="text-sm font-medium break-all line-clamp-2 text-zinc-700 dark:text-zinc-300">
+                              <span className="text-sm font-medium break-all line-clamp-2 text-zinc-700 ">
                                 {file.split('/').pop()}
                               </span>
                             </label>
@@ -505,13 +507,25 @@ export default function ArsipPage() {
               )}
             </div>
             
-            <div className="p-6 border-t border-black/5 dark:border-white/5 flex justify-end gap-3 bg-zinc-50 dark:bg-zinc-800/50">
-              <button
-                onClick={() => setIsExtractModalOpen(false)}
-                className="px-6 py-2.5 rounded-xl font-bold text-zinc-600 hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-700 transition-colors"
-              >
-                Batal
-              </button>
+            <div className="p-6 border-t border-black/5  flex justify-between items-center gap-3 bg-zinc-50 ">
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-semibold text-zinc-600">Simpan ke:</span>
+                <select 
+                  value={extractDestination}
+                  onChange={(e) => setExtractDestination(e.target.value as 'brosur' | 'hadist_chm')}
+                  className="px-3 py-2 border border-black/10 rounded-xl bg-white text-sm font-medium text-zinc-800 outline-none focus:ring-2 focus:ring-accent/50"
+                >
+                  <option value="brosur">Koleksi Brosur</option>
+                  <option value="hadist_chm">Koleksi Hadist 9 Imam (CHM)</option>
+                </select>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setIsExtractModalOpen(false)}
+                  className="px-6 py-2.5 rounded-xl font-bold text-zinc-600 hover:bg-zinc-200   transition-colors"
+                >
+                  Batal
+                </button>
               <button
                 onClick={handleProcessExtract}
                 disabled={selectedFiles.length === 0}
@@ -520,18 +534,19 @@ export default function ArsipPage() {
                 Proses Ekstrak
               </button>
             </div>
+            </div>
           </div>
         </div>
       )}
 
       {/* Fullscreen Extraction Loader / Overlay */}
       {isExtracting && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-white/60 dark:bg-black/60 backdrop-blur-xl">
-          <div className="w-full max-w-xl bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 shadow-2xl rounded-[32px] p-8 md:p-12 text-center relative overflow-hidden flex flex-col items-center">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-white/60  backdrop-blur-xl">
+          <div className="w-full max-w-xl bg-white  border border-black/5  shadow-2xl rounded-[32px] p-8 md:p-12 text-center relative overflow-hidden flex flex-col items-center">
             
             <Loader2 className="animate-spin text-accent mb-6" size={56} strokeWidth={2} />
             
-            <h2 className="text-2xl font-extrabold text-zinc-900 dark:text-zinc-100 mb-2">
+            <h2 className="text-2xl font-extrabold text-zinc-900  mb-2">
               Mengekstrak Arsip
             </h2>
             <p className="text-zinc-500 font-medium mb-8 max-w-sm">
@@ -539,7 +554,7 @@ export default function ArsipPage() {
             </p>
 
             {/* Progress Bar Container */}
-            <div className="w-full bg-black/5 dark:bg-white/5 rounded-full h-4 mb-4 relative overflow-hidden">
+            <div className="w-full bg-black/5  rounded-full h-4 mb-4 relative overflow-hidden">
               <div 
                 className="absolute top-0 left-0 h-full bg-accent transition-all duration-1000 ease-out rounded-full" 
                 style={{ width: `${extractProgress}%` }}
@@ -551,7 +566,7 @@ export default function ArsipPage() {
               <span className="text-accent">{Math.floor(extractProgress)}%</span>
             </div>
             
-            <div className="bg-red-500/10 text-red-600 dark:text-red-400 px-4 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+            <div className="bg-red-500/10 text-red-600  px-4 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-widest flex items-center gap-2">
               <span className="relative flex h-3 w-3">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>

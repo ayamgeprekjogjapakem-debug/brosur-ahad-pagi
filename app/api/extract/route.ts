@@ -1,5 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import { createClient as createAdminClient } from '@supabase/supabase-js';
 import AdmZip from 'adm-zip';
 import iconv from 'iconv-lite';
 import { formatParagraphWithArabic } from '@/utils/arabic-normalizer';
@@ -40,9 +41,14 @@ export async function POST(request: NextRequest) {
     const folderName = fileName.replace(/\.(chm|zip|pdf)$/i, '');
     let folderId = null;
 
+    const destination = body.destination || (fileName.toUpperCase().startsWith('HADIST_') ? 'hadist_chm' : 'brosur');
+    const isHadist = destination === 'hadist_chm';
+    const folderTable = isHadist ? 'folders_hadist' : 'folders';
+    const contentTable = isHadist ? 'hadist_chm' : 'brosur';
+
     if (action === 'extract') {
       const { data: existingFolder } = await supabase
-        .from('folders')
+        .from(folderTable)
         .select('id')
         .eq('name', folderName)
         .single();
@@ -52,7 +58,7 @@ export async function POST(request: NextRequest) {
       } else {
         const folderSlug = folderName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
         const { data: newFolder, error: folderError } = await supabase
-          .from('folders')
+          .from(folderTable)
           .insert({ 
             name: folderName, 
             slug: folderSlug,
@@ -148,7 +154,22 @@ export async function POST(request: NextRequest) {
              }
           }
           if (reader.close) await reader.close();
-          return NextResponse.json({ success: true, files: htmlFiles });
+
+          // Cek ID yang sudah diekstrak
+          let existingIds: string[] = [];
+          const folderName = fileName.replace(/\.(chm|zip|pdf)$/i, '');
+          const destination = body.destination || (fileName.toUpperCase().startsWith('HADIST_') ? 'hadist_chm' : 'brosur');
+          const isHadist = destination === 'hadist_chm';
+          const folderTable = isHadist ? 'folders_hadist' : 'folders';
+          const contentTable = isHadist ? 'hadist_chm' : 'brosur';
+
+          const { data: existingFolder } = await supabase.from(folderTable).select('id').eq('name', folderName).single();
+          if (existingFolder) {
+            const { data: existingData } = await supabase.from(contentTable).select('id').eq('folder_id', existingFolder.id);
+            if (existingData) existingIds = existingData.map(row => row.id);
+          }
+
+          return NextResponse.json({ success: true, files: htmlFiles, existingIds });
         }
 
         console.log(`📦 Membuka file CHM...`);
@@ -230,6 +251,9 @@ export async function POST(request: NextRequest) {
     for (const item of pendingHtmls) {
       const $ = cheerio.load(item.content);
       
+      // Hapus tag yang tidak diperlukan (css, javascript, meta) agar tidak bocor ke teks
+      $('script, style, meta, link, noframes, noscript').remove();
+
       // Ganti URL gambar jika ada yang cocok di Map
       $('img').each((_, el) => {
         const src = $(el).attr('src');
@@ -242,16 +266,56 @@ export async function POST(request: NextRequest) {
       });
       
       const finalHtml = $.html();
-      const cleanText = $.text().replace(/\s+/g, ' ').trim();
+      
+      let cleanText = $.text().replace(/\s+/g, ' ').trim();
+      let overrideJudul = null;
+
+      // Smart parsing untuk struktur Kitab-9-Imam.chm
+      const chmTitle = $('#winchm_template_title').text().trim();
+      if (chmTitle) {
+        overrideJudul = chmTitle;
+      } else {
+        const headTitle = $('head title').text().trim();
+        if (headTitle) overrideJudul = headTitle;
+      }
+
+      // Mengambil bagian terjemahan (indo) dan arab
+      const indoHtml = $('#indo').html() || '';
+      const indoText = $('#indo').text().replace(/\s+/g, ' ').trim();
+      
+      const arabHtml = $('#arab, #Harab').html() || '';
+      const arabText = $('#arab, #Harab').text().replace(/\s+/g, ' ').trim();
+
+      if (indoText) {
+        cleanText = (overrideJudul || '') + '\n\n' + indoText;
+        if (arabText) cleanText += '\n\n' + arabText;
+      }
       
       const fileNameOnly = item.entryName.split('/').pop() || item.entryName;
       const baseName = fileNameOnly.replace(/\.html?$/i, '');
-      const { id, tahun, judul, slug } = parseFilename(baseName);
+      const parsed = parseFilename(baseName);
+      const id = parsed.id;
+      const tahun = parsed.tahun;
+      const slug = parsed.slug;
+      const judul = overrideJudul || parsed.judul;
 
-      const { error: upsertError } = await supabase.from('brosur').upsert(
-        { id, tahun, judul, slug, konten: finalHtml, teks_bersih: cleanText, folder_id: folderId },
+      const { error: upsertError, data: upsertData } = await supabase.from(contentTable).upsert(
+        { 
+          id, 
+          tahun, 
+          judul, 
+          slug, 
+          konten: finalHtml, 
+          teks_bersih: cleanText, 
+          folder_id: folderId,
+          // Menambahkan kolom spesifik untuk pencarian
+          teks_arab: arabText || null,
+          terjemahan: indoText || null
+        },
         { onConflict: 'id' }
-      );
+      ).select();
+
+      console.log(`Upserting ${id} to ${contentTable}. Error:`, upsertError, `Data length:`, upsertData?.length);
 
       if (upsertError) {
         extractResults.push({ file: baseName, status: 'error', message: upsertError.message });

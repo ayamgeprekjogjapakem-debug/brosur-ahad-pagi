@@ -12,6 +12,11 @@ interface DashboardHeaderProps {
 
 export default function DashboardHeader({ email: initialEmail, role: initialRole }: DashboardHeaderProps) {
   const pathname = usePathname();
+  
+  if (pathname.startsWith('/dashboard/hadist9imam')) {
+    return null;
+  }
+
   const router = useRouter();
   const [email, setEmail] = useState(initialEmail || 'Admin');
   const [role, setRole] = useState(initialRole || 'admin');
@@ -71,25 +76,25 @@ export default function DashboardHeader({ email: initialEmail, role: initialRole
   const initial = (email || 'A').charAt(0).toUpperCase();
 
   return (
-    <header className="w-full bg-white/70 dark:bg-zinc-900/70 backdrop-blur-2xl border-b border-black/[0.04] dark:border-white/[0.04] px-6 py-4 flex items-center justify-between sticky top-0 z-30 shadow-sm">
+    <header className="w-full bg-white/70  backdrop-blur-2xl border-b border-black/[0.04] [0.04] px-6 py-4 flex items-center justify-between sticky top-0 z-30 shadow-sm">
       <div className="flex items-center gap-3">
         <button
           onClick={handleToggleSidebar}
           title={isSidebarMinimized ? 'Perluas Sidebar' : 'Kecilkan Sidebar'}
-          className="p-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-zinc-600 dark:text-zinc-300 transition-colors hidden md:flex items-center justify-center"
+          className="p-2 rounded-xl bg-black/5  hover:bg-black/10  text-zinc-600  transition-colors hidden md:flex items-center justify-center"
         >
           {isSidebarMinimized ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
         </button>
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <h1 className="text-base md:text-lg font-extrabold text-zinc-900 dark:text-zinc-100 tracking-tight">
+          <h1 className="text-base md:text-lg font-extrabold text-zinc-900  tracking-tight">
             {getPageTitle(pathname)}
           </h1>
         </div>
       </div>
 
       <div className="flex items-center gap-3 relative">
-        <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold text-xs rounded-full">
+        <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600  font-bold text-xs rounded-full">
           <ShieldCheck size={14} />
           <span className="uppercase tracking-wide">{role}</span>
         </span>
@@ -97,9 +102,9 @@ export default function DashboardHeader({ email: initialEmail, role: initialRole
         <div className="relative">
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="flex items-center gap-2.5 p-1.5 pl-3 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-2xl transition-all border border-black/5 dark:border-white/5"
+            className="flex items-center gap-2.5 p-1.5 pl-3 bg-black/5  hover:bg-black/10  rounded-2xl transition-all border border-black/5 "
           >
-            <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-200 hidden md:inline-block max-w-[160px] truncate">
+            <span className="text-sm font-semibold text-zinc-700  hidden md:inline-block max-w-[160px] truncate">
               {email}
             </span>
             <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-accent to-accent/70 text-white font-extrabold text-sm flex items-center justify-center shadow-md shadow-accent/20">
@@ -114,10 +119,10 @@ export default function DashboardHeader({ email: initialEmail, role: initialRole
                 className="fixed inset-0 z-10" 
                 onClick={() => setIsMenuOpen(false)} 
               />
-              <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-zinc-900 border border-black/10 dark:border-white/10 rounded-2xl shadow-2xl p-2 z-20 animate-in fade-in zoom-in-95 duration-150">
-                <div className="px-3 py-2.5 border-b border-black/5 dark:border-white/5 mb-1">
+              <div className="absolute right-0 mt-2 w-56 bg-white  border border-black/10  rounded-2xl shadow-2xl p-2 z-20 animate-in fade-in zoom-in-95 duration-150">
+                <div className="px-3 py-2.5 border-b border-black/5  mb-1">
                   <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Akun Anda</p>
-                  <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate">{email}</p>
+                  <p className="text-sm font-bold text-zinc-900  truncate">{email}</p>
                   <p className="text-xs font-semibold text-emerald-500 mt-0.5 capitalize">{role}</p>
                 </div>
                 <button

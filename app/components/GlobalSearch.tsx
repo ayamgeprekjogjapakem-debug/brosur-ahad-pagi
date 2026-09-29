@@ -64,7 +64,7 @@ export default function GlobalSearch() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={searchType === 'brosur' ? "Cari tema, judul, atau isi brosur dari seluruh arsip..." : "Cari kata kunci terjemahan atau lafaz arab hadist..."} 
-          className="w-full bg-white dark:bg-zinc-900 border border-black/10 dark:border-white/10 rounded-[20px] py-4 pl-14 pr-32 text-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 shadow-sm transition-all"
+          className="w-full bg-white  border border-black/10  rounded-[20px] py-4 pl-14 pr-32 text-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 shadow-sm transition-all"
         />
         <button 
           type="submit"

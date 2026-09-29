@@ -13,9 +13,9 @@ export default function JuzPage() {
   );
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#0a0a0a] text-zinc-900 dark:text-zinc-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-white [#0a0a0a] text-zinc-900  flex flex-col font-sans">
       {/* HEADER */}
-      <header className="p-6 md:px-12 md:py-8 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-white/50 dark:bg-black/50 backdrop-blur-xl sticky top-0 z-10">
+      <header className="p-6 md:px-12 md:py-8 flex items-center justify-between border-b border-black/5  bg-white/50  backdrop-blur-xl sticky top-0 z-10">
         <Link href="/" className="flex items-center gap-3">
           <div className="w-12 h-12 relative flex items-center justify-center shrink-0">
             <Image 
@@ -47,11 +47,11 @@ export default function JuzPage() {
 
       <main className="flex-1 p-6 md:p-12 max-w-7xl mx-auto w-full flex flex-col items-center">
         {/* Tabs and Sort */}
-        <div className="w-full flex flex-col md:flex-row md:items-center justify-between border-b border-black/10 dark:border-white/10 mb-6 pb-2">
+        <div className="w-full flex flex-col md:flex-row md:items-center justify-between border-b border-black/10  mb-6 pb-2">
           <div className="flex items-center gap-6 text-sm font-medium">
-            <Link href="/quran" className="pb-2 text-zinc-500 hover:text-black dark:hover:text-white transition-colors">Surah</Link>
-            <Link href="/quran/juz" className="border-b-2 border-black dark:border-white pb-2 text-black dark:text-white">Juz</Link>
-            <Link href="/quran/urutan-wahyu" className="pb-2 text-zinc-500 hover:text-black dark:hover:text-white transition-colors">Urutan Wahyu</Link>
+            <Link href="/quran" className="pb-2 text-zinc-500 hover:text-black  transition-colors">Surah</Link>
+            <Link href="/quran/juz" className="border-b-2 border-black  pb-2 text-black ">Juz</Link>
+            <Link href="/quran/urutan-wahyu" className="pb-2 text-zinc-500 hover:text-black  transition-colors">Urutan Wahyu</Link>
           </div>
         </div>
 
@@ -64,7 +64,7 @@ export default function JuzPage() {
               placeholder="Cari juz..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-white dark:bg-zinc-900 border border-black/10 dark:border-white/10 focus:border-black dark:focus:border-white rounded-full pl-12 pr-4 py-2.5 text-sm outline-none transition-all shadow-sm font-medium"
+              className="w-full bg-white  border border-black/10  focus:border-black  rounded-full pl-12 pr-4 py-2.5 text-sm outline-none transition-all shadow-sm font-medium"
             />
           </div>
         </div>
@@ -73,9 +73,9 @@ export default function JuzPage() {
           {filteredJuz.map((juz) => (
             <div 
               key={juz}
-              className="group bg-white dark:bg-zinc-900/50 border border-black/5 dark:border-white/5 rounded-xl p-6 hover:border-black/20 dark:hover:border-white/20 transition-all flex flex-col items-center justify-center gap-2 cursor-not-allowed opacity-60"
+              className="group bg-white  border border-black/5  rounded-xl p-6 hover:border-black/20  transition-all flex flex-col items-center justify-center gap-2 cursor-not-allowed opacity-60"
             >
-              <h3 className="font-bold text-2xl text-zinc-900 dark:text-zinc-100">Juz {juz}</h3>
+              <h3 className="font-bold text-2xl text-zinc-900 ">Juz {juz}</h3>
               <span className="text-xs text-zinc-400">Segera Hadir</span>
             </div>
           ))}

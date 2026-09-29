@@ -82,23 +82,23 @@ export default function CompareQuranPage() {
       </header>
 
       {isChecking ? (
-        <div className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-3xl p-12 flex flex-col items-center justify-center shadow-sm">
+        <div className="bg-white  border border-black/5  rounded-3xl p-12 flex flex-col items-center justify-center shadow-sm">
           <Loader2 className="w-12 h-12 text-accent animate-spin mb-4" />
           <h2 className="text-xl font-bold mb-2">Sedang Mengecek Pembaruan...</h2>
           <p className="text-zinc-500 text-sm">Menghubungkan ke API EQuran.id</p>
         </div>
       ) : syncResult && !syncResult.success ? (
-        <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 rounded-3xl p-8 flex flex-col items-center justify-center text-center">
+        <div className="bg-red-50  border border-red-200  rounded-3xl p-8 flex flex-col items-center justify-center text-center">
           <XCircle className="w-16 h-16 text-red-500 mb-4" />
-          <h2 className="text-xl font-bold text-red-700 dark:text-red-400 mb-2">Pengecekan Gagal</h2>
-          <p className="text-red-600/80 dark:text-red-500/80 mb-6">{syncResult.error}</p>
+          <h2 className="text-xl font-bold text-red-700  mb-2">Pengecekan Gagal</h2>
+          <p className="text-red-600/80  mb-6">{syncResult.error}</p>
           <button onClick={checkUpdates} className="bg-red-500 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-red-600 transition-colors">
             Coba Lagi
           </button>
         </div>
       ) : syncResult ? (
-        <div className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-3xl p-8 shadow-sm">
-          <div className="flex items-center justify-between mb-8 pb-8 border-b border-black/5 dark:border-white/5">
+        <div className="bg-white  border border-black/5  rounded-3xl p-8 shadow-sm">
+          <div className="flex items-center justify-between mb-8 pb-8 border-b border-black/5 ">
             <div className="flex items-center gap-4">
               {syncResult.needsUpdate ? (
                 <div className="w-16 h-16 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
@@ -130,11 +130,11 @@ export default function CompareQuranPage() {
 
           <div className="space-y-6 mb-8">
             <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl border border-black/5 dark:border-white/5">
+              <div className="p-4 bg-zinc-50  rounded-2xl border border-black/5 ">
                 <p className="text-zinc-500 text-xs font-bold uppercase mb-1">Data Lokal (Supabase)</p>
                 <p className="text-2xl font-black">{syncResult.localSurahsCount} Surah</p>
               </div>
-              <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl border border-black/5 dark:border-white/5">
+              <div className="p-4 bg-zinc-50  rounded-2xl border border-black/5 ">
                 <p className="text-zinc-500 text-xs font-bold uppercase mb-1">Data Kemenag (EQuran)</p>
                 <p className="text-2xl font-black">{syncResult.externalSurahsCount} Surah</p>
               </div>
@@ -145,7 +145,7 @@ export default function CompareQuranPage() {
                 <h3 className="font-bold text-sm mb-3">Detail Perubahan:</h3>
                 <ul className="space-y-2">
                   {syncResult.changes.map((c: string, i: number) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-zinc-600 dark:text-zinc-400 bg-amber-50 dark:bg-amber-900/10 p-3 rounded-xl">
+                    <li key={i} className="flex items-start gap-2 text-sm text-zinc-600  bg-amber-50  p-3 rounded-xl">
                       <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 shrink-0"></span> {c}
                     </li>
                   ))}
@@ -168,12 +168,12 @@ export default function CompareQuranPage() {
       {/* Fullscreen Overlay for Progress */}
       {isApplying && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center p-8">
-          <div className="bg-white dark:bg-zinc-900 rounded-3xl p-8 max-w-md w-full text-center">
+          <div className="bg-white  rounded-3xl p-8 max-w-md w-full text-center">
             <Loader2 className="w-16 h-16 text-accent animate-spin mx-auto mb-6" />
             <h2 className="text-2xl font-bold mb-2">Sinkronisasi Berjalan</h2>
             <p className="text-zinc-500 mb-8">Memproses Surah ke-{currentSurah} dari 114...</p>
             
-            <div className="w-full h-4 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden mb-2">
+            <div className="w-full h-4 bg-zinc-100  rounded-full overflow-hidden mb-2">
               <div 
                 className="h-full bg-accent transition-all duration-300 ease-out" 
                 style={{ width: `${progress}%` }}

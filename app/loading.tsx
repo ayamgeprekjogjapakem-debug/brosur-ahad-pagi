@@ -2,7 +2,7 @@ import React from 'react';
 
 export default function Loading() {
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-zinc-50/80 dark:bg-zinc-950/80 backdrop-blur-sm transition-all duration-500">
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-zinc-50/80  backdrop-blur-sm transition-all duration-500">
       <div className="relative flex items-center justify-center w-16 h-16">
         {/* Lingkaran dasar yang sangat tipis dan elegan */}
         <div className="absolute w-full h-full border-[1.5px] border-teal-500/10 rounded-full"></div>

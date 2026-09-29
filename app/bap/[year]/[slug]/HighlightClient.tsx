@@ -217,7 +217,7 @@ export default function HighlightClient({ brosur }: { brosur: BrosurData }) {
                   setIsShareOpen(false);
                 }}
                 disabled={isRendering}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-sm font-semibold text-zinc-700 dark:text-zinc-200 disabled:opacity-50"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-black/5  transition-colors text-sm font-semibold text-zinc-700  disabled:opacity-50"
               >
                 {isRendering ? <Loader2 size={16} className="animate-spin text-accent" /> : <ImageIcon size={16} />}
                 {isRendering ? 'Memproses Gambar...' : 'Simpan sbg Gambar'}
@@ -234,7 +234,7 @@ export default function HighlightClient({ brosur }: { brosur: BrosurData }) {
                 Cetak / Export PDF
               </button>
 
-              <div className="border-t border-black/5 dark:border-white/5 mt-1 pt-1"></div>
+              <div className="border-t border-black/5  mt-1 pt-1"></div>
               <div className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-widest px-3 py-1.5 mt-1">
                 Bagikan
               </div>
@@ -290,7 +290,7 @@ export default function HighlightClient({ brosur }: { brosur: BrosurData }) {
               {/* Optional Web Share if supported */}
               {typeof navigator !== 'undefined' && navigator.share && (
                 <>
-                  <div className="border-t border-black/5 dark:border-white/5 mt-1 pt-1"></div>
+                  <div className="border-t border-black/5  mt-1 pt-1"></div>
                   <button
                     onClick={() => {
                       navigator.share({

@@ -66,14 +66,22 @@ export async function POST(req: Request) {
        }
     };
 
+    // Cek parameter type dari URL (default brosur)
+    const { searchParams } = new URL(req.url);
+    const type = searchParams.get('type') || 'brosur';
+    const sourceTable = type === 'hadist_chm' ? 'hadist_chm' : 'brosur';
+    const chunksTable = type === 'hadist_chm' ? 'hadist_chm_chunks' : 'brosur_chunks';
+    const fkColumn = type === 'hadist_chm' ? 'hadist_id' : 'brosur_id';
+    const titleColumn = type === 'hadist_chm' ? 'judul_hadist' : 'judul_brosur';
+
     const { brosurId } = await req.json().catch(() => ({ brosurId: null })); // opsional
     
     // 1. Ambil ID brosur yang SUDAH di-sinkronisasi (agar tidak diproses ulang)
-    const { data: existingChunks } = await supabase.from('brosur_chunks').select('brosur_id');
-    const syncedIds = Array.from(new Set(existingChunks?.map(c => c.brosur_id) || []));
+    const { data: existingChunks } = await supabase.from(chunksTable).select(fkColumn);
+    const syncedIds = Array.from(new Set(existingChunks?.map(c => (c as Record<string, any>)[fkColumn]) || []));
     
     // 2. Ambil data brosur yang BELUM di-sinkronisasi dan memiliki konten
-    let query = supabase.from('brosur').select('*')
+    let query = supabase.from(sourceTable).select('*')
       .not('konten', 'is', null)
       .neq('konten', '');
       
@@ -90,7 +98,7 @@ export async function POST(req: Request) {
     const { data: brosurs, error: fetchError } = await query;
     if (fetchError) throw fetchError;
     if (!brosurs || brosurs.length === 0) {
-        return NextResponse.json({ success: true, message: "Tidak ada brosur untuk diproses." });
+        return NextResponse.json({ success: true, message: "Tidak ada data untuk diproses." });
     }
     
     const processedBrosurs = [];
@@ -100,7 +108,7 @@ export async function POST(req: Request) {
     // 2. Looping setiap brosur
     for (const b of brosurs) {
        // Bersihkan chunk lama agar tidak dobel
-       await supabase.from('brosur_chunks').delete().eq('brosur_id', b.id);
+       await supabase.from(chunksTable).delete().eq(fkColumn, b.id);
        
        // Bersihkan HTML menjadi Teks Murni menggunakan Cheerio
        const $ = cheerio.load(b.konten || '');
@@ -125,22 +133,26 @@ export async function POST(req: Request) {
                   throw e; // Lemparkan error agar ditangkap oleh catch block di luar
               }
               
-              // Simpan ke Supabase (tabel brosur_chunks)
-              const { data: insertedData, error: insertError } = await supabase.from('brosur_chunks').insert({
-                 brosur_id: b.id,
-                 judul_brosur: b.judul,
+              // Simpan ke Supabase
+              const payload: any = {
+                 [fkColumn]: b.id,
+                 [titleColumn]: b.judul,
                  tahun: b.tahun,
-                 nomor: b.nomor,
-                 tanggal: b.tanggal,
                  content: chunkContent,
                  metadata: { chunk_index: i, total_chunks: chunks.length },
                  embedding: embedding
-              }).select();
+              };
+              if (type === 'brosur') {
+                 payload.nomor = b.nomor;
+                 payload.tanggal = b.tanggal;
+              }
+
+              const { data: insertedData, error: insertError } = await supabase.from(chunksTable).insert(payload).select();
 
               if (insertError || !insertedData || insertedData.length === 0) {
                  const errStr = insertError ? insertError.message : "Silent fail (mungkin RLS memblokir SELECT/INSERT atau dimensi vektor tidak cocok)";
-                 console.error(`Gagal menyimpan chunk ${i} untuk brosur ${b.id}:`, errStr);
-                 insertErrors.push({ chunk: i, brosur_id: b.id, error: errStr });
+                 console.error(`Gagal menyimpan chunk ${i} untuk ${b.id}:`, errStr);
+                 insertErrors.push({ chunk: i, id: b.id, error: errStr });
               }
           } catch (embedError: any) {
               console.error(`Gagal membuat embedding chunk ${i}:`, embedError);

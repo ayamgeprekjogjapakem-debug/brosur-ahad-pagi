@@ -111,18 +111,21 @@ export default function HadistApiImportPage() {
           }
         }
         else if (sumberApi === 'myquran') {
-          const requests = [];
-          for (let i = start; i <= end; i++) {
-            requests.push(fetch(`https://api.myquran.com/v2/hadits/perawi/${mappedKitab}/${i}`).then(r => r.json()));
+          // Batching request MyQuran agar tidak freeze karena 100 concurrent requests
+          for (let i = start; i <= end; i += 20) {
+            const chunkEnd = Math.min(i + 19, end);
+            const requests = [];
+            for (let j = i; j <= chunkEnd; j++) {
+              requests.push(fetch(`https://api.myquran.com/v2/hadits/perawi/${mappedKitab}/${j}`).then(r => r.json()).catch(() => null));
+            }
+            const results = await Promise.all(requests);
+            batchData.push(...results.filter((r: any) => r?.data?.arab).map((r: any) => ({
+              number: r.data.number,
+              arab: r.data.arab,
+              id: r.data.id
+            })));
+            await new Promise(r => setTimeout(r, 100)); // Jeda kecil antar sub-batch
           }
-          const results = await Promise.allSettled(requests);
-          batchData = results
-            .filter(r => r.status === 'fulfilled' && (r as any).value?.data?.arab)
-            .map((r: any) => ({
-              number: r.value.data.number,
-              arab: r.value.data.arab,
-              id: r.value.data.id
-            }));
         }
         else if (sumberApi === 'hadithapi') {
           const apiKey = process.env.NEXT_PUBLIC_HADITHAPI_KEY || 'YOUR_KEY';
@@ -146,8 +149,11 @@ export default function HadistApiImportPage() {
         }
         
         if (batchData.length > 0) {
-          allData = [...allData, ...batchData];
-          setPulledData(allData); // Update UI per batch
+          allData.push(...batchData);
+          // Set preview hanya 50 data pertama agar UI tidak kosong saat proses awal
+          if (allData.length <= 100) {
+            setPulledData([...allData]);
+          }
         } else {
            // Jika data kosong, berarti sudah mentok di ujung kitab, stop loop!
            break;
@@ -162,6 +168,7 @@ export default function HadistApiImportPage() {
     } finally {
       setLoading(false);
       setProgress({ current: totalToFetch, total: totalToFetch }); // Selesai
+      setPulledData([...allData]); // Pastikan state memiliki semua data untuk diimpor
       if (!hasError) {
         alert(`Berhasil menarik ${allData.length} hadist dari API ke layar! Silakan klik tombol Simpan.`);
       }
@@ -456,7 +463,7 @@ export default function HadistApiImportPage() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {pulledData.map((hadist, idx) => (
+                    {pulledData.slice(0, 50).map((hadist, idx) => (
                       <div key={idx} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-indigo-300 transition-colors">
                         <div className="flex justify-between items-center mb-3">
                           <span className="inline-flex px-2.5 py-1 rounded-md text-xs font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-100 uppercase tracking-widest">
@@ -471,6 +478,11 @@ export default function HadistApiImportPage() {
                         </p>
                       </div>
                     ))}
+                    {pulledData.length > 50 && (
+                      <div className="text-center p-4 text-slate-500 font-medium bg-slate-100/50 rounded-xl border border-slate-200">
+                        + {pulledData.length - 50} hadist lainnya disembunyikan untuk menjaga performa browser.<br/>(Semua data tetap siap untuk diimpor).
+                      </div>
+                    )}
                   </div>
                 )
               ) : (

@@ -80,7 +80,7 @@ export default function EditKoleksiPage({ params }: { params: Promise<{ id: stri
       <header className="mb-10 flex items-center gap-4">
         <Link 
           href="/dashboard/data" 
-          className="p-3 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors"
+          className="p-3 bg-black/5  hover:bg-black/10  rounded-full transition-colors"
         >
           <ArrowLeft size={20} />
         </Link>
@@ -90,7 +90,7 @@ export default function EditKoleksiPage({ params }: { params: Promise<{ id: stri
         </div>
       </header>
 
-      <form onSubmit={handleSubmit} className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-3xl p-8 shadow-sm">
+      <form onSubmit={handleSubmit} className="bg-white  border border-black/5  rounded-3xl p-8 shadow-sm">
         {errorMsg && (
           <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 text-red-600 rounded-xl font-bold">
             {errorMsg}
@@ -104,7 +104,7 @@ export default function EditKoleksiPage({ params }: { params: Promise<{ id: stri
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 px-4 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
+            className="w-full bg-zinc-50  border border-zinc-200  rounded-xl py-3 px-4 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
           />
         </div>
 
@@ -115,7 +115,7 @@ export default function EditKoleksiPage({ params }: { params: Promise<{ id: stri
             required
             value={slug}
             onChange={(e) => setSlug(e.target.value)}
-            className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 px-4 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent font-mono text-sm"
+            className="w-full bg-zinc-50  border border-zinc-200  rounded-xl py-3 px-4 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent font-mono text-sm"
           />
         </div>
 
@@ -125,7 +125,7 @@ export default function EditKoleksiPage({ params }: { params: Promise<{ id: stri
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={4}
-            className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 px-4 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent text-sm custom-scrollbar resize-none"
+            className="w-full bg-zinc-50  border border-zinc-200  rounded-xl py-3 px-4 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent text-sm custom-scrollbar resize-none"
           ></textarea>
         </div>
 

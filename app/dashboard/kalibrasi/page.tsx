@@ -57,25 +57,25 @@ export default function KalibrasiPage() {
 
   return (
     <div className="p-4 md:p-8 max-w-4xl">
-      <h1 className="text-2xl font-bold mb-6 text-zinc-900 dark:text-white flex items-center gap-2">
+      <h1 className="text-2xl font-bold mb-6 text-zinc-900  flex items-center gap-2">
         <CalendarClock className="text-accent" />
         Kalibrasi Penanggalan Hijriyah
       </h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Kolom Kiri: Form Kalibrasi */}
-        <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 md:p-8 border border-zinc-200 dark:border-zinc-800 shadow-sm h-fit">
-          <h2 className="text-lg font-semibold mb-4 text-zinc-800 dark:text-zinc-200">
+        <div className="bg-white  rounded-3xl p-6 md:p-8 border border-zinc-200  shadow-sm h-fit">
+          <h2 className="text-lg font-semibold mb-4 text-zinc-800 ">
             Penyesuaian Tanggal
           </h2>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6 leading-relaxed">
+          <p className="text-sm text-zinc-500  mb-6 leading-relaxed">
             Pilih *offset* (hari) dan **mulai tanggal berapa** penyesuaian ini diberlakukan.
           </p>
 
           <div className="flex flex-col gap-6">
             {/* Input Offset */}
             <div>
-              <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-4 block">
+              <label className="text-sm font-medium text-zinc-700  mb-4 block">
                 Offset Kalibrasi (Hari)
               </label>
               <div className="flex items-center gap-4">
@@ -103,14 +103,14 @@ export default function KalibrasiPage() {
 
             {/* Input Tanggal Efektif */}
             <div>
-              <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2 block flex items-center gap-2">
+              <label className="text-sm font-medium text-zinc-700  mb-2 block flex items-center gap-2">
                 <CalendarRange size={16} className="text-zinc-400"/> Berlaku Mulai Tanggal
               </label>
               <input 
                 type="date"
                 value={effectiveDate}
                 onChange={(e) => setEffectiveDate(e.target.value)}
-                className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full bg-zinc-50  border border-zinc-200  rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
               />
               <p className="text-xs text-zinc-500 mt-2">
                 Tanggal sebelum ini tidak akan terkena efek kalibrasi (agar arsip lama tetap akurat).
@@ -132,15 +132,15 @@ export default function KalibrasiPage() {
         </div>
 
         {/* Kolom Kanan: Info & Edukasi */}
-        <div className="bg-blue-50 dark:bg-blue-900/10 rounded-3xl p-6 md:p-8 border border-blue-100 dark:border-blue-900/30 h-fit">
+        <div className="bg-blue-50  rounded-3xl p-6 md:p-8 border border-blue-100  h-fit">
           <div className="flex items-start gap-3 mb-4">
-            <Info className="text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-            <h2 className="text-lg font-semibold text-blue-900 dark:text-blue-300">
+            <Info className="text-blue-600  shrink-0 mt-0.5" />
+            <h2 className="text-lg font-semibold text-blue-900 ">
               Penting Diketahui
             </h2>
           </div>
           
-          <div className="space-y-4 text-sm text-blue-800 dark:text-blue-200/80 leading-relaxed">
+          <div className="space-y-4 text-sm text-blue-800  leading-relaxed">
             <p>
               <strong>1. Apakah Weton (Jawa) ikut bergeser?</strong><br/>
               <strong>TIDAK.</strong> Penanggalan dan Pasaran Jawa (Legi, Pahing, Pon, dsb.) bersifat statis abadi dan terikat pada kalender Matahari (Masehi/Gregorian). Jika kalibrasi Hijriyah di-set +1 hari, <em>hanya angka tanggal Hijriyah-nya saja yang berubah</em>, sedangkan Weton Jawanya akan tetap akurat.

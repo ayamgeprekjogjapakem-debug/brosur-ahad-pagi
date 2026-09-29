@@ -141,7 +141,7 @@ export default function UsersPage() {
   return (
     <div className="p-6 md:p-10 w-full max-w-6xl mx-auto space-y-8">
       {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-3xl p-6 md:p-8 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white  border border-black/5  rounded-3xl p-6 md:p-8 shadow-sm">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <UserCog className="text-accent" size={26} />
@@ -157,7 +157,7 @@ export default function UsersPage() {
             onClick={fetchUsers}
             title="Segarkan Data"
             disabled={loading}
-            className="p-3 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-2xl transition-all disabled:opacity-50"
+            className="p-3 bg-black/5  hover:bg-black/10  rounded-2xl transition-all disabled:opacity-50"
           >
             <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
           </button>
@@ -189,7 +189,7 @@ export default function UsersPage() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold text-sm rounded-2xl flex items-center gap-3"
+            className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600  font-bold text-sm rounded-2xl flex items-center gap-3"
           >
             <CheckCircle2 size={18} className="shrink-0" />
             <span>{successMsg}</span>
@@ -201,7 +201,7 @@ export default function UsersPage() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="p-4 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 font-bold text-sm rounded-2xl flex items-center gap-3"
+            className="p-4 bg-red-500/10 border border-red-500/20 text-red-600  font-bold text-sm rounded-2xl flex items-center gap-3"
           >
             <AlertCircle size={18} className="shrink-0" />
             <span>{errorMsg}</span>
@@ -218,17 +218,17 @@ export default function UsersPage() {
             placeholder="Cari berdasarkan nama atau email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-2xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40 transition-all shadow-sm"
+            className="w-full bg-white  border border-black/5  rounded-2xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40 transition-all shadow-sm"
           />
         </div>
 
-        <div className="text-xs font-bold text-zinc-500 bg-black/5 dark:bg-white/5 px-4 py-3 rounded-2xl">
-          Total Pengguna: <span className="text-zinc-900 dark:text-zinc-100">{filteredUsers.length}</span>
+        <div className="text-xs font-bold text-zinc-500 bg-black/5  px-4 py-3 rounded-2xl">
+          Total Pengguna: <span className="text-zinc-900 ">{filteredUsers.length}</span>
         </div>
       </div>
 
       {/* User Table */}
-      <div className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-3xl overflow-hidden shadow-sm">
+      <div className="bg-white  border border-black/5  rounded-3xl overflow-hidden shadow-sm">
         {loading ? (
           <div className="py-20 flex flex-col items-center justify-center text-zinc-400 gap-3">
             <Loader2 size={32} className="animate-spin text-accent" />
@@ -236,15 +236,15 @@ export default function UsersPage() {
           </div>
         ) : filteredUsers.length === 0 ? (
           <div className="py-20 flex flex-col items-center justify-center text-zinc-400 gap-2">
-            <UserX size={36} className="text-zinc-300 dark:text-zinc-700" />
-            <p className="text-base font-bold text-zinc-600 dark:text-zinc-400">Tidak ada pengguna yang ditemukan</p>
+            <UserX size={36} className="text-zinc-300 " />
+            <p className="text-base font-bold text-zinc-600 ">Tidak ada pengguna yang ditemukan</p>
             {search && <p className="text-xs">Coba ubah kata kunci pencarian Anda.</p>}
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02] text-[11px] font-extrabold uppercase tracking-widest text-zinc-400">
+                <tr className="border-b border-black/5  bg-black/[0.02] [0.02] text-[11px] font-extrabold uppercase tracking-widest text-zinc-400">
                   <th className="py-4 px-6">Pengguna</th>
                   <th className="py-4 px-6">Email</th>
                   <th className="py-4 px-6">Role</th>
@@ -253,25 +253,25 @@ export default function UsersPage() {
                   <th className="py-4 px-6 text-right">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-black/5 dark:divide-white/5 text-sm font-medium">
+              <tbody className="divide-y divide-black/5  text-sm font-medium">
                 {filteredUsers.map((u) => {
                   const initial = (u.name || u.email || 'U').charAt(0).toUpperCase();
                   const isBusy = updatingId === u.id;
                   return (
-                    <tr key={u.id} className="hover:bg-black/[0.01] dark:hover:bg-white/[0.01] transition-colors">
+                    <tr key={u.id} className="hover:bg-black/[0.01] [0.01] transition-colors">
                       <td className="py-4 px-6">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-accent/80 to-accent text-white font-extrabold text-sm flex items-center justify-center shadow-md shadow-accent/20 shrink-0">
                             {initial}
                           </div>
                           <div>
-                            <p className="font-bold text-zinc-900 dark:text-zinc-100">{u.name}</p>
+                            <p className="font-bold text-zinc-900 ">{u.name}</p>
                             <p className="text-xs text-zinc-400 font-mono">ID: {u.id.slice(0, 8)}...</p>
                           </div>
                         </div>
                       </td>
 
-                      <td className="py-4 px-6 text-zinc-600 dark:text-zinc-400">
+                      <td className="py-4 px-6 text-zinc-600 ">
                         <div className="flex items-center gap-2">
                           <Mail size={14} className="text-zinc-400" />
                           <span>{u.email}</span>
@@ -284,8 +284,8 @@ export default function UsersPage() {
                           disabled={isBusy}
                           className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 border transition-all ${
                             u.role === 'admin'
-                              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
-                              : 'bg-zinc-500/10 border-zinc-500/20 text-zinc-600 dark:text-zinc-400'
+                              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 '
+                              : 'bg-zinc-500/10 border-zinc-500/20 text-zinc-600 '
                           }`}
                         >
                           <Shield size={13} />
@@ -297,8 +297,8 @@ export default function UsersPage() {
                         <span
                           className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs border ${
                             u.is_active
-                              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
-                              : 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400 animate-pulse'
+                              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 '
+                              : 'bg-amber-500/10 border-amber-500/20 text-amber-600  animate-pulse'
                           }`}
                         >
                           {u.is_active ? <UserCheck size={14} /> : <UserX size={14} />}
@@ -325,7 +325,7 @@ export default function UsersPage() {
                           disabled={isBusy}
                           className={`px-4 py-2 rounded-xl font-bold text-xs transition-all ${
                             u.is_active
-                              ? 'bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500 hover:text-white'
+                              ? 'bg-red-500/10 text-red-600  hover:bg-red-500 hover:text-white'
                               : 'bg-emerald-500 text-white hover:bg-emerald-600 shadow-md shadow-emerald-500/20'
                           }`}
                         >

@@ -148,7 +148,7 @@ export default function MasukanDashboardPage() {
         </div>
         
         <div className="flex flex-col sm:flex-row items-center gap-4">
-          <div className="flex items-center gap-3 bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 px-4 py-2 rounded-xl shadow-sm">
+          <div className="flex items-center gap-3 bg-white  border border-black/5  px-4 py-2 rounded-xl shadow-sm">
             <div className="flex flex-col">
               <span className="text-sm font-bold">Terima Masukan</span>
               <span className="text-xs text-zinc-500">{isFeedbackEnabled ? 'Formulir Aktif' : 'Formulir Dimatikan'}</span>
@@ -156,8 +156,8 @@ export default function MasukanDashboardPage() {
             <button 
               onClick={handleToggleFeedback}
               disabled={isToggling}
-              className={`w-12 h-6 rounded-full relative transition-colors duration-300 ease-in-out shrink-0 outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 ${
-                isFeedbackEnabled ? 'bg-blue-500' : 'bg-zinc-300 dark:bg-zinc-700'
+              className={`w-12 h-6 rounded-full relative transition-colors duration-300 ease-in-out shrink-0 outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2  ${
+                isFeedbackEnabled ? 'bg-blue-500' : 'bg-zinc-300 '
               }`}
             >
               <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 shadow transition-transform duration-300 ease-in-out ${
@@ -168,7 +168,7 @@ export default function MasukanDashboardPage() {
 
           <button 
             onClick={fetchData}
-            className="flex items-center gap-2 px-5 py-3 h-full rounded-xl font-bold bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 transition-all text-sm shadow-sm"
+            className="flex items-center gap-2 px-5 py-3 h-full rounded-xl font-bold bg-white  border border-black/5  hover:bg-black/5  transition-all text-sm shadow-sm"
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
             Segarkan
@@ -185,17 +185,17 @@ export default function MasukanDashboardPage() {
           <p className="text-sm font-medium text-blue-600/70 tracking-widest uppercase animate-pulse">Memuat Pesan...</p>
         </div>
       ) : messages.length === 0 ? (
-        <div className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-3xl p-20 text-center text-zinc-500 shadow-sm flex flex-col items-center">
+        <div className="bg-white  border border-black/5  rounded-3xl p-20 text-center text-zinc-500 shadow-sm flex flex-col items-center">
           <MessageSquare size={64} className="mb-6 opacity-20" />
           <h3 className="text-2xl font-bold mb-2">Kotak Masuk Kosong</h3>
           <p>Belum ada masukan atau laporan dari pengunjung saat ini.</p>
         </div>
       ) : (
-        <div className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-3xl shadow-sm overflow-hidden">
+        <div className="bg-white  border border-black/5  rounded-3xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-black/5 dark:border-white/5 text-zinc-500 text-sm">
+                <tr className="border-b border-black/5  text-zinc-500 text-sm">
                   <th className="p-4 font-bold w-12 text-center">Status</th>
                   <th className="p-4 font-bold">Pengirim</th>
                   <th className="p-4 font-bold">Cuplikan Pesan</th>
@@ -208,23 +208,23 @@ export default function MasukanDashboardPage() {
                   <tr 
                     key={msg.id} 
                     onClick={() => openMessage(msg)}
-                    className={`border-b border-black/5 dark:border-white/5 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors cursor-pointer group ${!msg.is_read ? 'bg-blue-50/30 dark:bg-blue-900/20' : ''}`}
+                    className={`border-b border-black/5  hover:bg-blue-50/50  transition-colors cursor-pointer group ${!msg.is_read ? 'bg-blue-50/30 ' : ''}`}
                   >
                     <td className="p-4 text-center">
                       {!msg.is_read ? (
                         <div className="w-2.5 h-2.5 bg-blue-500 rounded-full mx-auto animate-pulse"></div>
                       ) : (
-                        <Check size={16} className="text-zinc-300 dark:text-zinc-700 mx-auto" />
+                        <Check size={16} className="text-zinc-300  mx-auto" />
                       )}
                     </td>
                     <td className="p-4">
-                      <div className={`font-bold ${!msg.is_read ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-700 dark:text-zinc-300'}`}>
+                      <div className={`font-bold ${!msg.is_read ? 'text-zinc-900 ' : 'text-zinc-700 '}`}>
                         {msg.nama_terang}
                       </div>
                       <div className="text-xs text-zinc-500 mt-1">{msg.cabang_instansi}</div>
                     </td>
                     <td className="p-4">
-                      <div className={`max-w-md truncate text-sm ${!msg.is_read ? 'font-medium text-zinc-800 dark:text-zinc-200' : 'text-zinc-500'}`}>
+                      <div className={`max-w-md truncate text-sm ${!msg.is_read ? 'font-medium text-zinc-800 ' : 'text-zinc-500'}`}>
                         {msg.pesan}
                       </div>
                     </td>
@@ -253,9 +253,9 @@ export default function MasukanDashboardPage() {
 
       {/* Modal Detail Pesan */}
       {selectedMessage && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-900/40 dark:bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setSelectedMessage(null)}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-900/40  backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setSelectedMessage(null)}>
           <div 
-            className="bg-white dark:bg-zinc-900 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-black/5 dark:border-white/5"
+            className="bg-white  w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-black/5 "
             onClick={e => e.stopPropagation()}
           >
             <div className="p-6 md:p-8">
@@ -266,28 +266,28 @@ export default function MasukanDashboardPage() {
                 </div>
                 <button 
                   onClick={() => setSelectedMessage(null)}
-                  className="p-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-full transition-colors text-zinc-500"
+                  className="p-2 bg-zinc-100  hover:bg-zinc-200  rounded-full transition-colors text-zinc-500"
                 >
                   <X size={20} />
                 </button>
               </div>
 
-              <div className="flex flex-wrap gap-3 mb-6 pb-6 border-b border-black/5 dark:border-white/5 text-sm">
-                <a href={`https://wa.me/${selectedMessage.no_wa.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-green-700 dark:text-green-400 hover:underline bg-green-50 dark:bg-green-500/10 px-3 py-1.5 rounded-lg font-bold border border-green-200 dark:border-green-900">
+              <div className="flex flex-wrap gap-3 mb-6 pb-6 border-b border-black/5  text-sm">
+                <a href={`https://wa.me/${selectedMessage.no_wa.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-green-700  hover:underline bg-green-50  px-3 py-1.5 rounded-lg font-bold border border-green-200 ">
                   <Phone size={14} /> {selectedMessage.no_wa}
                 </a>
                 {selectedMessage.email && (
-                  <a href={`mailto:${selectedMessage.email}`} className="flex items-center gap-2 text-blue-700 dark:text-blue-400 hover:underline bg-blue-50 dark:bg-blue-500/10 px-3 py-1.5 rounded-lg font-bold border border-blue-200 dark:border-blue-900">
+                  <a href={`mailto:${selectedMessage.email}`} className="flex items-center gap-2 text-blue-700  hover:underline bg-blue-50  px-3 py-1.5 rounded-lg font-bold border border-blue-200 ">
                     <Mail size={14} /> {selectedMessage.email}
                   </a>
                 )}
-                <div className="flex items-center gap-2 text-zinc-500 px-3 py-1.5 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 ml-auto">
+                <div className="flex items-center gap-2 text-zinc-500 px-3 py-1.5 rounded-lg bg-zinc-50  border border-zinc-200  ml-auto">
                   {formatDate(selectedMessage.created_at)}
                 </div>
               </div>
 
-              <div className="bg-zinc-50 dark:bg-black/20 rounded-2xl p-6 border border-zinc-100 dark:border-zinc-800/50 mb-8">
-                <p className="text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap leading-relaxed">
+              <div className="bg-zinc-50  rounded-2xl p-6 border border-zinc-100  mb-8">
+                <p className="text-zinc-800  whitespace-pre-wrap leading-relaxed">
                   {selectedMessage.pesan}
                 </p>
               </div>
@@ -295,7 +295,7 @@ export default function MasukanDashboardPage() {
               <div className="flex justify-between items-center">
                 <button 
                   onClick={() => handleDelete(selectedMessage.id)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm text-red-600 hover:bg-red-50  transition-colors"
                 >
                   <Trash2 size={16} /> Hapus
                 </button>
@@ -303,8 +303,8 @@ export default function MasukanDashboardPage() {
                   onClick={() => handleMarkAsRead(selectedMessage.id, selectedMessage.is_read)}
                   className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-colors ${
                     selectedMessage.is_read 
-                      ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700' 
-                      : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50'
+                      ? 'bg-zinc-100  text-zinc-600  hover:bg-zinc-200 ' 
+                      : 'bg-blue-100  text-blue-700  hover:bg-blue-200 '
                   }`}
                 >
                   <Check size={16} /> {selectedMessage.is_read ? 'Tandai Belum Dibaca' : 'Tandai Dibaca'}

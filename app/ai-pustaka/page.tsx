@@ -278,7 +278,7 @@ export default function AiSimulatorPage() {
   }
 
   return (
-    <div className="flex h-screen bg-white dark:bg-zinc-950 font-sans overflow-hidden">
+    <div className="flex h-screen bg-white  font-sans overflow-hidden">
       <MainSidebar 
         aiMode={true}
         aiSessions={sessions}
@@ -287,23 +287,23 @@ export default function AiSimulatorPage() {
         onAiSessionClick={setActiveSessionId}
         onAiSessionDelete={handleDeleteSession}
       />
-      <div className="flex-1 flex flex-col relative h-full bg-white dark:bg-zinc-950 font-[family-name:var(--font-geist-sans)] text-sm overflow-hidden">
+      <div className="flex-1 flex flex-col relative h-full bg-white  font-[family-name:var(--font-geist-sans)] text-sm overflow-hidden">
       <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet" />
 
       {/* MAIN AREA */}
-      <div className="flex-1 flex flex-col h-full relative bg-white dark:bg-zinc-950">
+      <div className="flex-1 flex flex-col h-full relative bg-white ">
         
         {/* Header */}
-        <div className="h-16 flex-shrink-0 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-4 z-10 bg-white dark:bg-zinc-950">
+        <div className="h-16 flex-shrink-0 border-b border-zinc-200  flex items-center justify-between px-4 z-10 bg-white ">
           <div className="flex items-center gap-4">
             <button
               onClick={() => window.dispatchEvent(new Event('toggle-main-sidebar'))}
-              className="w-10 h-10 border border-zinc-200 dark:border-zinc-800 rounded-xl flex items-center justify-center text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-900 hover:text-zinc-700 dark:hover:text-zinc-300 transition"
+              className="w-10 h-10 border border-zinc-200  rounded-xl flex items-center justify-center text-zinc-500 hover:bg-zinc-50  hover:text-zinc-700  transition"
               title="Toggle Sidebar"
             >
               <Menu size={18} />
             </button>
-            <div className="font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
+            <div className="font-semibold text-zinc-800  flex items-center gap-2">
               <Bot size={18} className="text-emerald-600" />
               {activeTab === 'memory' ? 'Memori Khusus AI' : activeSession.title}
             </div>
@@ -319,7 +319,7 @@ export default function AiSimulatorPage() {
         {activeTab === 'memory' ? (
           <div className="flex-1 overflow-y-auto p-8">
             <div className="max-w-4xl mx-auto space-y-8">
-              <div className="bg-zinc-50 dark:bg-zinc-900 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800">
+              <div className="bg-zinc-50  p-6 rounded-2xl border border-zinc-200 ">
                 <h2 className="text-xl font-bold mb-2 flex items-center gap-2">
                   <Plus size={20} className="text-emerald-600" />
                   Tambah Aturan Baru
@@ -329,15 +329,15 @@ export default function AiSimulatorPage() {
                 <form onSubmit={handleAddRule} className="space-y-4">
                   <div>
                     <label className="block text-sm font-semibold mb-1">Kata Kunci (Opsional / Penanda)</label>
-                    <input type="text" value={newKeyword} onChange={e => setNewKeyword(e.target.value)} placeholder="Misal: aqiqah, puasa, umum..." className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none" />
+                    <input type="text" value={newKeyword} onChange={e => setNewKeyword(e.target.value)} placeholder="Misal: aqiqah, puasa, umum..." className="w-full p-3 bg-white  border border-zinc-200  rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none" />
                   </div>
                   <div>
                     <label className="block text-sm font-semibold mb-1">Instruksi / Aturan Wajib</label>
-                    <textarea value={newInstruction} onChange={e => setNewInstruction(e.target.value)} placeholder="Misal: Jika ada pertanyaan tentang puasa senin kamis, sebutkan bahwa..." className="w-full p-3 h-24 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none resize-none"></textarea>
+                    <textarea value={newInstruction} onChange={e => setNewInstruction(e.target.value)} placeholder="Misal: Jika ada pertanyaan tentang puasa senin kamis, sebutkan bahwa..." className="w-full p-3 h-24 bg-white  border border-zinc-200  rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none resize-none"></textarea>
                   </div>
                   <div>
                     <label className="block text-sm font-semibold mb-1">Sumber Data (Opsional)</label>
-                    <select value={newTargetFolderId} onChange={e => setNewTargetFolderId(e.target.value)} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
+                    <select value={newTargetFolderId} onChange={e => setNewTargetFolderId(e.target.value)} className="w-full p-3 bg-white  border border-zinc-200  rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
                       <option value="">Semua Data / Referensi Bebas</option>
                       {folders.map(f => (<option key={f.id} value={f.id}>{f.name}</option>))}
                     </select>
@@ -360,10 +360,10 @@ export default function AiSimulatorPage() {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {rules.map(rule => (
-                      <div key={rule.id} className={`p-5 rounded-2xl border ${rule.is_active ? 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800' : 'bg-zinc-100 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 opacity-60'} shadow-sm relative group`}>
+                      <div key={rule.id} className={`p-5 rounded-2xl border ${rule.is_active ? 'bg-white  border-zinc-200 ' : 'bg-zinc-100  border-zinc-200  opacity-60'} shadow-sm relative group`}>
                         <div className="flex justify-between items-start mb-2">
                           <div className="flex gap-2">
-                            <span className="inline-block px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-bold rounded-lg uppercase">{rule.keyword}</span>
+                            <span className="inline-block px-3 py-1 bg-emerald-100  text-emerald-700  text-xs font-bold rounded-lg uppercase">{rule.keyword}</span>
                           </div>
                           <div className="flex gap-2">
                             <button onClick={() => handleToggleRule(rule.id, rule.is_active)} className="text-zinc-400 hover:text-emerald-600 transition-colors">
@@ -374,7 +374,7 @@ export default function AiSimulatorPage() {
                             </button>
                           </div>
                         </div>
-                        <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200 leading-relaxed mt-3">{rule.instruction}</p>
+                        <p className="text-sm font-medium text-zinc-800  leading-relaxed mt-3">{rule.instruction}</p>
                       </div>
                     ))}
                   </div>
@@ -395,11 +395,11 @@ export default function AiSimulatorPage() {
                 {activeSession.messages.map((msg, i) => (
                   <div key={i} className={`flex gap-4 ${msg.role === 'user' ? 'justify-end' : ''}`}>
                     {msg.role !== 'user' && (
-                      <div className="w-8 h-8 rounded-full border border-zinc-200 dark:border-zinc-700 flex items-center justify-center flex-shrink-0 text-zinc-600 dark:text-zinc-300">
+                      <div className="w-8 h-8 rounded-full border border-zinc-200  flex items-center justify-center flex-shrink-0 text-zinc-600 ">
                         <Bot size={16} />
                       </div>
                     )}
-                    <div className={`max-w-[85%] ${msg.role === 'user' ? 'bg-zinc-100 dark:bg-zinc-800 rounded-3xl py-3 px-5 text-[15px]' : 'py-1'}`}>
+                    <div className={`max-w-[85%] ${msg.role === 'user' ? 'bg-zinc-100  rounded-3xl py-3 px-5 text-[15px]' : 'py-1'}`}>
                       {msg.role === 'user' ? (
                          msg.content
                       ) : (
@@ -411,18 +411,18 @@ export default function AiSimulatorPage() {
                                  const textContent = React.Children.toArray(children).join('');
                                  if (containsArabic(textContent)) {
                                    return (
-                                     <p {...props} className="text-[20px] leading-[2.2] text-right py-3 px-4 bg-zinc-50 dark:bg-zinc-900 rounded-xl my-4 text-zinc-900 dark:text-white" style={{ fontFamily: "'Scheherazade New', serif", direction: 'rtl' }}>{children}</p>
+                                     <p {...props} className="text-[20px] leading-[2.2] text-right py-3 px-4 bg-zinc-50  rounded-xl my-4 text-zinc-900 " style={{ fontFamily: "'Scheherazade New', serif", direction: 'rtl' }}>{children}</p>
                                    );
                                  }
-                                 return <p {...props} className="mb-4 break-words text-zinc-800 dark:text-zinc-200">{children}</p>;
+                                 return <p {...props} className="mb-4 break-words text-zinc-800 ">{children}</p>;
                                },
-                               strong: ({ node, ...props }) => <strong {...props} className="font-semibold text-zinc-950 dark:text-white" />,
-                               ul: ({ node, ...props }) => <ul {...props} className="list-disc pl-5 mb-4 space-y-1 text-zinc-800 dark:text-zinc-200" />,
-                               ol: ({ node, ...props }) => <ol {...props} className="list-decimal pl-5 mb-4 space-y-1 text-zinc-800 dark:text-zinc-200" />,
+                               strong: ({ node, ...props }) => <strong {...props} className="font-semibold text-zinc-950 " />,
+                               ul: ({ node, ...props }) => <ul {...props} className="list-disc pl-5 mb-4 space-y-1 text-zinc-800 " />,
+                               ol: ({ node, ...props }) => <ol {...props} className="list-decimal pl-5 mb-4 space-y-1 text-zinc-800 " />,
                                li: ({ node, ...props }) => <li {...props} className="leading-relaxed" />,
-                               h1: ({ node, ...props }) => <h1 {...props} className="text-xl font-bold mb-3 mt-6 text-zinc-900 dark:text-white" />,
-                               h2: ({ node, ...props }) => <h2 {...props} className="text-lg font-bold mb-3 mt-6 text-zinc-900 dark:text-white" />,
-                               h3: ({ node, ...props }) => <h3 {...props} className="text-base font-bold mb-2 mt-4 text-zinc-900 dark:text-white" />,
+                               h1: ({ node, ...props }) => <h1 {...props} className="text-xl font-bold mb-3 mt-6 text-zinc-900 " />,
+                               h2: ({ node, ...props }) => <h2 {...props} className="text-lg font-bold mb-3 mt-6 text-zinc-900 " />,
+                               h3: ({ node, ...props }) => <h3 {...props} className="text-base font-bold mb-2 mt-4 text-zinc-900 " />,
                              }}
                            >
                              {msg.content}
@@ -434,8 +434,8 @@ export default function AiSimulatorPage() {
                 ))}
                 {isSimulating !== 'idle' && (
                   <div className="flex gap-4">
-                     <div className="w-8 h-8 rounded-full border border-zinc-200 dark:border-zinc-700 flex items-center justify-center flex-shrink-0">
-                        <div className="w-3 h-3 border-2 border-zinc-600 dark:border-zinc-400 border-t-transparent rounded-full animate-spin"></div>
+                     <div className="w-8 h-8 rounded-full border border-zinc-200  flex items-center justify-center flex-shrink-0">
+                        <div className="w-3 h-3 border-2 border-zinc-600  border-t-transparent rounded-full animate-spin"></div>
                      </div>
                   </div>
                 )}
@@ -443,7 +443,7 @@ export default function AiSimulatorPage() {
             </div>
 
             {/* Sticky Input Area */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white dark:from-zinc-950 dark:via-zinc-950 to-transparent pt-12 pb-6 px-6">
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white   to-transparent pt-12 pb-6 px-6">
               <div className="max-w-3xl mx-auto">
                 <form 
                   onSubmit={async (e) => {
@@ -480,13 +480,13 @@ export default function AiSimulatorPage() {
                       setIsSimulating('idle');
                     }
                   }}
-                  className="bg-zinc-100 dark:bg-zinc-800 rounded-3xl p-2 flex items-end gap-2"
+                  className="bg-zinc-100  rounded-3xl p-2 flex items-end gap-2"
                 >
                   <textarea 
                     value={simInput}
                     onChange={(e) => setSimInput(e.target.value)}
                     placeholder="Tanyakan ke Sahabat MTA..."
-                    className="flex-1 bg-transparent border-transparent px-4 py-3 text-[15px] text-zinc-900 dark:text-zinc-100 focus:outline-none resize-none max-h-48 min-h-[52px]"
+                    className="flex-1 bg-transparent border-transparent px-4 py-3 text-[15px] text-zinc-900  focus:outline-none resize-none max-h-48 min-h-[52px]"
                     rows={1}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) {
@@ -498,12 +498,12 @@ export default function AiSimulatorPage() {
                   <button 
                     type="submit"
                     disabled={!simInput.trim() || isSimulating !== 'idle'}
-                    className="w-10 h-10 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center flex-shrink-0 disabled:opacity-30 mb-1 mr-1 transition-transform active:scale-95"
+                    className="w-10 h-10 rounded-full bg-zinc-900  text-white  flex items-center justify-center flex-shrink-0 disabled:opacity-30 mb-1 mr-1 transition-transform active:scale-95"
                   >
                     <MessageSquare size={16} />
                   </button>
                 </form>
-                <div className="text-center mt-3 text-xs text-zinc-400 dark:text-zinc-500">AI bisa berbuat kesalahan. Selalu periksa kembali hukum dan dalil dengan rujukan asli MTA.</div>
+                <div className="text-center mt-3 text-xs text-zinc-400 ">AI bisa berbuat kesalahan. Selalu periksa kembali hukum dan dalil dengan rujukan asli MTA.</div>
               </div>
             </div>
           </div>

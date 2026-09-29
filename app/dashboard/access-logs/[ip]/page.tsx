@@ -108,7 +108,7 @@ export default function IpDetailLogsPage() {
     <div className="p-8">
       <Link 
         href="/dashboard/access-logs"
-        className="flex items-center gap-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors mb-6 w-fit"
+        className="flex items-center gap-2 text-zinc-500 hover:text-zinc-900  transition-colors mb-6 w-fit"
       >
         <ArrowLeft size={20} />
         <span className="font-medium">Kembali ke Daftar</span>
@@ -120,10 +120,10 @@ export default function IpDetailLogsPage() {
             <User size={32} />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-zinc-900 dark:text-white font-mono">
+            <h1 className="text-2xl font-bold text-zinc-900  font-mono">
               {decodedIp}
             </h1>
-            <div className="flex items-center gap-2 mt-1 text-zinc-500 dark:text-zinc-400">
+            <div className="flex items-center gap-2 mt-1 text-zinc-500 ">
               <MapPin size={16} />
               <span>{latestLocation}</span>
             </div>
@@ -136,7 +136,7 @@ export default function IpDetailLogsPage() {
           <select 
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value)}
-            className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white px-4 py-2.5 rounded-xl text-sm outline-none focus:border-accent"
+            className="bg-white  border border-zinc-200  text-zinc-900  px-4 py-2.5 rounded-xl text-sm outline-none focus:border-accent"
           >
             <option value="all">Semua Waktu</option>
             <option value="today">Hari Ini</option>
@@ -148,8 +148,8 @@ export default function IpDetailLogsPage() {
       </div>
       
       {chartData.length > 0 && (
-        <div className="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-sm mb-6">
-          <h2 className="text-lg font-bold text-zinc-900 dark:text-white mb-6">Grafik Akses</h2>
+        <div className="bg-white  p-6 rounded-3xl border border-zinc-200  shadow-sm mb-6">
+          <h2 className="text-lg font-bold text-zinc-900  mb-6">Grafik Akses</h2>
           <div className="h-64 w-full text-sm">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData}>
@@ -168,9 +168,9 @@ export default function IpDetailLogsPage() {
         </div>
       )}
 
-      <div className="bg-white dark:bg-zinc-900 rounded-3xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-sm">
-        <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex flex-wrap justify-between items-center bg-zinc-50 dark:bg-zinc-950/50 gap-4">
-          <h3 className="font-semibold text-zinc-900 dark:text-white">Riwayat Detail</h3>
+      <div className="bg-white  rounded-3xl overflow-hidden border border-zinc-200  shadow-sm">
+        <div className="p-4 border-b border-zinc-200  flex flex-wrap justify-between items-center bg-zinc-50  gap-4">
+          <h3 className="font-semibold text-zinc-900 ">Riwayat Detail</h3>
           <div className="flex items-center gap-2">
             <span className="text-sm text-zinc-500">Tampilkan:</span>
             <select
@@ -179,7 +179,7 @@ export default function IpDetailLogsPage() {
                 setItemsPerPage(Number(e.target.value));
                 setCurrentPage(1);
               }}
-              className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-white px-3 py-1.5 rounded-lg text-sm outline-none focus:border-accent"
+              className="bg-white  border border-zinc-200  text-zinc-900  px-3 py-1.5 rounded-lg text-sm outline-none focus:border-accent"
             >
               {[5, 10, 20, 50, 100].map(size => (
                 <option key={size} value={size}>{size}</option>
@@ -190,10 +190,10 @@ export default function IpDetailLogsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-zinc-50 dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800">
-                <th className="p-4 font-semibold text-sm text-zinc-600 dark:text-zinc-400">Waktu Akses</th>
-                <th className="p-4 font-semibold text-sm text-zinc-600 dark:text-zinc-400">Versi App</th>
-                <th className="p-4 font-semibold text-sm text-zinc-600 dark:text-zinc-400">Info Perangkat</th>
+              <tr className="bg-zinc-50  border-b border-zinc-200 ">
+                <th className="p-4 font-semibold text-sm text-zinc-600 ">Waktu Akses</th>
+                <th className="p-4 font-semibold text-sm text-zinc-600 ">Versi App</th>
+                <th className="p-4 font-semibold text-sm text-zinc-600 ">Info Perangkat</th>
               </tr>
             </thead>
             <tbody>
@@ -211,16 +211,16 @@ export default function IpDetailLogsPage() {
                 </tr>
               ) : (
                 currentLogs.map((log) => (
-                  <tr key={log.id} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/20 transition-colors">
-                    <td className="p-4 text-sm text-zinc-600 dark:text-zinc-400 whitespace-nowrap">
+                  <tr key={log.id} className="border-b border-zinc-100  hover:bg-zinc-50  transition-colors">
+                    <td className="p-4 text-sm text-zinc-600  whitespace-nowrap">
                       {format(new Date(log.created_at), 'dd MMM yyyy, HH:mm:ss', { locale: id })}
                     </td>
                     <td className="p-4 text-sm">
-                      <span className="bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-2 py-1 rounded text-xs font-medium">
+                      <span className="bg-zinc-100  border border-zinc-200  px-2 py-1 rounded text-xs font-medium">
                         {log.app_version === 'Web' ? 'Web Visitor' : `v${log.app_version || '?'}`}
                       </span>
                     </td>
-                    <td className="p-4 text-sm text-zinc-700 dark:text-zinc-300">
+                    <td className="p-4 text-sm text-zinc-700 ">
                       {log.device_info}
                     </td>
                   </tr>
@@ -231,7 +231,7 @@ export default function IpDetailLogsPage() {
         </div>
         
         {totalPages > 1 && (
-          <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 flex flex-wrap items-center justify-between bg-zinc-50 dark:bg-zinc-950/50 gap-4">
+          <div className="p-4 border-t border-zinc-200  flex flex-wrap items-center justify-between bg-zinc-50  gap-4">
             <span className="text-sm text-zinc-500">
               Menampilkan {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, logs.length)} dari {logs.length} data
             </span>
@@ -239,17 +239,17 @@ export default function IpDetailLogsPage() {
               <button
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="p-1.5 rounded-lg border border-zinc-200  text-zinc-600  hover:bg-zinc-200  disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronLeft size={18} />
               </button>
-              <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300 px-2">
+              <span className="text-sm font-medium text-zinc-700  px-2">
                 Halaman {currentPage} dari {totalPages}
               </span>
               <button
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="p-1.5 rounded-lg border border-zinc-200  text-zinc-600  hover:bg-zinc-200  disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronRight size={18} />
               </button>

@@ -95,7 +95,7 @@ export default function AiChatWidget() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-6 right-6 z-50 w-full max-w-sm sm:max-w-md h-[500px] max-h-[80vh] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden"
+            className="fixed bottom-6 right-6 z-50 w-full max-w-sm sm:max-w-md h-[500px] max-h-[80vh] bg-white  border border-zinc-200  rounded-3xl shadow-2xl flex flex-col overflow-hidden"
           >
             {/* Header */}
             <div className="bg-accent text-white p-4 flex items-center justify-between shadow-sm">
@@ -116,7 +116,7 @@ export default function AiChatWidget() {
             </div>
 
             {/* Chat Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-zinc-50 dark:bg-zinc-950/50">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-zinc-50 ">
               {messages.map((msg, idx) => (
                 <div 
                   key={idx} 
@@ -126,7 +126,7 @@ export default function AiChatWidget() {
                     className={`max-w-[85%] rounded-2xl p-3 ${
                       msg.role === 'user' 
                         ? 'bg-accent text-white rounded-tr-sm' 
-                        : 'bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-100 dark:border-zinc-700 shadow-sm rounded-tl-sm'
+                        : 'bg-white  text-zinc-800  border border-zinc-100  shadow-sm rounded-tl-sm'
                     }`}
                   >
                     {msg.role === 'user' ? (
@@ -142,7 +142,7 @@ export default function AiChatWidget() {
                                 return (
                                   <p 
                                     {...props} 
-                                    className="text-[18px] leading-[1.8] text-right py-2 px-3 bg-white dark:bg-zinc-800/80 rounded-xl my-2 text-zinc-900 dark:text-white"
+                                    className="text-[18px] leading-[1.8] text-right py-2 px-3 bg-white  rounded-xl my-2 text-zinc-900 "
                                     style={{ fontFamily: "'Scheherazade New', serif", direction: 'rtl' }}
                                   >
                                     {children}
@@ -151,7 +151,7 @@ export default function AiChatWidget() {
                               }
                               return <p {...props} className="mb-2 break-words">{children}</p>;
                             },
-                            strong: ({ node, ...props }) => <strong {...props} className="font-bold text-zinc-900 dark:text-zinc-100" />,
+                            strong: ({ node, ...props }) => <strong {...props} className="font-bold text-zinc-900 " />,
                             ul: ({ node, ...props }) => <ul {...props} className="list-disc pl-4 mb-2 space-y-1" />,
                             ol: ({ node, ...props }) => <ol {...props} className="list-decimal pl-4 mb-2 space-y-1" />,
                             li: ({ node, ...props }) => <li {...props} className="leading-[1.6]" />,
@@ -169,7 +169,7 @@ export default function AiChatWidget() {
               ))}
               {loadingState !== 'idle' && (
                 <div className="flex justify-start">
-                  <div className="bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 rounded-2xl p-4 shadow-sm rounded-tl-sm flex items-center gap-2 text-zinc-500">
+                  <div className="bg-white  border border-zinc-100  rounded-2xl p-4 shadow-sm rounded-tl-sm flex items-center gap-2 text-zinc-500">
                     {loadingState === 'searching' ? (
                       <>
                         <Search size={16} className="animate-pulse text-blue-500" />
@@ -188,7 +188,7 @@ export default function AiChatWidget() {
             </div>
 
             {/* Input Area */}
-            <form onSubmit={handleSubmit} className="p-4 bg-white dark:bg-zinc-900 border-t border-zinc-100 dark:border-zinc-800">
+            <form onSubmit={handleSubmit} className="p-4 bg-white  border-t border-zinc-100 ">
               <div className="relative flex items-center">
                 <input
                   type="text"
@@ -196,7 +196,7 @@ export default function AiChatWidget() {
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Tanya seputar brosur..."
                   disabled={loadingState !== 'idle'}
-                  className="w-full bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-full py-3 pl-5 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 disabled:opacity-50"
+                  className="w-full bg-zinc-100  text-zinc-900  rounded-full py-3 pl-5 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 disabled:opacity-50"
                 />
                 <button
                   type="submit"

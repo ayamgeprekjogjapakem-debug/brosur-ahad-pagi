@@ -93,7 +93,7 @@ export default function EditBrosurPage({ params }: { params: Promise<{ id: strin
       <header className="mb-10 flex items-center gap-4">
         <Link 
           href="/dashboard/data" 
-          className="p-3 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors"
+          className="p-3 bg-black/5  hover:bg-black/10  rounded-full transition-colors"
         >
           <ArrowLeft size={20} />
         </Link>
@@ -103,7 +103,7 @@ export default function EditBrosurPage({ params }: { params: Promise<{ id: strin
         </div>
       </header>
 
-      <form onSubmit={handleSubmit} className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-3xl p-8 shadow-sm">
+      <form onSubmit={handleSubmit} className="bg-white  border border-black/5  rounded-3xl p-8 shadow-sm">
         {errorMsg && (
           <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 text-red-600 rounded-xl font-bold">
             {errorMsg}
@@ -118,7 +118,7 @@ export default function EditBrosurPage({ params }: { params: Promise<{ id: strin
               required
               value={tahun}
               onChange={(e) => setTahun(e.target.value)}
-              className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 px-4 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
+              className="w-full bg-zinc-50  border border-zinc-200  rounded-xl py-3 px-4 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
             />
           </div>
           <div>
@@ -128,7 +128,7 @@ export default function EditBrosurPage({ params }: { params: Promise<{ id: strin
               required
               value={judul}
               onChange={(e) => setJudul(e.target.value)}
-              className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 px-4 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
+              className="w-full bg-zinc-50  border border-zinc-200  rounded-xl py-3 px-4 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
             />
           </div>
         </div>
@@ -140,7 +140,7 @@ export default function EditBrosurPage({ params }: { params: Promise<{ id: strin
               value={folderId}
               onChange={(e) => setFolderId(e.target.value)}
               required
-              className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 pl-12 pr-4 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent appearance-none cursor-pointer"
+              className="w-full bg-zinc-50  border border-zinc-200  rounded-xl py-3 pl-12 pr-4 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent appearance-none cursor-pointer"
             >
               <option value="" disabled>-- Pilih Koleksi --</option>
               {folders.map(f => (
@@ -158,16 +158,16 @@ export default function EditBrosurPage({ params }: { params: Promise<{ id: strin
             required
             value={slug}
             onChange={(e) => setSlug(e.target.value)}
-            className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 px-4 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent font-mono text-sm"
+            className="w-full bg-zinc-50  border border-zinc-200  rounded-xl py-3 px-4 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent font-mono text-sm"
           />
         </div>
 
-        <div className="mb-8 border border-zinc-200 dark:border-zinc-700 rounded-xl overflow-hidden">
-          <div className="flex border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50">
+        <div className="mb-8 border border-zinc-200  rounded-xl overflow-hidden">
+          <div className="flex border-b border-zinc-200  bg-zinc-50 ">
             <button
               type="button"
               onClick={() => setActiveTab('editor')}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 font-bold text-sm transition-colors ${activeTab === 'editor' ? 'text-accent border-b-2 border-accent bg-white dark:bg-zinc-900' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 font-bold text-sm transition-colors ${activeTab === 'editor' ? 'text-accent border-b-2 border-accent bg-white ' : 'text-zinc-500 hover:text-zinc-700 '}`}
             >
               <Code2 size={16} />
               Editor HTML
@@ -175,14 +175,14 @@ export default function EditBrosurPage({ params }: { params: Promise<{ id: strin
             <button
               type="button"
               onClick={() => setActiveTab('view')}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 font-bold text-sm transition-colors ${activeTab === 'view' ? 'text-accent border-b-2 border-accent bg-white dark:bg-zinc-900' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 font-bold text-sm transition-colors ${activeTab === 'view' ? 'text-accent border-b-2 border-accent bg-white ' : 'text-zinc-500 hover:text-zinc-700 '}`}
             >
               <Eye size={16} />
               Live Preview
             </button>
           </div>
           
-          <div className="bg-white dark:bg-zinc-900">
+          <div className="bg-white ">
             {activeTab === 'editor' ? (
               <textarea 
                 required
@@ -194,7 +194,7 @@ export default function EditBrosurPage({ params }: { params: Promise<{ id: strin
               ></textarea>
             ) : (
               <div 
-                className="p-6 prose prose-zinc dark:prose-invert max-w-none w-full h-[456px] overflow-y-auto custom-scrollbar bg-white dark:bg-zinc-900"
+                className="p-6 prose prose-zinc  max-w-none w-full h-[456px] overflow-y-auto custom-scrollbar bg-white "
                 dangerouslySetInnerHTML={{ __html: konten || '<p class="text-zinc-500 italic text-center mt-10">Preview kosong, masukkan konten HTML di tab Editor.</p>' }}
               />
             )}

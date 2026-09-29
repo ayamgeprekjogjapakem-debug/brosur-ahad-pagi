@@ -71,7 +71,7 @@ export default function BlockedIpsPage() {
 
   return (
     <div className="p-8">
-      <h1 className="text-2xl font-bold mb-6 text-zinc-900 dark:text-white flex items-center gap-2">
+      <h1 className="text-2xl font-bold mb-6 text-zinc-900  flex items-center gap-2">
         <ShieldBan size={24} className="text-red-500" />
         Daftar Blokir IP (Blacklist)
       </h1>
@@ -80,8 +80,8 @@ export default function BlockedIpsPage() {
         
         {/* Form Tambah Blokir */}
         <div className="lg:col-span-1">
-          <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200 dark:border-zinc-800 shadow-sm">
-            <h2 className="font-bold mb-4 text-zinc-800 dark:text-zinc-200">Blokir IP Baru</h2>
+          <div className="bg-white  rounded-3xl p-6 border border-zinc-200  shadow-sm">
+            <h2 className="font-bold mb-4 text-zinc-800 ">Blokir IP Baru</h2>
             <form onSubmit={handleAddBlock} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-zinc-500 mb-1">Alamat IP</label>
@@ -90,7 +90,7 @@ export default function BlockedIpsPage() {
                   value={newIp}
                   onChange={(e) => setNewIp(e.target.value)}
                   placeholder="Contoh: 192.168.1.1"
-                  className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                  className="w-full bg-zinc-50  border border-zinc-200  rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
                   required
                 />
               </div>
@@ -101,7 +101,7 @@ export default function BlockedIpsPage() {
                   value={newReason}
                   onChange={(e) => setNewReason(e.target.value)}
                   placeholder="Contoh: Spam request"
-                  className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                  className="w-full bg-zinc-50  border border-zinc-200  rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
                 />
               </div>
               <button 
@@ -117,15 +117,15 @@ export default function BlockedIpsPage() {
 
         {/* Tabel Daftar Blokir */}
         <div className="lg:col-span-2">
-          <div className="bg-white dark:bg-zinc-900 rounded-3xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-sm">
+          <div className="bg-white  rounded-3xl overflow-hidden border border-zinc-200  shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-zinc-50 dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800">
-                    <th className="p-4 font-semibold text-sm text-zinc-600 dark:text-zinc-400">Alamat IP</th>
-                    <th className="p-4 font-semibold text-sm text-zinc-600 dark:text-zinc-400">Alasan</th>
-                    <th className="p-4 font-semibold text-sm text-zinc-600 dark:text-zinc-400">Tanggal Diblokir</th>
-                    <th className="p-4 font-semibold text-sm text-zinc-600 dark:text-zinc-400 text-right">Aksi</th>
+                  <tr className="bg-zinc-50  border-b border-zinc-200 ">
+                    <th className="p-4 font-semibold text-sm text-zinc-600 ">Alamat IP</th>
+                    <th className="p-4 font-semibold text-sm text-zinc-600 ">Alasan</th>
+                    <th className="p-4 font-semibold text-sm text-zinc-600 ">Tanggal Diblokir</th>
+                    <th className="p-4 font-semibold text-sm text-zinc-600  text-right">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -137,11 +137,11 @@ export default function BlockedIpsPage() {
                     </tr>
                   ) : (
                     blockedIps.map((item) => (
-                      <tr key={item.id} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/20 transition-colors">
+                      <tr key={item.id} className="border-b border-zinc-100  hover:bg-zinc-50  transition-colors">
                         <td className="p-4 text-sm font-mono font-bold text-red-500">
                           {item.ip_address}
                         </td>
-                        <td className="p-4 text-sm text-zinc-600 dark:text-zinc-400">
+                        <td className="p-4 text-sm text-zinc-600 ">
                           {item.reason}
                         </td>
                         <td className="p-4 text-sm text-zinc-500">
@@ -150,7 +150,7 @@ export default function BlockedIpsPage() {
                         <td className="p-4 text-right">
                           <button 
                             onClick={() => handleUnblock(item.id)}
-                            className="inline-flex items-center gap-1.5 text-zinc-500 hover:text-red-500 bg-zinc-100 dark:bg-zinc-800 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                            className="inline-flex items-center gap-1.5 text-zinc-500 hover:text-red-500 bg-zinc-100  hover:bg-red-50  px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
                           >
                             <Trash2 size={14} /> Hapus
                           </button>

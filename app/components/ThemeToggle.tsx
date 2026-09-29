@@ -33,7 +33,7 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      className="fixed left-4 bottom-8 md:bottom-12 z-50 p-3.5 rounded-full shadow-xl shadow-black/10 backdrop-blur-md bg-white/80 dark:bg-zinc-800/80 border border-black/5 dark:border-white/10 text-zinc-600 dark:text-zinc-300 hover:scale-110 active:scale-95 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] group"
+      className="fixed left-4 bottom-8 md:bottom-12 z-50 p-3.5 rounded-full shadow-xl shadow-black/10 backdrop-blur-md bg-white/80  border border-black/5  text-zinc-600  hover:scale-110 active:scale-95 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] group"
       aria-label="Toggle Theme"
       title="Ubah Mode Gelap/Terang"
     >

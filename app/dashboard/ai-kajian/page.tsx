@@ -513,7 +513,7 @@ export default function AiKajianPage() {
         return (
           <p 
             key={idx} 
-            className="font-arabic text-[18px] leading-[1.8] text-right py-2 px-4 bg-zinc-50 dark:bg-zinc-800/40 rounded-xl my-3 text-zinc-900 dark:text-white"
+            className="font-arabic text-[18px] leading-[1.8] text-right py-2 px-4 bg-zinc-50  rounded-xl my-3 text-zinc-900 "
             style={{ fontFamily: "'Scheherazade New', serif", direction: 'rtl' }}
           >
             {trimmed}
@@ -523,7 +523,7 @@ export default function AiKajianPage() {
       return (
         <p 
           key={idx} 
-          className="text-[12px] leading-[1.5] mb-2.5 text-zinc-800 dark:text-zinc-200 text-justify"
+          className="text-[12px] leading-[1.5] mb-2.5 text-zinc-800  text-justify"
           style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
         >
           {trimmed}
@@ -549,7 +549,7 @@ export default function AiKajianPage() {
         
         <header className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-extrabold mb-2 tracking-tight text-zinc-900 dark:text-zinc-100 flex items-center gap-3">
+            <h1 className="text-3xl font-extrabold mb-2 tracking-tight text-zinc-900  flex items-center gap-3">
               <Sparkles className="text-accent" /> Pembuat Materi Kajian AI
             </h1>
             <p className="text-zinc-500 font-medium max-w-xl">
@@ -561,16 +561,16 @@ export default function AiKajianPage() {
         </header>
 
         {/* Tab Selector with URL sync */}
-        <div className="flex items-center gap-2 mb-6 border-b border-black/5 dark:border-white/5 pb-2">
+        <div className="flex items-center gap-2 mb-6 border-b border-black/5  pb-2">
           <button 
             onClick={() => changeTab('generator')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-t-xl font-bold transition-colors ${activeTab === 'generator' ? 'bg-white dark:bg-zinc-900 border-t border-l border-r border-black/5 dark:border-white/5 text-accent' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-black/5 dark:hover:bg-white/5'}`}
+            className={`flex items-center gap-2 px-6 py-3 rounded-t-xl font-bold transition-colors ${activeTab === 'generator' ? 'bg-white  border-t border-l border-r border-black/5  text-accent' : 'text-zinc-500 hover:text-zinc-900  hover:bg-black/5 '}`}
           >
             <Sparkles size={16} /> Generator AI
           </button>
           <button 
             onClick={() => changeTab('saved')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-t-xl font-bold transition-colors ${activeTab === 'saved' ? 'bg-white dark:bg-zinc-900 border-t border-l border-r border-black/5 dark:border-white/5 text-blue-600' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-black/5 dark:hover:bg-white/5'}`}
+            className={`flex items-center gap-2 px-6 py-3 rounded-t-xl font-bold transition-colors ${activeTab === 'saved' ? 'bg-white  border-t border-l border-r border-black/5  text-blue-600' : 'text-zinc-500 hover:text-zinc-900  hover:bg-black/5 '}`}
           >
             <Database size={16} /> Kajian Tersimpan (Dashboard Only)
           </button>
@@ -582,33 +582,33 @@ export default function AiKajianPage() {
           /* TAB 1: GENERATOR */
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1 space-y-6">
-              <div className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-3xl p-6 shadow-sm">
-                <h2 className="font-extrabold text-lg mb-4 text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+              <div className="bg-white  border border-black/5  rounded-3xl p-6 shadow-sm">
+                <h2 className="font-extrabold text-lg mb-4 text-zinc-900  flex items-center gap-2">
                   <FileText size={18} className="text-accent" /> 1. Sumber Referensi
                 </h2>
 
-                <div className="grid grid-cols-4 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden p-1 bg-zinc-50 dark:bg-zinc-950 mb-5 text-[10px] font-bold gap-1">
+                <div className="grid grid-cols-4 border border-zinc-200  rounded-xl overflow-hidden p-1 bg-zinc-50  mb-5 text-[10px] font-bold gap-1">
                   <button
                     onClick={() => setSourceType('individual')}
-                    className={`py-2 rounded-lg text-center transition-colors truncate ${sourceType === 'individual' ? 'bg-white dark:bg-zinc-800 text-accent shadow-sm' : 'text-zinc-500'}`}
+                    className={`py-2 rounded-lg text-center transition-colors truncate ${sourceType === 'individual' ? 'bg-white  text-accent shadow-sm' : 'text-zinc-500'}`}
                   >
                     Pilih Brosur
                   </button>
                   <button
                     onClick={() => setSourceType('folder')}
-                    className={`py-2 rounded-lg text-center transition-colors truncate ${sourceType === 'folder' ? 'bg-white dark:bg-zinc-800 text-blue-600 shadow-sm' : 'text-zinc-500'}`}
+                    className={`py-2 rounded-lg text-center transition-colors truncate ${sourceType === 'folder' ? 'bg-white  text-blue-600 shadow-sm' : 'text-zinc-500'}`}
                   >
                     Koleksi
                   </button>
                   <button
                     onClick={() => setSourceType('all')}
-                    className={`py-2 rounded-lg text-center transition-colors truncate ${sourceType === 'all' ? 'bg-white dark:bg-zinc-800 text-purple-600 shadow-sm' : 'text-zinc-500'}`}
+                    className={`py-2 rounded-lg text-center transition-colors truncate ${sourceType === 'all' ? 'bg-white  text-purple-600 shadow-sm' : 'text-zinc-500'}`}
                   >
                     Semua
                   </button>
                   <button
                     onClick={() => setSourceType('custom')}
-                    className={`py-2 rounded-lg text-center transition-colors truncate ${sourceType === 'custom' ? 'bg-white dark:bg-zinc-800 text-amber-600 shadow-sm' : 'text-zinc-500'}`}
+                    className={`py-2 rounded-lg text-center transition-colors truncate ${sourceType === 'custom' ? 'bg-white  text-amber-600 shadow-sm' : 'text-zinc-500'}`}
                   >
                     Teks Kustom
                   </button>
@@ -623,7 +623,7 @@ export default function AiKajianPage() {
                         placeholder="Cari brosur referensi..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-2.5 pl-11 pr-4 focus:outline-none focus:border-accent text-sm"
+                        className="w-full bg-zinc-50  border border-zinc-200  rounded-xl py-2.5 pl-11 pr-4 focus:outline-none focus:border-accent text-sm"
                       />
                       {searching && (
                         <div className="absolute right-4 top-1/2 -translate-y-1/2">
@@ -632,15 +632,15 @@ export default function AiKajianPage() {
                       )}
 
                       {searchResults.length > 0 && (
-                        <div className="absolute left-0 right-0 mt-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl z-30 max-h-60 overflow-y-auto p-1 divide-y divide-black/5 dark:divide-white/5">
+                        <div className="absolute left-0 right-0 mt-2 bg-white  border border-zinc-200  rounded-xl shadow-xl z-30 max-h-60 overflow-y-auto p-1 divide-y divide-black/5 ">
                           {searchResults.map((b) => (
                             <button
                               key={b.id}
                               onClick={() => addReference(b)}
-                              className="w-full text-left px-4 py-3 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-900 flex items-center justify-between rounded-lg transition-colors"
+                              className="w-full text-left px-4 py-3 text-sm hover:bg-zinc-50  flex items-center justify-between rounded-lg transition-colors"
                             >
-                              <span className="font-semibold text-zinc-800 dark:text-zinc-200 truncate">{b.judul}</span>
-                              <span className="bg-zinc-100 dark:bg-zinc-800 text-[10px] px-2 py-0.5 rounded-full font-bold text-zinc-500 shrink-0">
+                              <span className="font-semibold text-zinc-800  truncate">{b.judul}</span>
+                              <span className="bg-zinc-100  text-[10px] px-2 py-0.5 rounded-full font-bold text-zinc-500 shrink-0">
                                 {b.tahun}
                               </span>
                             </button>
@@ -651,22 +651,22 @@ export default function AiKajianPage() {
 
                     <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
                       {selectedBrosurs.length === 0 ? (
-                        <div className="text-center py-8 text-zinc-400 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl text-sm">
+                        <div className="text-center py-8 text-zinc-400 border border-dashed border-zinc-200  rounded-2xl text-sm">
                           Pilih brosur dari kolom pencarian di atas.
                         </div>
                       ) : (
                         selectedBrosurs.map((b) => (
                           <div
                             key={b.id}
-                            className="flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-black/5 dark:border-white/5 group"
+                            className="flex items-center justify-between p-3 bg-zinc-50  rounded-xl border border-black/5  group"
                           >
                             <div className="overflow-hidden pr-2">
-                              <p className="font-bold text-xs text-zinc-800 dark:text-zinc-200 truncate">{b.judul}</p>
+                              <p className="font-bold text-xs text-zinc-800  truncate">{b.judul}</p>
                               <p className="text-[10px] text-zinc-500">Tahun {b.tahun}</p>
                             </div>
                             <button
                               onClick={() => removeReference(b.id)}
-                              className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-all"
+                              className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50  rounded-lg transition-all"
                             >
                               <Trash2 size={14} />
                             </button>
@@ -685,7 +685,7 @@ export default function AiKajianPage() {
                         <select
                           value={selectedSourceFolder}
                           onChange={(e) => setSelectedSourceFolder(e.target.value)}
-                          className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 pl-11 pr-4 focus:outline-none focus:border-accent text-sm cursor-pointer appearance-none"
+                          className="w-full bg-zinc-50  border border-zinc-200  rounded-xl py-3 pl-11 pr-4 focus:outline-none focus:border-accent text-sm cursor-pointer appearance-none"
                         >
                           {folders.map((f) => (
                             <option key={f.id} value={f.id}>
@@ -696,7 +696,7 @@ export default function AiKajianPage() {
                         <FolderArchive className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={16} />
                       </div>
                     </div>
-                    <div className="p-4 bg-blue-500/5 border border-blue-500/10 rounded-2xl text-xs text-blue-600 dark:text-blue-400">
+                    <div className="p-4 bg-blue-500/5 border border-blue-500/10 rounded-2xl text-xs text-blue-600 ">
                       AI akan menggunakan materi-materi dari seluruh brosur yang berada dalam kategori koleksi ini sebagai rujukan.
                     </div>
                   </div>
@@ -706,8 +706,8 @@ export default function AiKajianPage() {
                   <div className="space-y-4">
                     <div className="p-5 bg-purple-500/5 border border-purple-500/10 rounded-2xl text-center space-y-2">
                       <Database className="text-purple-500 mx-auto" size={32} />
-                      <p className="font-bold text-xs text-purple-700 dark:text-purple-400">Gunakan Seluruh Database</p>
-                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                      <p className="font-bold text-xs text-purple-700 ">Gunakan Seluruh Database</p>
+                      <p className="text-[11px] text-zinc-500  leading-relaxed">
                         AI akan menyaring ide dan konten dari seluruh arsip brosur untuk dijadikan bahan utama pembuatan materi kajian.
                       </p>
                     </div>
@@ -739,15 +739,15 @@ export default function AiKajianPage() {
                       onChange={(e) => setCustomReferenceText(e.target.value)}
                       placeholder="Ketik atau tempel teks rujukan materi di sini..."
                       rows={8}
-                      className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 px-4 focus:outline-none focus:border-accent text-sm resize-y custom-scrollbar"
+                      className="w-full bg-zinc-50  border border-zinc-200  rounded-xl py-3 px-4 focus:outline-none focus:border-accent text-sm resize-y custom-scrollbar"
                     />
                   </div>
                 )}
               </div>
 
               {/* Custom prompt instructions */}
-              <div className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-3xl p-6 shadow-sm">
-                <h2 className="font-extrabold text-lg mb-4 text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+              <div className="bg-white  border border-black/5  rounded-3xl p-6 shadow-sm">
+                <h2 className="font-extrabold text-lg mb-4 text-zinc-900  flex items-center gap-2">
                   <Settings2 size={18} className="text-blue-500" /> 2. Instruksi Kajian
                 </h2>
                 <textarea
@@ -755,7 +755,7 @@ export default function AiKajianPage() {
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   rows={4}
-                  className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 px-4 focus:outline-none focus:border-accent text-sm resize-none"
+                  className="w-full bg-zinc-50  border border-zinc-200  rounded-xl py-3 px-4 focus:outline-none focus:border-accent text-sm resize-none"
                 />
                 <button
                   onClick={handleGenerate}
@@ -778,17 +778,17 @@ export default function AiKajianPage() {
             </div>
 
             <div className="lg:col-span-2 space-y-6">
-              <div className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-3xl p-6 md:p-8 shadow-sm min-h-[500px] flex flex-col justify-between">
+              <div className="bg-white  border border-black/5  rounded-3xl p-6 md:p-8 shadow-sm min-h-[500px] flex flex-col justify-between">
                 <div>
-                  <header className="border-b border-black/5 dark:border-white/5 pb-4 mb-6 flex items-center justify-between">
-                    <h2 className="font-extrabold text-xl text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                  <header className="border-b border-black/5  pb-4 mb-6 flex items-center justify-between">
+                    <h2 className="font-extrabold text-xl text-zinc-900  flex items-center gap-2">
                       Hasil Kajian AI
                     </h2>
                     {generatedResult && (
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleCopyText(generatedResult)}
-                          className="p-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-xl text-zinc-600 dark:text-zinc-300 transition-colors"
+                          className="p-2 bg-zinc-100  hover:bg-zinc-200  rounded-xl text-zinc-600  transition-colors"
                           title="Salin Materi"
                         >
                           <Copy size={16} />
@@ -814,8 +814,8 @@ export default function AiKajianPage() {
                     <div
                       className={`mb-6 p-4 rounded-xl flex items-start gap-3 text-sm font-medium ${
                         statusMessage.type === 'success'
-                          ? 'bg-green-500/10 border border-green-500/20 text-green-700 dark:text-green-400'
-                          : 'bg-red-500/10 border border-red-500/20 text-red-700 dark:text-red-400'
+                          ? 'bg-green-500/10 border border-green-500/20 text-green-700 '
+                          : 'bg-red-500/10 border border-red-500/20 text-red-700 '
                       }`}
                     >
                       {statusMessage.type === 'success' ? (
@@ -834,12 +834,12 @@ export default function AiKajianPage() {
                       <p className="text-xs text-zinc-400 mt-1">Ini mungkin memerlukan waktu 10-30 detik.</p>
                     </div>
                   ) : generatedResult ? (
-                    <div className="bg-white dark:bg-zinc-950 border border-black/5 dark:border-white/5 rounded-2xl p-6 shadow-inner max-h-[60vh] overflow-y-auto custom-scrollbar">
+                    <div className="bg-white  border border-black/5  rounded-2xl p-6 shadow-inner max-h-[60vh] overflow-y-auto custom-scrollbar">
                       {renderFormattedKajian(generatedResult)}
                     </div>
                   ) : (
-                    <div className="py-32 text-center text-zinc-400 flex flex-col items-center justify-center border-2 border-dashed border-zinc-100 dark:border-zinc-800 rounded-2xl">
-                      <Sparkles size={40} className="text-zinc-300 dark:text-zinc-700 mb-4" />
+                    <div className="py-32 text-center text-zinc-400 flex flex-col items-center justify-center border-2 border-dashed border-zinc-100  rounded-2xl">
+                      <Sparkles size={40} className="text-zinc-300  mb-4" />
                       <p className="font-medium text-sm">Belum ada materi kajian yang dibuat.</p>
                       <p className="text-xs text-zinc-500 mt-1 max-w-xs">
                         Pilih rujukan di panel kiri (Brosur, Koleksi, Semua, atau Teks Kustom), isi instruksi tambahan bila perlu, lalu klik tombol **Mulai Rumuskan**.
@@ -852,7 +852,7 @@ export default function AiKajianPage() {
           </div>
         ) : (
           /* TAB 2: SAVED MATERIALS LIST */
-          <div className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-3xl p-6 shadow-sm">
+          <div className="bg-white  border border-black/5  rounded-3xl p-6 shadow-sm">
             <div className="mb-6 flex flex-col sm:flex-row items-center gap-4">
               <div className="relative flex-1 w-full">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
@@ -861,7 +861,7 @@ export default function AiKajianPage() {
                   placeholder="Cari materi kajian tersimpan..."
                   value={savedSearchQuery}
                   onChange={(e) => setSavedSearchQuery(e.target.value)}
-                  className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 pl-12 pr-4 focus:outline-none focus:border-accent text-sm"
+                  className="w-full bg-zinc-50  border border-zinc-200  rounded-xl py-3 pl-12 pr-4 focus:outline-none focus:border-accent text-sm"
                 />
               </div>
 
@@ -887,14 +887,14 @@ export default function AiKajianPage() {
                 <p className="text-sm font-semibold tracking-wide animate-pulse">Memuat materi kajian...</p>
               </div>
             ) : savedMaterials.length === 0 ? (
-              <div className="py-20 text-center text-zinc-500 border-2 border-dashed border-zinc-150 dark:border-zinc-800 rounded-3xl">
+              <div className="py-20 text-center text-zinc-500 border-2 border-dashed border-zinc-150  rounded-3xl">
                 Tidak ada materi kajian tersimpan yang ditemukan.
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="border-b border-black/5 dark:border-white/5 text-zinc-500 text-sm">
+                    <tr className="border-b border-black/5  text-zinc-500 text-sm">
                       <th className="p-4 font-bold">Judul Kajian</th>
                       <th className="p-4 font-bold">Tahun Rujukan</th>
                       <th className="p-4 font-bold">Koleksi</th>
@@ -904,12 +904,12 @@ export default function AiKajianPage() {
                   </thead>
                   <tbody>
                     {savedMaterials.map((item) => (
-                      <tr key={item.id} className="border-b border-black/5 dark:border-white/5 hover:bg-black/[0.01] dark:hover:bg-white/[0.01] transition-colors">
+                      <tr key={item.id} className="border-b border-black/5  hover:bg-black/[0.01] [0.01] transition-colors">
                         <td className="p-4 font-bold max-w-[250px] truncate" title={item.judul}>
                           {item.judul}
                         </td>
                         <td className="p-4">
-                          <span className="bg-blue-500/10 text-blue-600 dark:text-blue-400 px-3 py-1 rounded-full text-xs font-bold">
+                          <span className="bg-blue-500/10 text-blue-600  px-3 py-1 rounded-full text-xs font-bold">
                             {item.tahun}
                           </span>
                         </td>
@@ -929,14 +929,14 @@ export default function AiKajianPage() {
                               setSelectedMaterialDetail(item);
                               setIsEditing(false);
                             }}
-                            className="p-2 bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500 hover:text-white rounded-lg transition-colors"
+                            className="p-2 bg-blue-500/10 text-blue-600  hover:bg-blue-500 hover:text-white rounded-lg transition-colors"
                             title="Baca Kajian"
                           >
                             <Eye size={16} />
                           </button>
                           <button
                             onClick={() => handleDeleteSaved(item.id, item.judul)}
-                            className="p-2 bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500 hover:text-white rounded-lg transition-colors"
+                            className="p-2 bg-red-500/10 text-red-600  hover:bg-red-500 hover:text-white rounded-lg transition-colors"
                             title="Hapus"
                           >
                             <Trash2 size={16} />
@@ -960,18 +960,18 @@ export default function AiKajianPage() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 md:p-8 max-w-2xl w-full h-[85vh] shadow-2xl flex flex-col justify-between"
+              className="bg-white  border border-zinc-200  rounded-3xl p-6 md:p-8 max-w-2xl w-full h-[85vh] shadow-2xl flex flex-col justify-between"
             >
               {isEditing ? (
                 /* EDIT MODE */
                 <div className="flex-1 flex flex-col justify-between h-full">
-                  <div className="border-b border-black/5 dark:border-white/5 pb-4 mb-4 flex items-center justify-between">
-                    <h3 className="text-xl font-extrabold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                  <div className="border-b border-black/5  pb-4 mb-4 flex items-center justify-between">
+                    <h3 className="text-xl font-extrabold text-zinc-900  flex items-center gap-2">
                       <Edit3 size={18} className="text-accent" /> Sunting Kajian AI
                     </h3>
                     <button 
                       onClick={() => setIsEditing(false)}
-                      className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-zinc-400"
+                      className="p-2 hover:bg-zinc-100  rounded-full transition-colors text-zinc-400"
                     >
                       <X size={18} />
                     </button>
@@ -984,7 +984,7 @@ export default function AiKajianPage() {
                         type="text"
                         value={editTitle}
                         onChange={(e) => setEditTitle(e.target.value)}
-                        className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 px-4 focus:outline-none focus:border-accent text-sm"
+                        className="w-full bg-zinc-50  border border-zinc-200  rounded-xl py-3 px-4 focus:outline-none focus:border-accent text-sm"
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
@@ -994,7 +994,7 @@ export default function AiKajianPage() {
                           type="number"
                           value={editYear}
                           onChange={(e) => setEditYear(e.target.value)}
-                          className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 px-4 focus:outline-none focus:border-accent text-sm"
+                          className="w-full bg-zinc-50  border border-zinc-200  rounded-xl py-3 px-4 focus:outline-none focus:border-accent text-sm"
                         />
                       </div>
                       <div>
@@ -1002,7 +1002,7 @@ export default function AiKajianPage() {
                         <select
                           value={editFolder}
                           onChange={(e) => setEditFolder(e.target.value)}
-                          className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 px-4 focus:outline-none focus:border-accent text-sm"
+                          className="w-full bg-zinc-50  border border-zinc-200  rounded-xl py-3 px-4 focus:outline-none focus:border-accent text-sm"
                         >
                           {folders.map((f) => (
                             <option key={f.id} value={f.id}>
@@ -1018,15 +1018,15 @@ export default function AiKajianPage() {
                         value={editText}
                         onChange={(e) => setEditText(e.target.value)}
                         rows={12}
-                        className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 px-4 focus:outline-none focus:border-accent font-sans text-sm resize-y custom-scrollbar"
+                        className="w-full bg-zinc-50  border border-zinc-200  rounded-xl py-3 px-4 focus:outline-none focus:border-accent font-sans text-sm resize-y custom-scrollbar"
                       />
                     </div>
                   </div>
 
-                  <div className="flex justify-end gap-3 pt-4 border-t border-black/5 dark:border-white/5">
+                  <div className="flex justify-end gap-3 pt-4 border-t border-black/5 ">
                     <button
                       onClick={() => setIsEditing(false)}
-                      className="px-5 py-2.5 bg-zinc-150 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-xl font-bold text-sm transition-colors"
+                      className="px-5 py-2.5 bg-zinc-150  hover:bg-zinc-200  rounded-xl font-bold text-sm transition-colors"
                     >
                       Batal
                     </button>
@@ -1043,9 +1043,9 @@ export default function AiKajianPage() {
               ) : (
                 /* READ MODE */
                 <div className="flex-1 flex flex-col justify-between h-full">
-                  <div className="flex items-start justify-between border-b border-black/5 dark:border-white/5 pb-4 mb-4">
+                  <div className="flex items-start justify-between border-b border-black/5  pb-4 mb-4">
                     <div>
-                      <h3 className="text-xl font-extrabold text-zinc-900 dark:text-zinc-100">{selectedMaterialDetail.judul}</h3>
+                      <h3 className="text-xl font-extrabold text-zinc-900 ">{selectedMaterialDetail.judul}</h3>
                       <div className="flex items-center gap-3 mt-1.5 text-xs text-zinc-400">
                         <span>Tahun Rujukan: {selectedMaterialDetail.tahun}</span>
                         <span>•</span>
@@ -1055,28 +1055,28 @@ export default function AiKajianPage() {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={startEditMode}
-                        className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors text-zinc-500"
+                        className="p-2 hover:bg-zinc-100  rounded-xl transition-colors text-zinc-500"
                         title="Sunting Kajian"
                       >
                         <Edit3 size={16} />
                       </button>
                       <button
                         onClick={() => handleCopyText(selectedMaterialDetail.teks_bersih || selectedMaterialDetail.konten)}
-                        className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors text-zinc-500"
+                        className="p-2 hover:bg-zinc-100  rounded-xl transition-colors text-zinc-500"
                         title="Salin Teks"
                       >
                         <Copy size={16} />
                       </button>
                       <button
                         onClick={() => handleDownloadPdf(selectedMaterialDetail.judul, selectedMaterialDetail.teks_bersih || selectedMaterialDetail.konten)}
-                        className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors text-blue-500"
+                        className="p-2 hover:bg-zinc-100  rounded-xl transition-colors text-blue-500"
                         title="Download PDF"
                       >
                         <Download size={16} />
                       </button>
                       <button 
                         onClick={() => setSelectedMaterialDetail(null)}
-                        className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors text-zinc-400"
+                        className="p-2 hover:bg-zinc-100  rounded-xl transition-colors text-zinc-400"
                       >
                         <X size={18} />
                       </button>
@@ -1084,15 +1084,15 @@ export default function AiKajianPage() {
                   </div>
 
                   <div className="flex-1 overflow-y-auto pr-2 mb-4 scrollbar-thin">
-                    <div className="bg-white dark:bg-zinc-950 border border-black/5 dark:border-white/5 rounded-2xl p-6 shadow-inner">
+                    <div className="bg-white  border border-black/5  rounded-2xl p-6 shadow-inner">
                       {renderFormattedKajian(selectedMaterialDetail.teks_bersih || selectedMaterialDetail.konten)}
                     </div>
                   </div>
 
-                  <div className="flex justify-end pt-4 border-t border-black/5 dark:border-white/5">
+                  <div className="flex justify-end pt-4 border-t border-black/5 ">
                     <button
                       onClick={() => setSelectedMaterialDetail(null)}
-                      className="px-6 py-2.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-xl font-bold text-sm transition-colors"
+                      className="px-6 py-2.5 bg-zinc-100  hover:bg-zinc-200  rounded-xl font-bold text-sm transition-colors"
                     >
                       Tutup
                     </button>
@@ -1112,7 +1112,7 @@ export default function AiKajianPage() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl space-y-6"
+              className="bg-white  border border-zinc-200  rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl space-y-6"
             >
               <div>
                 <h3 className="text-xl font-extrabold mb-1">Simpan Materi Kajian</h3>
@@ -1127,7 +1127,7 @@ export default function AiKajianPage() {
                     required
                     value={saveTitle}
                     onChange={(e) => handleTitleChange(e.target.value)}
-                    className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 px-4 focus:outline-none focus:border-accent text-sm"
+                    className="w-full bg-zinc-50  border border-zinc-200  rounded-xl py-3 px-4 focus:outline-none focus:border-accent text-sm"
                   />
                 </div>
 
@@ -1139,7 +1139,7 @@ export default function AiKajianPage() {
                       required
                       value={saveYear}
                       onChange={(e) => setSaveYear(e.target.value)}
-                      className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 px-4 focus:outline-none focus:border-accent text-sm"
+                      className="w-full bg-zinc-50  border border-zinc-200  rounded-xl py-3 px-4 focus:outline-none focus:border-accent text-sm"
                     />
                   </div>
                   <div>
@@ -1147,7 +1147,7 @@ export default function AiKajianPage() {
                     <select
                       value={saveFolder}
                       onChange={(e) => setSaveFolder(e.target.value)}
-                      className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 px-4 focus:outline-none focus:border-accent text-sm"
+                      className="w-full bg-zinc-50  border border-zinc-200  rounded-xl py-3 px-4 focus:outline-none focus:border-accent text-sm"
                     >
                       {folders.map((f) => (
                         <option key={f.id} value={f.id}>
@@ -1165,15 +1165,15 @@ export default function AiKajianPage() {
                     required
                     value={saveSlug}
                     onChange={(e) => setSaveSlug(e.target.value)}
-                    className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 px-4 focus:outline-none focus:border-accent font-mono text-xs"
+                    className="w-full bg-zinc-50  border border-zinc-200  rounded-xl py-3 px-4 focus:outline-none focus:border-accent font-mono text-xs"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-black/5 dark:border-white/5">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-black/5 ">
                 <button
                   onClick={() => setShowSaveModal(false)}
-                  className="px-5 py-2.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-xl font-bold text-sm transition-colors"
+                  className="px-5 py-2.5 bg-zinc-100  hover:bg-zinc-200  rounded-xl font-bold text-sm transition-colors"
                 >
                   Batal
                 </button>
@@ -1199,15 +1199,15 @@ export default function AiKajianPage() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 md:p-8 max-w-2xl w-full h-[85vh] shadow-2xl flex flex-col justify-between"
+              className="bg-white  border border-zinc-200  rounded-3xl p-6 md:p-8 max-w-2xl w-full h-[85vh] shadow-2xl flex flex-col justify-between"
             >
-              <div className="border-b border-black/5 dark:border-white/5 pb-4 mb-4 flex items-center justify-between">
-                <h3 className="text-xl font-extrabold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+              <div className="border-b border-black/5  pb-4 mb-4 flex items-center justify-between">
+                <h3 className="text-xl font-extrabold text-zinc-900  flex items-center gap-2">
                   <Plus size={20} className="text-accent" /> Tambah Kajian Secara Manual
                 </h3>
                 <button 
                   onClick={() => setShowCreateManualModal(false)}
-                  className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-zinc-400"
+                  className="p-2 hover:bg-zinc-100  rounded-full transition-colors text-zinc-400"
                 >
                   <X size={18} />
                 </button>
@@ -1222,7 +1222,7 @@ export default function AiKajianPage() {
                     placeholder="Masukkan judul materi kajian..."
                     value={createTitle}
                     onChange={(e) => handleCreateTitleChange(e.target.value)}
-                    className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 px-4 focus:outline-none focus:border-accent text-sm"
+                    className="w-full bg-zinc-50  border border-zinc-200  rounded-xl py-3 px-4 focus:outline-none focus:border-accent text-sm"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -1233,7 +1233,7 @@ export default function AiKajianPage() {
                       required
                       value={createYear}
                       onChange={(e) => setCreateYear(e.target.value)}
-                      className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 px-4 focus:outline-none focus:border-accent text-sm"
+                      className="w-full bg-zinc-50  border border-zinc-200  rounded-xl py-3 px-4 focus:outline-none focus:border-accent text-sm"
                     />
                   </div>
                   <div>
@@ -1241,7 +1241,7 @@ export default function AiKajianPage() {
                     <select
                       value={createFolder}
                       onChange={(e) => setCreateFolder(e.target.value)}
-                      className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 px-4 focus:outline-none focus:border-accent text-sm"
+                      className="w-full bg-zinc-50  border border-zinc-200  rounded-xl py-3 px-4 focus:outline-none focus:border-accent text-sm"
                     >
                       {folders.map((f) => (
                         <option key={f.id} value={f.id}>
@@ -1258,7 +1258,7 @@ export default function AiKajianPage() {
                     required
                     value={createSlug}
                     onChange={(e) => setCreateSlug(e.target.value)}
-                    className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 px-4 focus:outline-none focus:border-accent font-mono text-xs"
+                    className="w-full bg-zinc-50  border border-zinc-200  rounded-xl py-3 px-4 focus:outline-none focus:border-accent font-mono text-xs"
                   />
                 </div>
                 <div>
@@ -1269,15 +1269,15 @@ export default function AiKajianPage() {
                     value={createText}
                     onChange={(e) => setCreateText(e.target.value)}
                     rows={10}
-                    className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl py-3 px-4 focus:outline-none focus:border-accent font-sans text-sm resize-y custom-scrollbar"
+                    className="w-full bg-zinc-50  border border-zinc-200  rounded-xl py-3 px-4 focus:outline-none focus:border-accent font-sans text-sm resize-y custom-scrollbar"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-black/5 dark:border-white/5">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-black/5 ">
                 <button
                   onClick={() => setShowCreateManualModal(false)}
-                  className="px-5 py-2.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-xl font-bold text-sm transition-colors"
+                  className="px-5 py-2.5 bg-zinc-100  hover:bg-zinc-200  rounded-xl font-bold text-sm transition-colors"
                 >
                   Batal
                 </button>

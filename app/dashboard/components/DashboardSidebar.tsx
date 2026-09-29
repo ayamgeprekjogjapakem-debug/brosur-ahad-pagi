@@ -13,6 +13,11 @@ import { createClient } from '@/utils/supabase/client';
 export default function DashboardSidebar() {
   const pathname = usePathname();
   const router = useRouter();
+
+  if (pathname.startsWith('/dashboard/hadist9imam')) {
+    return null;
+  }
+
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
@@ -47,10 +52,6 @@ export default function DashboardSidebar() {
     router.refresh();
   };
 
-  // Sembunyikan sidebar utama jika sedang berada di dalam menu /dashboard/hadist
-  if (pathname?.startsWith('/dashboard/hadist')) {
-    return null;
-  }
 
   const navGroups = [
     {
@@ -61,6 +62,7 @@ export default function DashboardSidebar() {
         { name: 'Data Brosur', href: '/dashboard/data', icon: Database },
         { name: 'Analisis Pencarian', href: '/dashboard/search-analyzer', icon: Search },
         { name: 'Hadist Sumber Brosur', href: '/dashboard/hadist', icon: BookMarked },
+        { name: 'Hadist 9 Imam', href: '/dashboard/hadist9imam', icon: BookMarked },
         { name: 'Hadist dari API', href: '/dashboard/hadist-api', icon: BookOpen },
         { name: 'Data Quran', href: '/dashboard/quran', icon: BookOpen },
         { name: 'Kotak Masukan', href: '/dashboard/masukan', icon: MessageSquare },
@@ -99,31 +101,31 @@ export default function DashboardSidebar() {
     <aside 
       className={`${
         isMinimized ? 'w-20' : 'w-64'
-      } bg-white/85 dark:bg-zinc-900/85 backdrop-blur-3xl md:rounded-3xl border border-black/5 dark:border-white/10 hidden md:flex flex-col shrink-0 h-full relative z-20 shadow-sm ${isMounted ? 'transition-all duration-300' : ''} overflow-hidden`}
+      } bg-white/85  backdrop-blur-3xl md:rounded-3xl border border-black/5  hidden md:flex flex-col shrink-0 h-full relative z-20 shadow-sm ${isMounted ? 'transition-all duration-300' : ''} overflow-hidden`}
     >
-      <div className={`p-6 flex items-center ${isMinimized ? 'justify-center' : 'justify-start'} border-b border-black/[0.04] dark:border-white/[0.04]`}>
+      <div className={`p-6 flex items-center ${isMinimized ? 'justify-center' : 'justify-start'} border-b border-black/[0.04] [0.04]`}>
         <Link href="/" className="flex items-center gap-3 group" title="Ke Beranda">
           <div className="w-10 h-10 bg-gradient-to-tr from-accent to-accent/80 rounded-2xl flex items-center justify-center shadow-lg shadow-accent/30 group-hover:scale-105 transition-transform duration-300 shrink-0">
             <BookOpen className="text-white" size={20} />
           </div>
           {!isMinimized && (
             <div className="flex flex-col overflow-hidden">
-              <span className="font-extrabold text-[17px] tracking-tight text-zinc-900 dark:text-zinc-100 truncate">Ulil Albab</span>
+              <span className="font-extrabold text-[17px] tracking-tight text-zinc-900  truncate">Ulil Albab</span>
               <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Admin</span>
             </div>
           )}
         </Link>
       </div>
       
-      <nav className="flex-1 px-3 py-4 space-y-4 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-zinc-700 scrollbar-track-transparent">
+      <nav className="flex-1 px-3 py-4 space-y-4 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-300  scrollbar-track-transparent">
         {navGroups.map((group, groupIdx) => (
           <div key={group.label}>
             {!isMinimized ? (
-              <span className="block px-4 pb-2 text-[11px] font-extrabold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+              <span className="block px-4 pb-2 text-[11px] font-extrabold uppercase tracking-widest text-zinc-400 ">
                 {group.label}
               </span>
             ) : (
-              groupIdx > 0 && <div className="my-2 border-t border-black/5 dark:border-white/5" />
+              groupIdx > 0 && <div className="my-2 border-t border-black/5 " />
             )}
             <div className="space-y-1">
               {group.items.map((item) => {
@@ -138,8 +140,8 @@ export default function DashboardSidebar() {
                       isMinimized ? 'justify-center px-2 py-3' : 'gap-3.5 px-4 py-3'
                     } rounded-2xl font-semibold text-sm transition-all duration-300 ${
                       isActive 
-                        ? 'bg-white dark:bg-zinc-800 text-accent shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.2)]' 
-                        : 'text-zinc-500 hover:bg-black/5 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-zinc-100 active:scale-95'
+                        ? 'bg-white  text-accent shadow-[0_4px_20px_rgba(0,0,0,0.03)] [0_4px_20px_rgba(0,0,0,0.2)]' 
+                        : 'text-zinc-500 hover:bg-black/5  hover:text-zinc-900  active:scale-95'
                     }`}
                   >
                     <Icon size={18} className={isActive ? 'text-accent shrink-0' : 'text-zinc-400 shrink-0'} strokeWidth={isActive ? 2.5 : 2} />
@@ -152,14 +154,14 @@ export default function DashboardSidebar() {
         ))}
       </nav>
 
-      <div className="p-3 border-t border-black/[0.04] dark:border-white/[0.04]">
+      <div className="p-3 border-t border-black/[0.04] [0.04]">
         <button 
           onClick={handleLogout}
           disabled={isLoggingOut}
           title={isMinimized ? 'Keluar' : undefined}
           className={`w-full flex items-center ${
             isMinimized ? 'justify-center py-3.5' : 'justify-center gap-2 px-4 py-3.5'
-          } bg-zinc-100 dark:bg-zinc-900 hover:bg-red-500 hover:text-white dark:hover:bg-red-500 text-zinc-600 dark:text-zinc-400 rounded-2xl font-semibold text-sm transition-all duration-300 disabled:opacity-50 group`}
+          } bg-zinc-100  hover:bg-red-500 hover:text-white  text-zinc-600  rounded-2xl font-semibold text-sm transition-all duration-300 disabled:opacity-50 group`}
         >
           {isLoggingOut ? (
             <Loader2 size={18} className="animate-spin shrink-0" />

@@ -282,25 +282,25 @@ export default function KalenderPage() {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         
         {/* World Clocks */}
-        <div className="xl:col-span-2 bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-zinc-200/50 dark:border-zinc-800/50 rounded-[2rem] p-6 shadow-sm flex flex-col justify-between">
+        <div className="xl:col-span-2 bg-white/60  backdrop-blur-xl border border-zinc-200/50  rounded-[2rem] p-6 shadow-sm flex flex-col justify-between">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-accent/10 dark:bg-accent/20 flex items-center justify-center text-accent">
+            <div className="w-10 h-10 rounded-xl bg-accent/10  flex items-center justify-center text-accent">
               <Globe className="w-5 h-5" strokeWidth={2.5} />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">Jam Dunia</h2>
-              <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Real-time sinkronisasi zona waktu</p>
+              <h2 className="text-lg font-bold text-zinc-900  tracking-tight">Jam Dunia</h2>
+              <p className="text-xs font-medium text-zinc-500 ">Real-time sinkronisasi zona waktu</p>
             </div>
           </div>
           <div className="flex flex-wrap gap-3 mt-auto">
             {timezones.map(tz => {
               const time = getTimeParts(tz.tz);
               return (
-                <div key={tz.name} className="flex-grow flex flex-col p-5 bg-white dark:bg-[#0c0c0e] rounded-2xl border border-zinc-200/80 dark:border-white/[0.04] shadow-sm hover:border-accent/40 dark:hover:border-accent/40 hover:-translate-y-0.5 transition-all min-w-[140px]">
-                  <span className="text-[10px] font-extrabold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-1.5">{tz.name}</span>
+                <div key={tz.name} className="flex-grow flex flex-col p-5 bg-white [#0c0c0e] rounded-2xl border border-zinc-200/80 [0.04] shadow-sm hover:border-accent/40  hover:-translate-y-0.5 transition-all min-w-[140px]">
+                  <span className="text-[10px] font-extrabold text-zinc-400  uppercase tracking-widest mb-1.5">{tz.name}</span>
                   <div className="flex items-baseline font-mono tracking-tighter">
-                    <span className="text-3xl font-black text-zinc-900 dark:text-white">{time.h}:{time.m}</span>
-                    <span className="text-sm font-bold text-zinc-400 dark:text-zinc-600 ml-1">:{time.s}</span>
+                    <span className="text-3xl font-black text-zinc-900 ">{time.h}:{time.m}</span>
+                    <span className="text-sm font-bold text-zinc-400  ml-1">:{time.s}</span>
                   </div>
                 </div>
               );
@@ -309,22 +309,22 @@ export default function KalenderPage() {
         </div>
 
         {/* Calendar Settings */}
-        <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-zinc-200/50 dark:border-zinc-800/50 rounded-[2rem] p-6 shadow-sm flex flex-col gap-5">
+        <div className="bg-white/60  backdrop-blur-xl border border-zinc-200/50  rounded-[2rem] p-6 shadow-sm flex flex-col gap-5">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-600 dark:text-zinc-300">
+            <div className="w-10 h-10 rounded-xl bg-zinc-100  flex items-center justify-center text-zinc-600 ">
               <Settings2 className="w-5 h-5" strokeWidth={2.5} />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">Pengaturan</h3>
-              <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Konfigurasi sumber kalender</p>
+              <h3 className="text-lg font-bold text-zinc-900  tracking-tight">Pengaturan</h3>
+              <p className="text-xs font-medium text-zinc-500 ">Konfigurasi sumber kalender</p>
             </div>
           </div>
           
           <div className="space-y-4 flex-1 flex flex-col justify-center">
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest px-1">Wilayah / Kota</label>
+              <label className="text-[10px] font-bold text-zinc-400  uppercase tracking-widest px-1">Wilayah / Kota</label>
               <select 
-                className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 text-sm font-medium rounded-xl p-3 outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all cursor-pointer shadow-sm appearance-none"
+                className="w-full bg-white  border border-zinc-200  text-zinc-800  text-sm font-medium rounded-xl p-3 outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all cursor-pointer shadow-sm appearance-none"
                 value={selectedLocation.city}
                 onChange={(e) => {
                   const loc = LOCATIONS.find(l => l.city === e.target.value);
@@ -339,9 +339,9 @@ export default function KalenderPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest px-1">Sumber API</label>
+                <label className="text-[10px] font-bold text-zinc-400  uppercase tracking-widest px-1">Sumber API</label>
                 <select 
-                  className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 text-sm font-medium rounded-xl p-3 outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all cursor-pointer shadow-sm appearance-none truncate"
+                  className="w-full bg-white  border border-zinc-200  text-zinc-800  text-sm font-medium rounded-xl p-3 outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all cursor-pointer shadow-sm appearance-none truncate"
                   value={selectedApi}
                   onChange={(e) => setSelectedApi(e.target.value)}
                 >
@@ -352,9 +352,9 @@ export default function KalenderPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest px-1">Metode</label>
+                <label className="text-[10px] font-bold text-zinc-400  uppercase tracking-widest px-1">Metode</label>
                 <select 
-                  className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 text-sm font-medium rounded-xl p-3 outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all cursor-pointer shadow-sm appearance-none disabled:opacity-50 disabled:bg-zinc-50 dark:disabled:bg-zinc-900/50 truncate"
+                  className="w-full bg-white  border border-zinc-200  text-zinc-800  text-sm font-medium rounded-xl p-3 outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all cursor-pointer shadow-sm appearance-none disabled:opacity-50 disabled:bg-zinc-50  truncate"
                   value={selectedMethod}
                   onChange={(e) => setSelectedMethod(Number(e.target.value))}
                   disabled={selectedApi !== 'aladhan'}
@@ -367,15 +367,15 @@ export default function KalenderPage() {
             </div>
             
             <div className="space-y-1.5 mt-2">
-              <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest px-1 flex justify-between items-center">
+              <label className="text-[10px] font-bold text-zinc-400  uppercase tracking-widest px-1 flex justify-between items-center">
                 <span className="flex items-center gap-1.5">
                   Koreksi Hijriah
                   {isCalibrating && <span className="animate-pulse w-2 h-2 rounded-full bg-accent inline-block"></span>}
                 </span>
                 <span className="text-accent font-black">{hijriAdjustment > 0 ? `+${hijriAdjustment}` : hijriAdjustment} Hari</span>
               </label>
-              <div className="flex items-center gap-3 bg-white dark:bg-zinc-900 p-2 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm relative overflow-hidden group">
-                <button onClick={() => setHijriAdjustment(prev => prev - 1)} className="w-8 h-8 flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition text-zinc-600 dark:text-zinc-300 font-bold shrink-0 z-10">-</button>
+              <div className="flex items-center gap-3 bg-white  p-2 rounded-xl border border-zinc-200  shadow-sm relative overflow-hidden group">
+                <button onClick={() => setHijriAdjustment(prev => prev - 1)} className="w-8 h-8 flex items-center justify-center bg-zinc-100  rounded-lg hover:bg-zinc-200  transition text-zinc-600  font-bold shrink-0 z-10">-</button>
                 <input 
                   type="range" 
                   min="-3" 
@@ -383,12 +383,12 @@ export default function KalenderPage() {
                   step="1" 
                   value={hijriAdjustment}
                   onChange={(e) => setHijriAdjustment(parseInt(e.target.value))}
-                  className="w-full accent-accent bg-zinc-200 dark:bg-zinc-800 h-1 rounded-full outline-none appearance-none cursor-pointer z-10"
+                  className="w-full accent-accent bg-zinc-200  h-1 rounded-full outline-none appearance-none cursor-pointer z-10"
                 />
-                <button onClick={() => setHijriAdjustment(prev => prev + 1)} className="w-8 h-8 flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition text-zinc-600 dark:text-zinc-300 font-bold shrink-0 z-10">+</button>
+                <button onClick={() => setHijriAdjustment(prev => prev + 1)} className="w-8 h-8 flex items-center justify-center bg-zinc-100  rounded-lg hover:bg-zinc-200  transition text-zinc-600  font-bold shrink-0 z-10">+</button>
                 
                 {/* Auto Sync Button Overlay */}
-                <div className="absolute inset-0 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
+                <div className="absolute inset-0 bg-white/95  backdrop-blur-sm z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
                   <button 
                     onClick={autoCalibrate}
                     disabled={isCalibrating}
@@ -401,8 +401,8 @@ export default function KalenderPage() {
             </div>
 
             {/* Filtrasi Event & Tampilan */}
-            <div className="space-y-3 mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-800">
-              <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest px-1">Filtrasi Event & Tampilan</label>
+            <div className="space-y-3 mt-4 pt-4 border-t border-zinc-200 ">
+              <label className="text-[10px] font-bold text-zinc-400  uppercase tracking-widest px-1">Filtrasi Event & Tampilan</label>
               
               <div className="space-y-2">
                 {[
@@ -411,14 +411,14 @@ export default function KalenderPage() {
                   { id: 'showWeton', label: 'Tampilkan Weton (Pasaran Jawa)' },
                   { id: 'showHolidays', label: 'Tampilkan Libur Nasional' }
                 ].map(toggle => (
-                  <label key={toggle.id} className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-900/50 p-2.5 rounded-xl border border-zinc-100 dark:border-zinc-800 cursor-pointer hover:border-accent/30 transition-colors">
+                  <label key={toggle.id} className="flex items-center gap-3 bg-zinc-50  p-2.5 rounded-xl border border-zinc-100  cursor-pointer hover:border-accent/30 transition-colors">
                     <input 
                       type="checkbox" 
                       className="w-4 h-4 text-accent rounded focus:ring-accent accent-accent"
                       checked={filters[toggle.id as keyof typeof filters]}
                       onChange={(e) => setFilters({...filters, [toggle.id]: e.target.checked})}
                     />
-                    <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">{toggle.label}</span>
+                    <span className="text-xs font-semibold text-zinc-700 ">{toggle.label}</span>
                   </label>
                 ))}
               </div>
@@ -440,7 +440,7 @@ export default function KalenderPage() {
                 setPublicStandard(newData);
                 alert('Berhasil disimpan sebagai Standar Publik!');
               }}
-              className="mt-4 w-full py-3 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl font-bold hover:bg-accent dark:hover:bg-accent hover:text-white transition-colors flex items-center justify-center gap-2 shadow-sm text-sm"
+              className="mt-4 w-full py-3 bg-zinc-900  text-white  rounded-xl font-bold hover:bg-accent  hover:text-white transition-colors flex items-center justify-center gap-2 shadow-sm text-sm"
             >
               Simpan Standar Publik
             </button>
@@ -449,15 +449,15 @@ export default function KalenderPage() {
       </div>
 
       {/* SECTION: Analisis Akurasi & Publikasi */}
-      <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 rounded-[2rem] p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+      <div className="bg-emerald-50  border border-emerald-200  rounded-[2rem] p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="flex-1">
-           <h3 className="text-emerald-900 dark:text-emerald-400 font-bold text-lg mb-3 flex items-center gap-2">
-             <Sparkles className="w-5 h-5 text-emerald-600 dark:text-emerald-500"/> Analisis Akurasi Hari Ini
+           <h3 className="text-emerald-900  font-bold text-lg mb-3 flex items-center gap-2">
+             <Sparkles className="w-5 h-5 text-emerald-600 "/> Analisis Akurasi Hari Ini
            </h3>
-           <div className="text-emerald-800 dark:text-emerald-300/80 text-sm leading-relaxed max-w-3xl space-y-2">
+           <div className="text-emerald-800  text-sm leading-relaxed max-w-3xl space-y-2">
              <p>Secara Astronomi Murni (Global API), hari ini terdeteksi sebagai tanggal <b>{aladhanTodayRaw || '...'} Hijriah</b>.</p>
              <p>Menurut Keputusan Sidang Isbat Kemenag (Mabims API), hari ini adalah tanggal <b>{mabimsTodayRaw || '...'} Hijriah</b>.</p>
-             <div className="font-semibold bg-emerald-100 dark:bg-emerald-900/40 p-3 rounded-xl mt-3 inline-block border border-emerald-200 dark:border-emerald-800/50">
+             <div className="font-semibold bg-emerald-100  p-3 rounded-xl mt-3 inline-block border border-emerald-200 ">
                {aladhanTodayRaw !== null && mabimsTodayRaw !== null 
                  ? aladhanTodayRaw === mabimsTodayRaw
                     ? "✨ Kedua sistem tersinkronisasi. Anda dapat membiarkan Slider Koreksi di angka 0."
@@ -467,60 +467,60 @@ export default function KalenderPage() {
            </div>
         </div>
 
-        <div className="bg-white dark:bg-[#111113] p-5 rounded-2xl border border-emerald-100 dark:border-emerald-900/30 min-w-[300px] shadow-sm w-full md:w-auto shrink-0">
-          <h4 className="text-[11px] font-black text-emerald-500 dark:text-emerald-600 uppercase tracking-widest mb-4">Live: Status Kalender Publik</h4>
+        <div className="bg-white [#111113] p-5 rounded-2xl border border-emerald-100  min-w-[300px] shadow-sm w-full md:w-auto shrink-0">
+          <h4 className="text-[11px] font-black text-emerald-500  uppercase tracking-widest mb-4">Live: Status Kalender Publik</h4>
           {publicStandard ? (
-            <div className="space-y-3 text-sm text-zinc-600 dark:text-zinc-400 font-medium">
-              <div className="flex justify-between items-center border-b border-zinc-100 dark:border-zinc-800 pb-2">
+            <div className="space-y-3 text-sm text-zinc-600  font-medium">
+              <div className="flex justify-between items-center border-b border-zinc-100  pb-2">
                 <span>API Aktif:</span> 
-                <span className="font-bold text-emerald-700 dark:text-emerald-400">{API_SOURCES.find(a => a.id === publicStandard.api)?.name || publicStandard.api}</span>
+                <span className="font-bold text-emerald-700 ">{API_SOURCES.find(a => a.id === publicStandard.api)?.name || publicStandard.api}</span>
               </div>
-              <div className="flex justify-between items-center border-b border-zinc-100 dark:border-zinc-800 pb-2">
+              <div className="flex justify-between items-center border-b border-zinc-100  pb-2">
                 <span>Wilayah:</span> 
-                <span className="font-bold text-emerald-700 dark:text-emerald-400">{publicStandard.city}</span>
+                <span className="font-bold text-emerald-700 ">{publicStandard.city}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span>Nilai Koreksi:</span> 
-                <span className="font-black text-emerald-700 dark:text-emerald-400">{publicStandard.adjustment > 0 ? `+${publicStandard.adjustment}` : publicStandard.adjustment} Hari</span>
+                <span className="font-black text-emerald-700 ">{publicStandard.adjustment > 0 ? `+${publicStandard.adjustment}` : publicStandard.adjustment} Hari</span>
               </div>
             </div>
           ) : (
-            <div className="text-sm text-zinc-400 dark:text-zinc-600 italic py-4 text-center">Belum ada standar publik yang disimpan. Tekan tombol "Simpan Standar Publik" pada menu pengaturan di atas.</div>
+            <div className="text-sm text-zinc-400  italic py-4 text-center">Belum ada standar publik yang disimpan. Tekan tombol "Simpan Standar Publik" pada menu pengaturan di atas.</div>
           )}
         </div>
       </div>
 
       {/* SECTION: Kalender Utama */}
-      <div className="bg-white dark:bg-[#0c0c0e] border border-zinc-200/50 dark:border-white/[0.05] rounded-[2.5rem] p-6 md:p-10 shadow-xl shadow-zinc-200/20 dark:shadow-none relative min-h-[600px] flex flex-col">
+      <div className="bg-white [#0c0c0e] border border-zinc-200/50 [0.05] rounded-[2.5rem] p-6 md:p-10 shadow-xl shadow-zinc-200/20  relative min-h-[600px] flex flex-col">
         
         {/* Header Kalender */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10 pb-6 border-b border-zinc-100 dark:border-zinc-800/50">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10 pb-6 border-b border-zinc-100 ">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-accent to-accent/80 flex items-center justify-center text-white shadow-lg shadow-accent/20">
               <CalendarDays className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl md:text-3xl font-extrabold text-zinc-900 dark:text-white tracking-tight">Jadwal & Penamaan</h1>
-              <div className="flex items-center mt-1.5 gap-2 text-sm font-medium text-zinc-500 dark:text-zinc-400">
+              <h1 className="text-2xl md:text-3xl font-extrabold text-zinc-900  tracking-tight">Jadwal & Penamaan</h1>
+              <div className="flex items-center mt-1.5 gap-2 text-sm font-medium text-zinc-500 ">
                 <MapPin className="w-3.5 h-3.5 text-accent" />
                 {selectedLocation.label}
-                <span className="w-1 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700"></span>
-                <span className="text-xs bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full text-zinc-600 dark:text-zinc-300">
+                <span className="w-1 h-1 rounded-full bg-zinc-300 "></span>
+                <span className="text-xs bg-zinc-100  px-2 py-0.5 rounded-full text-zinc-600 ">
                   {METHODS.find(m => m.value === (selectedApi !== 'aladhan' ? 20 : selectedMethod))?.label}
                 </span>
               </div>
             </div>
           </div>
           
-          <div className="flex items-center gap-2 bg-zinc-50/80 dark:bg-zinc-900/80 backdrop-blur-md p-2 rounded-2xl border border-zinc-200/80 dark:border-zinc-800 shrink-0 shadow-sm">
+          <div className="flex items-center gap-2 bg-zinc-50/80  backdrop-blur-md p-2 rounded-2xl border border-zinc-200/80  shrink-0 shadow-sm">
             <button 
               onClick={handlePrevMonth}
-              className="p-2 hover:bg-white dark:hover:bg-zinc-800 hover:shadow-sm rounded-xl transition-all text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
+              className="p-2 hover:bg-white  hover:shadow-sm rounded-xl transition-all text-zinc-500 hover:text-zinc-900  "
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
             
-            <div className="flex items-center gap-1 bg-white dark:bg-zinc-800 px-3 py-1.5 rounded-xl border border-zinc-100 dark:border-zinc-700 shadow-sm">
+            <div className="flex items-center gap-1 bg-white  px-3 py-1.5 rounded-xl border border-zinc-100  shadow-sm">
               <select 
                 value={currentDate.getMonth()}
                 onChange={(e) => {
@@ -528,7 +528,7 @@ export default function KalenderPage() {
                   newDate.setMonth(parseInt(e.target.value));
                   setCurrentDate(newDate);
                 }}
-                className="bg-transparent font-extrabold text-[15px] text-zinc-900 dark:text-white capitalize tracking-tight outline-none cursor-pointer appearance-none hover:text-accent dark:hover:text-accent transition-colors"
+                className="bg-transparent font-extrabold text-[15px] text-zinc-900  capitalize tracking-tight outline-none cursor-pointer appearance-none hover:text-accent  transition-colors"
               >
                 {Array.from({length: 12}).map((_, i) => (
                   <option key={i} value={i} className="text-black">{format(new Date(2020, i, 1), 'MMMM', {locale: id})}</option>
@@ -541,7 +541,7 @@ export default function KalenderPage() {
                   newDate.setFullYear(parseInt(e.target.value));
                   setCurrentDate(newDate);
                 }}
-                className="bg-transparent text-[14px] font-bold text-zinc-500 dark:text-zinc-400 outline-none cursor-pointer appearance-none hover:text-accent dark:hover:text-accent transition-colors"
+                className="bg-transparent text-[14px] font-bold text-zinc-500  outline-none cursor-pointer appearance-none hover:text-accent  transition-colors"
               >
                 {Array.from({length: 30}).map((_, i) => {
                   const y = new Date().getFullYear() - 15 + i;
@@ -552,7 +552,7 @@ export default function KalenderPage() {
 
             <button 
               onClick={handleNextMonth}
-              className="p-2 hover:bg-white dark:hover:bg-zinc-800 hover:shadow-sm rounded-xl transition-all text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
+              className="p-2 hover:bg-white  hover:shadow-sm rounded-xl transition-all text-zinc-500 hover:text-zinc-900  "
             >
               <ChevronRight className="w-5 h-5" />
             </button>
@@ -560,7 +560,7 @@ export default function KalenderPage() {
         </div>
 
         {error && (
-          <div className="bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 p-4 rounded-2xl mb-8 text-sm font-medium flex items-center border border-red-100 dark:border-red-500/20">
+          <div className="bg-red-50  text-red-600  p-4 rounded-2xl mb-8 text-sm font-medium flex items-center border border-red-100 ">
             <X className="w-4 h-4 mr-2 shrink-0" /> {error}
           </div>
         )}
@@ -568,15 +568,15 @@ export default function KalenderPage() {
         {/* Grid Kalender */}
         <div className="w-full relative flex-1 flex flex-col">
           {loading && (
-            <div className="absolute inset-0 z-10 bg-white/60 dark:bg-[#0c0c0e]/60 backdrop-blur-sm flex justify-center items-center rounded-3xl">
-              <div className="w-12 h-12 rounded-2xl border-4 border-zinc-100 dark:border-zinc-800 border-t-accent dark:border-t-accent animate-spin"></div>
+            <div className="absolute inset-0 z-10 bg-white/60 [#0c0c0e]/60 backdrop-blur-sm flex justify-center items-center rounded-3xl">
+              <div className="w-12 h-12 rounded-2xl border-4 border-zinc-100  border-t-accent  animate-spin"></div>
             </div>
           )}
 
           {/* Header Hari */}
           <div className="grid grid-cols-7 gap-3 md:gap-4 mb-4">
             {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map((day, idx) => (
-              <div key={day} className={`text-center font-bold text-[11px] md:text-xs tracking-widest uppercase py-2 ${idx === 0 ? 'text-red-500 dark:text-red-400' : 'text-zinc-400 dark:text-zinc-500'}`}>
+              <div key={day} className={`text-center font-bold text-[11px] md:text-xs tracking-widest uppercase py-2 ${idx === 0 ? 'text-red-500 ' : 'text-zinc-400 '}`}>
                 {day}
               </div>
             ))}
@@ -585,7 +585,7 @@ export default function KalenderPage() {
           <div className="grid grid-cols-7 gap-3 md:gap-4 auto-rows-fr flex-1">
             {/* Empty cells sebelum awal bulan */}
             {emptyCellsPrefix.map((i) => (
-              <div key={`empty-${i}`} className="min-h-[90px] md:min-h-[120px] rounded-2xl bg-zinc-50/50 dark:bg-zinc-900/30 border border-zinc-100/50 dark:border-zinc-800/30 opacity-40"></div>
+              <div key={`empty-${i}`} className="min-h-[90px] md:min-h-[120px] rounded-2xl bg-zinc-50/50  border border-zinc-100/50  opacity-40"></div>
             ))}
             
             {/* Sel hari dari data */}
@@ -630,32 +630,32 @@ export default function KalenderPage() {
                   key={index}
                   onClick={() => setSelectedDay(day)}
                   className={`relative min-h-[110px] md:min-h-[130px] p-2 md:p-3 rounded-2xl border text-left group overflow-hidden ${
-                    holidayLabel ? 'bg-rose-50/50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/50' :
-                    isPuasa ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/50' :
+                    holidayLabel ? 'bg-rose-50/50  border-rose-200 ' :
+                    isPuasa ? 'bg-emerald-50/50  border-emerald-200 ' :
                     isToday 
-                      ? 'border-accent bg-accent/[0.03] dark:bg-accent/10 ring-2 ring-accent/20 dark:ring-accent/30 shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-none' 
-                      : 'border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-[#111113] hover:border-accent/40 dark:hover:border-accent/50 hover:shadow-lg hover:shadow-zinc-200/40 dark:hover:shadow-none transition-all duration-300 hover:-translate-y-0.5'
+                      ? 'border-accent bg-accent/[0.03]  ring-2 ring-accent/20  shadow-[0_4px_20px_rgba(0,0,0,0.03)] ' 
+                      : 'border-zinc-200/80  bg-white [#111113] hover:border-accent/40  hover:shadow-lg hover:shadow-zinc-200/40  transition-all duration-300 hover:-translate-y-0.5'
                   }`}
                 >
                   <div className="flex flex-col h-full justify-between">
                     <div className="flex justify-between items-start">
-                      <span className={`text-xl md:text-3xl font-black tracking-tight ${isSunday || holidayLabel ? 'text-red-500 dark:text-red-400' : isToday ? 'text-accent' : 'text-zinc-800 dark:text-zinc-200'}`}>
+                      <span className={`text-xl md:text-3xl font-black tracking-tight ${isSunday || holidayLabel ? 'text-red-500 ' : isToday ? 'text-accent' : 'text-zinc-800 '}`}>
                         {dateNum}
                       </span>
                       <span className={`text-[10px] md:text-xs font-bold px-2 py-0.5 rounded-lg ${
-                        holidayLabel ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300' :
-                        isPuasa ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' :
-                        isToday ? 'bg-accent/20 text-accent dark:bg-accent/20 dark:text-accent-300' : 
-                        'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400 group-hover:bg-accent/10 group-hover:text-accent transition-colors'
+                        holidayLabel ? 'bg-rose-100 text-rose-700  ' :
+                        isPuasa ? 'bg-emerald-100 text-emerald-700  ' :
+                        isToday ? 'bg-accent/20 text-accent  ' : 
+                        'bg-zinc-100 text-zinc-500   group-hover:bg-accent/10 group-hover:text-accent transition-colors'
                       }`}>
                         {day.date.hijri.day}
                       </span>
                     </div>
                     
                     <div className="flex flex-col gap-1 mt-1">
-                      {pasaran && <span className="text-[10px] font-bold text-amber-600 dark:text-amber-500 tracking-wider uppercase">{pasaran}</span>}
-                      {holidayLabel && <span className="text-[9px] font-bold bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 px-1.5 py-0.5 rounded-md inline-block max-w-max truncate border border-rose-200 dark:border-rose-800/50">{holidayLabel}</span>}
-                      {isPuasa && <span className="text-[9px] font-bold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded-md inline-block max-w-max truncate border border-emerald-200 dark:border-emerald-800/50">{puasaLabel}</span>}
+                      {pasaran && <span className="text-[10px] font-bold text-amber-600  tracking-wider uppercase">{pasaran}</span>}
+                      {holidayLabel && <span className="text-[9px] font-bold bg-rose-100  text-rose-700  px-1.5 py-0.5 rounded-md inline-block max-w-max truncate border border-rose-200 ">{holidayLabel}</span>}
+                      {isPuasa && <span className="text-[9px] font-bold bg-emerald-100  text-emerald-700  px-1.5 py-0.5 rounded-md inline-block max-w-max truncate border border-emerald-200 ">{puasaLabel}</span>}
                     </div>
 
                     <div className="mt-auto hidden md:block">
@@ -675,29 +675,29 @@ export default function KalenderPage() {
 
       {/* POPUP MODAL */}
       {selectedDay && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-900/40 dark:bg-black/60 backdrop-blur-md transition-opacity" onClick={() => setSelectedDay(null)}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-900/40  backdrop-blur-md transition-opacity" onClick={() => setSelectedDay(null)}>
           <div 
-            className="bg-white dark:bg-[#0c0c0e] rounded-[2.5rem] p-8 md:p-10 max-w-sm w-full shadow-2xl dark:shadow-none dark:border dark:border-white/10 relative transform transition-all scale-100 animate-in zoom-in-95 duration-200"
+            className="bg-white [#0c0c0e] rounded-[2.5rem] p-8 md:p-10 max-w-sm w-full shadow-2xl    relative transform transition-all scale-100 animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             <button 
               onClick={() => setSelectedDay(null)}
-              className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center bg-zinc-100 dark:bg-zinc-800/80 text-zinc-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/20 rounded-full transition-colors"
+              className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center bg-zinc-100  text-zinc-500 hover:text-red-500 hover:bg-red-50  rounded-full transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
             
             <div className="mb-8 pr-6">
-              <h3 className="text-4xl font-black text-zinc-900 dark:text-white mb-2 tracking-tight">
+              <h3 className="text-4xl font-black text-zinc-900  mb-2 tracking-tight">
                 {selectedDay.date.gregorian.day} {selectedDay.date.gregorian.month.en}
               </h3>
-              <p className="text-accent font-bold text-lg border-b border-zinc-100 dark:border-zinc-800 pb-5">
+              <p className="text-accent font-bold text-lg border-b border-zinc-100  pb-5">
                 {selectedDay.date.hijri.day} {selectedDay.date.hijri.month.en} {selectedDay.date.hijri.year} H
               </p>
             </div>
             
             <div className="space-y-4">
-              <h4 className="font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest text-[10px] flex items-center gap-2 mb-2">
+              <h4 className="font-bold text-zinc-400  uppercase tracking-widest text-[10px] flex items-center gap-2 mb-2">
                 <Clock className="w-3.5 h-3.5" /> Jadwal Sholat {selectedLocation.city}
               </h4>
               
@@ -709,9 +709,9 @@ export default function KalenderPage() {
                   { name: 'Maghrib', time: selectedDay.timings.Maghrib },
                   { name: 'Isya', time: selectedDay.timings.Isha },
                 ].map((sholat) => (
-                  <div key={sholat.name} className="flex justify-between items-center px-5 py-3.5 bg-zinc-50 dark:bg-zinc-900/50 rounded-2xl border border-zinc-100/50 dark:border-zinc-800 hover:border-accent/30 transition-colors">
-                    <span className="font-bold text-sm text-zinc-600 dark:text-zinc-300">{sholat.name}</span>
-                    <span className="text-xl font-black text-zinc-900 dark:text-white font-mono tracking-tight">{sholat.time.split(' ')[0]}</span>
+                  <div key={sholat.name} className="flex justify-between items-center px-5 py-3.5 bg-zinc-50  rounded-2xl border border-zinc-100/50  hover:border-accent/30 transition-colors">
+                    <span className="font-bold text-sm text-zinc-600 ">{sholat.name}</span>
+                    <span className="text-xl font-black text-zinc-900  font-mono tracking-tight">{sholat.time.split(' ')[0]}</span>
                   </div>
                 ))}
               </div>
@@ -719,7 +719,7 @@ export default function KalenderPage() {
             
             <button 
               onClick={() => setSelectedDay(null)}
-              className="mt-8 w-full py-4 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-2xl font-bold hover:opacity-90 active:scale-[0.98] transition-all"
+              className="mt-8 w-full py-4 bg-zinc-900  text-white  rounded-2xl font-bold hover:opacity-90 active:scale-[0.98] transition-all"
             >
               Tutup Jadwal
             </button>
