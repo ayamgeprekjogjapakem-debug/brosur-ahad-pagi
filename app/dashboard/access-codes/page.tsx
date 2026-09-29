@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Key, Plus, Trash2, CheckCircle2, XCircle, Loader2, Copy, Edit2, X, Save } from 'lucide-react';
+import { Key, Plus, Trash2, CheckCircle2, XCircle, Loader2, Copy, Edit2, X, Save, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface AccessCode {
@@ -34,6 +34,9 @@ export default function AccessCodesPage() {
   const [editingCode, setEditingCode] = useState<AccessCode | null>(null);
   const [editFeatures, setEditFeatures] = useState<string[]>([]);
   const [savingEdit, setSavingEdit] = useState(false);
+  
+  // Search State
+  const [searchQuery, setSearchQuery] = useState('');
   
   const supabase = createClient();
 
@@ -141,6 +144,11 @@ export default function AccessCodesPage() {
     setSavingEdit(false);
   };
 
+  const filteredCodes = codes.filter(c => 
+    c.code.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    (c.notes && c.notes.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
@@ -156,8 +164,20 @@ export default function AccessCodesPage() {
       <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden flex flex-col">
         {/* Toolbar Data Table */}
         <div className="p-4 border-b border-zinc-200 bg-zinc-50/50 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <h2 className="text-lg font-bold text-zinc-800">Daftar Kode & Hak Akses</h2>
-          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <h2 className="text-lg font-bold text-zinc-800 hidden sm:block">Daftar Kode & Hak Akses</h2>
+          
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto flex-1 sm:justify-end">
+            <div className="relative w-full sm:max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+              <input
+                type="text"
+                placeholder="Cari kode atau nama grup..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 text-sm"
+              />
+            </div>
+            
             <input
               type="text"
               placeholder="Catatan / Nama Grup..."
@@ -193,14 +213,14 @@ export default function AccessCodesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100">
-                {codes.length === 0 ? (
+                {filteredCodes.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-12 text-center text-zinc-500">
-                      Belum ada kode akses yang dibuat.
+                      {searchQuery ? 'Tidak ada kode akses yang cocok dengan pencarian.' : 'Belum ada kode akses yang dibuat.'}
                     </td>
                   </tr>
                 ) : (
-                  codes.map((code) => {
+                  filteredCodes.map((code) => {
                     const features = code.allowed_features || [];
                     const isAll = features.length === AVAILABLE_FEATURES.length;
                     

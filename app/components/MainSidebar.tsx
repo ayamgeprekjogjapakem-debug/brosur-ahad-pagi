@@ -228,6 +228,8 @@ export default function MainSidebar({
                   const premiumCode = localStorage.getItem('mta_premium_access');
                   if (!premiumCode) return false; // Sembunyikan semua jika belum masuk kode
                   
+                  if (menu.id === 'search' || menu.id === 'tersimpan') return true; // Menu dasar selalu muncul jika sudah punya kode
+                  
                   const featuresStr = localStorage.getItem('mta_premium_features');
                   if (featuresStr) {
                     try {
