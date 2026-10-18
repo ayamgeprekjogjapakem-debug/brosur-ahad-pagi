@@ -102,8 +102,7 @@ export default function UsersPage() {
     }
   };
 
-  const handleToggleRole = async (userId: string, currentRole: string) => {
-    const nextRole = currentRole === 'admin' ? 'user' : 'admin';
+  const handleSetRole = async (userId: string, nextRole: string) => {
     setUpdatingId(userId);
     setErrorMsg('');
     setSuccessMsg('');
@@ -133,6 +132,17 @@ export default function UsersPage() {
     }
   };
 
+  const handleToggleRole = (userId: string, currentRole: string) => {
+    // Rotasi role: user -> admin -> super-admin -> user
+    const roleCycle: Record<string, string> = {
+      'user': 'admin',
+      'admin': 'super-admin',
+      'super-admin': 'user',
+    };
+    const nextRole = roleCycle[currentRole] || 'admin';
+    handleSetRole(userId, nextRole);
+  };
+
   const filteredUsers = users.filter((u) => {
     const term = search.toLowerCase();
     return u.name.toLowerCase().includes(term) || u.email.toLowerCase().includes(term);
@@ -148,7 +158,7 @@ export default function UsersPage() {
             <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">Akses Admin & User</h1>
           </div>
           <p className="text-zinc-500 text-sm">
-            Kelola role Admin maupun User serta aktifkan akses untuk seluruh pengguna terdaftar pada sistem.
+            Kelola role Super Admin, Admin, dan User serta aktifkan akses untuk seluruh pengguna terdaftar pada sistem.
           </p>
         </div>
 
@@ -279,18 +289,23 @@ export default function UsersPage() {
                       </td>
 
                       <td className="py-4 px-6">
-                        <button
-                          onClick={() => handleToggleRole(u.id, u.role)}
-                          disabled={isBusy}
-                          className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 border transition-all ${
-                            u.role === 'admin'
-                              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 '
-                              : 'bg-zinc-500/10 border-zinc-500/20 text-zinc-600 '
-                          }`}
-                        >
-                          <Shield size={13} />
-                          <span className="uppercase">{u.role}</span>
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => handleToggleRole(u.id, u.role)}
+                            disabled={isBusy}
+                            title="Klik untuk rotasi role (User -> Admin -> Super Admin)"
+                            className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 border transition-all cursor-pointer ${
+                              u.role === 'super-admin'
+                                ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20'
+                                : u.role === 'admin'
+                                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20'
+                                : 'bg-zinc-500/10 border-zinc-500/20 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-500/20'
+                            }`}
+                          >
+                            <Shield size={13} />
+                            <span className="uppercase">{u.role === 'super-admin' ? 'Super Admin' : u.role === 'admin' ? 'Admin' : 'User'}</span>
+                          </button>
+                        </div>
                       </td>
 
                       <td className="py-4 px-6">

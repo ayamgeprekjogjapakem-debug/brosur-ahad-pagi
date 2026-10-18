@@ -32,12 +32,30 @@ export async function GET() {
     .not('teks_bersih', 'is', null);
 
   const statsMap: Record<string, { total: number, clean: number }> = {};
+  const bookStatsMap: Record<string, { total: number, clean: number }> = {
+    'H1': { total: 0, clean: 0 },
+    'H2': { total: 0, clean: 0 },
+    'H3': { total: 0, clean: 0 },
+    'H4': { total: 0, clean: 0 },
+    'H5': { total: 0, clean: 0 },
+    'H6': { total: 0, clean: 0 },
+    'H7': { total: 0, clean: 0 },
+    'H8': { total: 0, clean: 0 },
+    'H9': { total: 0, clean: 0 },
+  };
   
   if (allBrosurs) {
     for (const b of allBrosurs) {
       if (b.folder_id) {
         if (!statsMap[b.folder_id]) statsMap[b.folder_id] = { total: 0, clean: 0 };
         statsMap[b.folder_id].total++;
+      }
+      const match = b.id?.match(/^(H\d+)/i);
+      if (match) {
+        const bookKey = match[1].toUpperCase();
+        if (bookStatsMap[bookKey]) {
+          bookStatsMap[bookKey].total++;
+        }
       }
     }
   }
@@ -48,6 +66,13 @@ export async function GET() {
         if (!statsMap[b.folder_id]) statsMap[b.folder_id] = { total: 0, clean: 0 };
         statsMap[b.folder_id].clean++;
       }
+      const match = b.id?.match(/^(H\d+)/i);
+      if (match) {
+        const bookKey = match[1].toUpperCase();
+        if (bookStatsMap[bookKey]) {
+          bookStatsMap[bookKey].clean++;
+        }
+      }
     }
   }
 
@@ -56,5 +81,5 @@ export async function GET() {
     stats: statsMap[f.id] || { total: 0, clean: 0 }
   }));
 
-  return NextResponse.json({ folders: enrichedFolders });
+  return NextResponse.json({ folders: enrichedFolders, bookStats: bookStatsMap });
 }

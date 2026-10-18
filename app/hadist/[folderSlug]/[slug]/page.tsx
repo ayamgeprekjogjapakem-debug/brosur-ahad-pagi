@@ -4,9 +4,11 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { use } from 'react';
 import { 
-  ArrowLeft, BookOpen, Loader2, Calendar, FolderArchive, FileText, Book
+  ArrowLeft, BookOpen, Loader2, Calendar, FolderArchive, FileText, Book, Menu
 } from 'lucide-react';
 import Image from 'next/image';
+import MainSidebar from '@/app/components/MainSidebar';
+import HeaderUserDropdown from '@/app/components/HeaderUserDropdown';
 import { createClient } from '@/utils/supabase/client';
 
 export default function PublicHadistDetailPage({ params }: { params: Promise<{ folderSlug: string, slug: string }> }) {
@@ -73,100 +75,123 @@ export default function PublicHadistDetailPage({ params }: { params: Promise<{ f
   }
 
   return (
-    <div className="min-h-screen bg-[#fafafa] text-zinc-900 flex flex-col font-sans selection:bg-emerald-500/30">
+    <div className="flex h-screen bg-[#fafaf9] font-sans selection:bg-emerald-200 overflow-hidden">
       
-      {/* HEADER */}
-      <header className="h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between border-b border-zinc-200/80 bg-white/80 backdrop-blur-2xl sticky top-0 z-50 transition-all">
-        <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-8 h-8 relative flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110">
-            <Image 
-              src="/logo.png" 
-              alt="Logo Ulil Albab" 
-              fill
-              className="object-contain"
-            />
-          </div>
-          <span className="font-bold text-[17px] tracking-tight text-zinc-900 hidden sm:block">Ulil Albab</span>
-        </Link>
-      </header>
+      {/* Sidebar Global */}
+      <MainSidebar />
 
-      <main className="flex-1 max-w-4xl mx-auto w-full px-4 py-8 md:px-8 md:py-12">
-        <Link href="/hadist" className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white text-zinc-600 font-bold text-xs hover:text-emerald-600 hover:bg-emerald-50 transition-colors shadow-sm mb-8 border border-zinc-200">
-          <ArrowLeft size={14} />
-          <span>Kembali ke Pencarian</span>
-        </Link>
+      {/* Main Canvas */}
+      <main className="flex-1 flex flex-col min-w-0 bg-white overflow-y-auto custom-scrollbar">
+        
+        {/* Header */}
+        <header className="h-16 border-b border-slate-100 flex items-center justify-between px-4 bg-white sticky top-0 z-20 shrink-0">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => window.dispatchEvent(new Event('toggle-main-sidebar'))}
+              className="w-10 h-10 border border-slate-200 rounded-xl flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition shadow-sm"
+              title="Toggle Sidebar Menu"
+            >
+              <Menu size={18} />
+            </button>
+
+            <Link 
+              href={`/hadist/${resolvedParams.folderSlug}`} 
+              className="text-xs font-semibold text-slate-500 hover:text-emerald-700 flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition-colors"
+            >
+              <ArrowLeft size={14} />
+              <span>Kembali ke Kitab</span>
+            </Link>
+          </div>
+
+          <HeaderUserDropdown />
+        </header>
 
         {/* Content Wrapper */}
-        <div className="bg-white rounded-[2rem] p-8 md:p-12 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-black/[0.03]">
-          
-          <div className="flex flex-wrap items-center gap-3 mb-6">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-bold uppercase tracking-wider border border-emerald-100">
-              <FolderArchive className="w-3.5 h-3.5" />
-              {hadist.folders_hadist?.name?.replace(/^HADIST_/i, '') || 'Koleksi Umum'}
-            </span>
-            {hadist.tahun && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 text-xs font-bold uppercase tracking-wider border border-amber-200">
-                <Calendar className="w-3.5 h-3.5" />
-                {hadist.tahun}
+        <div className="p-4 md:p-8 max-w-4xl mx-auto w-full pb-20">
+          <div className="bg-white rounded-3xl p-6 md:p-10 shadow-sm border border-slate-200">
+            
+            <div className="flex flex-wrap items-center gap-2.5 mb-6">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-bold uppercase tracking-wider border border-emerald-100">
+                <FolderArchive className="w-3.5 h-3.5" />
+                {hadist.folders_hadist?.name?.replace(/^HADIST_/i, '') || 'Koleksi Kitab'}
               </span>
-            )}
-          </div>
+              {hadist.id && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-bold uppercase tracking-wider">
+                  ID: {hadist.id}
+                </span>
+              )}
+              {hadist.tahun && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold uppercase tracking-wider border border-amber-200">
+                  <Calendar className="w-3.5 h-3.5" />
+                  {hadist.tahun}
+                </span>
+              )}
+            </div>
 
-          <h1 className="text-3xl md:text-5xl font-semibold tracking-tight text-zinc-900 leading-tight mb-12">
-            {hadist.judul || 'Hadist Tanpa Judul'}
-          </h1>
-          
-          {/* Teks Arab (Jika ada yang dipisah) */}
-          {hadist.teks_arab ? (
-            <div className="mb-10">
-              <div className="flex items-center gap-3 mb-6 pb-4 border-b border-zinc-100">
-                <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center">
-                  <Book className="w-4 h-4 text-emerald-600" />
-                </div>
-                <h3 className="font-semibold text-zinc-800 text-lg">Matan Hadist</h3>
-              </div>
-              <p className="font-arabic text-3xl md:text-4xl leading-[2.5] md:leading-[2.8] text-right text-zinc-900" dir="rtl">
-                {hadist.teks_arab}
-              </p>
-            </div>
-          ) : hadist.teks_bersih && !hadist.konten && (
-            <div className="mb-10">
-              <p className="font-arabic text-3xl md:text-4xl leading-[2.5] md:leading-[2.8] text-right text-zinc-900" dir="rtl">
-                {hadist.teks_bersih}
-              </p>
-            </div>
-          )}
-
-          {/* Terjemahan */}
-          {hadist.terjemahan ? (
-            <div className="mt-10">
-              <div className="flex items-center gap-3 mb-6 pb-4 border-b border-zinc-100">
-                <div className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center">
-                  <FileText className="w-4 h-4 text-zinc-600" />
-                </div>
-                <h3 className="font-semibold text-zinc-800 text-lg">Terjemahan</h3>
-              </div>
-              <div className="text-zinc-600 text-lg leading-relaxed max-w-none">
-                {hadist.terjemahan}
-              </div>
-            </div>
-          ) : (
-            hadist.konten && (
-              <div className="mt-10">
-                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-zinc-100">
-                  <div className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center">
-                    <FileText className="w-4 h-4 text-zinc-600" />
+            <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight text-slate-900 leading-tight mb-8">
+              {hadist.judul || 'Hadist'}
+            </h1>
+            
+            {/* Teks Arab */}
+            {hadist.teks_arab ? (
+              <div className="mb-8">
+                <div className="flex items-center gap-3 mb-4 pb-3 border-b border-slate-100">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+                    <Book className="w-4 h-4" />
                   </div>
-                  <h3 className="font-semibold text-zinc-800 text-lg">Isi & Terjemahan Lengkap</h3>
+                  <h3 className="font-bold text-slate-800 text-base">Matan Hadist</h3>
                 </div>
-                <div 
-                  className="text-zinc-600 text-lg leading-relaxed max-w-none prose prose-emerald"
-                  dangerouslySetInnerHTML={{ __html: hadist.konten }}
-                />
+                <p 
+                  className="text-right text-[26px] md:text-[30px] leading-[2.2] md:leading-[2.5] text-slate-900" 
+                  dir="rtl"
+                  style={{ fontFamily: "'Traditional Arabic', 'Amiri', 'Scheherazade New', serif" }}
+                >
+                  {hadist.teks_arab}
+                </p>
               </div>
-            )
-          )}
-          
+            ) : hadist.teks_bersih && !hadist.konten && (
+              <div className="mb-8">
+                <p 
+                  className="text-right text-[26px] md:text-[30px] leading-[2.2] md:leading-[2.5] text-slate-900" 
+                  dir="rtl"
+                  style={{ fontFamily: "'Traditional Arabic', 'Amiri', 'Scheherazade New', serif" }}
+                >
+                  {hadist.teks_bersih}
+                </p>
+              </div>
+            )}
+
+            {/* Terjemahan */}
+            {hadist.terjemahan ? (
+              <div className="mt-8 pt-6 border-t border-slate-100">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600">
+                    <FileText className="w-4 h-4" />
+                  </div>
+                  <h3 className="font-bold text-slate-800 text-base">Terjemahan</h3>
+                </div>
+                <div className="text-slate-700 text-base leading-relaxed max-w-none">
+                  "{hadist.terjemahan}"
+                </div>
+              </div>
+            ) : (
+              hadist.konten && (
+                <div className="mt-8 pt-6 border-t border-slate-100">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600">
+                      <FileText className="w-4 h-4" />
+                    </div>
+                    <h3 className="font-bold text-slate-800 text-base">Isi & Terjemahan Lengkap</h3>
+                  </div>
+                  <div 
+                    className="text-slate-700 text-base leading-relaxed max-w-none prose prose-slate prose-emerald"
+                    dangerouslySetInnerHTML={{ __html: hadist.konten }}
+                  />
+                </div>
+              )
+            )}
+            
+          </div>
         </div>
       </main>
     </div>

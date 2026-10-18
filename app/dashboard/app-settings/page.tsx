@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Save, AlertTriangle, ShieldCheck, Plus, Check, X } from 'lucide-react';
+import { Save, AlertTriangle, ShieldCheck, Plus, Check, X, Edit2, Trash2 } from 'lucide-react';
 
 export default function AppSettingsPage() {
   const [allowedVersions, setAllowedVersions] = useState<{version: string, is_active: boolean}[]>([{version: '1.0.0', is_active: true}]);
   const [newVersion, setNewVersion] = useState('');
+  const [editingVersion, setEditingVersion] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
   const [isMaintenance, setIsMaintenance] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -50,6 +52,47 @@ export default function AppSettingsPage() {
     setAllowedVersions(allowedVersions.map(v => 
       v.version === versionStr ? { ...v, is_active: !v.is_active } : v
     ));
+  };
+
+  const deleteVersion = async (versionStr: string) => {
+    if (confirm('Apakah Anda yakin ingin menghapus versi ini?')) {
+      const { error } = await supabase
+        .from('allowed_versions')
+        .delete()
+        .eq('version', versionStr);
+
+      if (error) {
+        console.error('Failed to delete version:', error);
+        alert('Gagal menghapus versi dari database.');
+        return;
+      }
+
+      setAllowedVersions(allowedVersions.filter(v => v.version !== versionStr));
+    }
+  };
+
+  const startEdit = (versionStr: string) => {
+    setEditingVersion(versionStr);
+    setEditValue(versionStr);
+  };
+
+  const saveEdit = (oldVersion: string) => {
+    if (editValue.trim() && !allowedVersions.find(v => v.version === editValue.trim() && v.version !== oldVersion)) {
+      setAllowedVersions(allowedVersions.map(v => 
+        v.version === oldVersion ? { ...v, version: editValue.trim() } : v
+      ));
+      setEditingVersion(null);
+      setEditValue('');
+    } else if (allowedVersions.find(v => v.version === editValue.trim() && v.version !== oldVersion)) {
+      alert('Versi ini sudah ada!');
+    } else {
+      setEditingVersion(null);
+    }
+  };
+
+  const cancelEdit = () => {
+    setEditingVersion(null);
+    setEditValue('');
   };
 
   const handleSave = async () => {
@@ -139,20 +182,64 @@ export default function AppSettingsPage() {
                 <tbody>
                   {allowedVersions.map((v) => (
                     <tr key={v.version} className={`border-b border-zinc-100  transition-colors ${!v.is_active ? 'opacity-60 bg-zinc-50 ' : 'hover:bg-zinc-50 '}`}>
-                      <td className="p-3 text-sm font-mono text-zinc-800 ">{v.version}</td>
+                      <td className="p-3 text-sm font-mono text-zinc-800 ">
+                        {editingVersion === v.version ? (
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              onKeyDown={(e) => e.key === 'Enter' && saveEdit(v.version)}
+                              className="border border-zinc-300 rounded px-2 py-1 text-sm w-32 focus:outline-none focus:ring-1 focus:ring-accent bg-white"
+                              autoFocus
+                            />
+                          </div>
+                        ) : (
+                          v.version
+                        )}
+                      </td>
                       <td className="p-3 text-center">
                         <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium ${v.is_active ? 'bg-green-100 text-green-700  ' : 'bg-zinc-100 text-zinc-600  '}`}>
                           {v.is_active ? 'Aktif' : 'Non-aktif'}
                         </span>
                       </td>
                       <td className="p-3 text-right">
-                        <button
-                          onClick={() => toggleVersion(v.version)}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${v.is_active ? 'bg-accent' : 'bg-zinc-300 '}`}
-                          title={v.is_active ? "Non-aktifkan Versi" : "Aktifkan Versi"}
-                        >
-                          <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${v.is_active ? 'translate-x-6' : 'translate-x-1'}`} />
-                        </button>
+                        <div className="flex items-center justify-end gap-3">
+                          {editingVersion === v.version ? (
+                            <>
+                              <button onClick={() => saveEdit(v.version)} className="text-green-600 hover:bg-green-50 p-1.5 rounded-lg transition-colors" title="Simpan">
+                                <Check size={16} />
+                              </button>
+                              <button onClick={cancelEdit} className="text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors" title="Batal">
+                                <X size={16} />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => startEdit(v.version)}
+                                className="text-blue-500 hover:bg-blue-50 p-1.5 rounded-lg transition-colors"
+                                title="Edit Versi"
+                              >
+                                <Edit2 size={16} />
+                              </button>
+                              <button
+                                onClick={() => toggleVersion(v.version)}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${v.is_active ? 'bg-accent' : 'bg-zinc-300 '}`}
+                                title={v.is_active ? "Non-aktifkan Versi" : "Aktifkan Versi"}
+                              >
+                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${v.is_active ? 'translate-x-6' : 'translate-x-1'}`} />
+                              </button>
+                              <button
+                                onClick={() => deleteVersion(v.version)}
+                                className="text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors"
+                                title="Hapus Versi"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}

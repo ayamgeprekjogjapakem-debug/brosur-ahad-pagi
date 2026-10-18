@@ -33,14 +33,15 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Cek akun aktif (role admin atau user)
+    // Cek akun aktif (role super-admin, admin, atau user)
     const { data: adminProfile } = await supabase
       .from('profiles')
       .select('role, is_active')
       .eq('id', user.id)
       .single();
 
-    if (!adminProfile || !adminProfile.is_active || (adminProfile.role !== 'admin' && adminProfile.role !== 'user')) {
+    const allowedRoles = ['super-admin', 'admin', 'user'];
+    if (!adminProfile || !adminProfile.is_active || !allowedRoles.includes(adminProfile.role)) {
       return NextResponse.json({ error: 'Forbidden - Bukan Akun Aktif' }, { status: 403 });
     }
 
@@ -129,8 +130,10 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (!adminProfile || !adminProfile.is_active || (adminProfile.role !== 'admin' && adminProfile.role !== 'user')) {
-      return NextResponse.json({ error: 'Forbidden - Bukan Akun Aktif' }, { status: 403 });
+    // Hanya super-admin atau admin (transisi) yang berhak mengubah konfigurasi user
+    const isSuperAdmin = adminProfile?.role === 'super-admin' || adminProfile?.role === 'admin';
+    if (!adminProfile || !adminProfile.is_active || !isSuperAdmin) {
+      return NextResponse.json({ error: 'Forbidden - Akses ini khusus Super Admin' }, { status: 403 });
     }
 
     const dbClient = getAdminClient(supabase);

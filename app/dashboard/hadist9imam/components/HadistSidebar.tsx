@@ -2,12 +2,13 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { Book, Folder, UploadCloud, Cpu, LogOut, Search, Activity, ChevronRight, Hash } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 
 export default function HadistSidebar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const supabase = createClient();
 
@@ -39,14 +40,21 @@ export default function HadistSidebar() {
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
         <div className="text-[10px] font-bold text-zinc-400 tracking-wider uppercase mb-3 ml-3">Menu Utama</div>
         {navItems.map((item) => {
-          const isActive = pathname === item.href || (pathname === '/dashboard/hadist9imam' && item.href.includes('tab='));
+          let isActive = false;
+          if (item.href.includes('?tab=')) {
+            const itemTab = item.href.split('?tab=')[1];
+            isActive = pathname === '/dashboard/hadist9imam' && searchParams?.get('tab') === itemTab;
+          } else {
+            isActive = pathname === item.href && !searchParams?.get('tab');
+          }
+
           return (
             <Link
               key={item.name}
               href={item.href}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 group ${
                 isActive 
-                  ? 'bg-emerald-500/10 text-emerald-700 shadow-sm' 
+                  ? 'bg-emerald-500/10 text-emerald-700 shadow-sm font-semibold' 
                   : 'text-zinc-500 hover:bg-black/5 hover:text-zinc-900'
               }`}
             >

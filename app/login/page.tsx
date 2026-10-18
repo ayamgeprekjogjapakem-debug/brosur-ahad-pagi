@@ -20,14 +20,34 @@ export default function LoginPage() {
     const checkActiveSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        router.replace('/dashboard');
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profile?.role === 'admin') {
+          router.replace('/admin');
+        } else {
+          router.replace('/dashboard');
+        }
       }
     };
     checkActiveSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
-        router.replace('/dashboard');
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profile?.role === 'admin') {
+          router.replace('/admin');
+        } else {
+          router.replace('/dashboard');
+        }
       }
     });
 
@@ -41,7 +61,7 @@ export default function LoginPage() {
     setIsLoading(true);
     setError('');
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -52,7 +72,21 @@ export default function LoginPage() {
       return;
     }
 
-    router.push('/dashboard');
+    if (data?.user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', data.user.id)
+        .single();
+
+      if (profile?.role === 'admin') {
+        router.push('/admin');
+      } else {
+        router.push('/dashboard');
+      }
+    } else {
+      router.push('/dashboard');
+    }
   };
 
   return (

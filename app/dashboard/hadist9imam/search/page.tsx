@@ -37,26 +37,58 @@ export default function SearchHadistPage() {
       setHasSearched(true);
       
       try {
+        // Sanitize input: Supabase PostgREST or() breaks on commas, parentheses, quotes, and percent signs
+        const cleanQuery = debouncedQuery.replace(/[(),"%]/g, ' ').trim();
+        if (!cleanQuery) return;
+
         let dbQuery = supabase
           .from('hadist_chm')
           .select('id, judul, konten, teks_bersih, teks_arab, terjemahan, folders_hadist(name)')
           .limit(20);
 
         if (filterType === 'all') {
-          // Because Supabase doesn't easily support OR across many text columns simply without `or()` syntax
-          dbQuery = dbQuery.or(`terjemahan.ilike.%${debouncedQuery}%,teks_arab.ilike.%${debouncedQuery}%,judul.ilike.%${debouncedQuery}%`);
+          dbQuery = dbQuery.or(`judul.ilike.%${cleanQuery}%,teks_bersih.ilike.%${cleanQuery}%,terjemahan.ilike.%${cleanQuery}%,teks_arab.ilike.%${cleanQuery}%`);
         } else if (filterType === 'arabic') {
-          dbQuery = dbQuery.ilike('teks_arab', `%${debouncedQuery}%`);
+          dbQuery = dbQuery.or(`teks_arab.ilike.%${cleanQuery}%,teks_bersih.ilike.%${cleanQuery}%`);
         } else if (filterType === 'translation') {
-          dbQuery = dbQuery.ilike('terjemahan', `%${debouncedQuery}%`);
+          dbQuery = dbQuery.or(`terjemahan.ilike.%${cleanQuery}%,teks_bersih.ilike.%${cleanQuery}%,judul.ilike.%${cleanQuery}%`);
         }
 
         const { data, error } = await dbQuery;
         
-        if (error) throw error;
+        if (error) {
+          console.warn("hadist_chm search error, trying master_hadist_api:", error.message || error);
+          // Fallback to master_hadist_api if hadist_chm doesn't have the columns or records
+          let apiQuery = supabase
+            .from('master_hadist_api')
+            .select('*')
+            .limit(20);
+
+          if (filterType === 'all') {
+            apiQuery = apiQuery.or(`terjemahan.ilike.%${cleanQuery}%,judul_bab_terjemahan.ilike.%${cleanQuery}%,teks_arab.ilike.%${cleanQuery}%`);
+          } else if (filterType === 'arabic') {
+            apiQuery = apiQuery.ilike('teks_arab', `%${cleanQuery}%`);
+          } else if (filterType === 'translation') {
+            apiQuery = apiQuery.or(`terjemahan.ilike.%${cleanQuery}%,judul_bab_terjemahan.ilike.%${cleanQuery}%`);
+          }
+
+          const { data: apiData, error: apiError } = await apiQuery;
+          if (apiError) throw apiError;
+
+          const mapped = (apiData || []).map((item: any) => ({
+            id: item.id || `${item.kitab}-${item.nomor}`,
+            judul: item.judul_bab_terjemahan || `${item.kitab} No. ${item.nomor}`,
+            teks_arab: item.teks_arab,
+            terjemahan: item.terjemahan,
+            folders_hadist: { name: item.kitab || '9 Imam' },
+          }));
+          setResults(mapped);
+          return;
+        }
+
         setResults(data || []);
-      } catch (err) {
-        console.error("Gagal mencari:", err);
+      } catch (err: any) {
+        console.error("Gagal mencari:", err?.message || err);
       } finally {
         setIsLoading(false);
       }

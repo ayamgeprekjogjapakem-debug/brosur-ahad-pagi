@@ -25,7 +25,15 @@ export default async function DashboardLayout({
     .eq('id', user.id)
     .single();
 
-  if (!profile || !profile.is_active || (profile.role !== 'admin' && profile.role !== 'user')) {
+  // Role admin reguler diarahkan ke dashboard khusus /admin
+  if (profile?.role === 'admin' && profile?.is_active) {
+    redirect('/admin');
+  }
+
+  // Hanya super-admin (atau akun legacy bertanda aktif) yang boleh masuk ke console Super Admin /dashboard
+  const isAuthorized = profile?.is_active && (profile.role === 'super-admin' || profile.role === 'admin');
+
+  if (!profile || !profile.is_active || !isAuthorized) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-[#fafafa] [#0a0a0a] text-center text-zinc-900 ">
         <div className="bg-white  p-10 rounded-3xl border border-black/5  shadow-2xl max-w-md">
@@ -56,9 +64,9 @@ export default async function DashboardLayout({
     .single();
 
   return (
-    <div className="h-screen max-h-screen overflow-hidden bg-[#eef0f3] [#070709] text-zinc-900  flex flex-col md:flex-row font-sans selection:bg-accent/30 selection:text-accent p-0 md:p-3 gap-0 md:gap-3">
+    <div className="h-screen max-h-screen overflow-hidden bg-[#F5F5F7] dark:bg-[#000000] text-zinc-900 dark:text-zinc-100 flex flex-col md:flex-row font-sans selection:bg-accent/25 selection:text-accent p-0 md:p-3.5 gap-0 md:gap-3.5 antialiased">
       <DashboardSidebar />
-      <div className="flex-1 w-full h-full overflow-hidden flex flex-col min-w-0 md:rounded-3xl border-0 md:border md:border-black/5 md: bg-white/75  backdrop-blur-xl shadow-sm relative">
+      <div className="flex-1 w-full h-full overflow-hidden flex flex-col min-w-0 md:rounded-[24px] border-0 md:border md:border-black/[0.06] dark:md:border-white/[0.08] bg-white/80 dark:bg-zinc-900/80 backdrop-blur-2xl shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)] relative">
         <DashboardHeader email={user.email} role={profile.role} />
         <MainContentWrapper>
           {children}

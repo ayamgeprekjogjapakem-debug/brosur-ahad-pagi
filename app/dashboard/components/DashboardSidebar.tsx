@@ -100,34 +100,35 @@ export default function DashboardSidebar() {
   return (
     <aside 
       className={`${
-        isMinimized ? 'w-20' : 'w-64'
-      } bg-white/85  backdrop-blur-3xl md:rounded-3xl border border-black/5  hidden md:flex flex-col shrink-0 h-full relative z-20 shadow-sm ${isMounted ? 'transition-all duration-300' : ''} overflow-hidden`}
+        isMinimized ? 'w-[74px]' : 'w-64'
+      } bg-[#FBFBFD]/90 dark:bg-[#161617]/90 backdrop-blur-3xl md:rounded-[24px] border border-black/[0.06] dark:border-white/[0.08] hidden md:flex flex-col shrink-0 h-full relative z-20 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] ${isMounted ? 'transition-all duration-300 ease-out' : ''} overflow-hidden select-none`}
     >
-      <div className={`p-6 flex items-center ${isMinimized ? 'justify-center' : 'justify-start'} border-b border-black/[0.04] [0.04]`}>
+      {/* Apple style app window top pill / branding */}
+      <div className={`px-5 py-5 flex items-center ${isMinimized ? 'justify-center' : 'justify-start'} border-b border-black/[0.04] dark:border-white/[0.05]`}>
         <Link href="/" className="flex items-center gap-3 group" title="Ke Beranda">
-          <div className="w-10 h-10 bg-gradient-to-tr from-accent to-accent/80 rounded-2xl flex items-center justify-center shadow-lg shadow-accent/30 group-hover:scale-105 transition-transform duration-300 shrink-0">
-            <BookOpen className="text-white" size={20} />
+          <div className="w-9 h-9 rounded-[10px] bg-gradient-to-b from-zinc-800 to-zinc-950 dark:from-zinc-100 dark:to-zinc-300 text-white dark:text-zinc-950 flex items-center justify-center shadow-sm group-hover:scale-105 active:scale-95 transition-all duration-200 shrink-0">
+            <BookOpen size={18} strokeWidth={2.2} />
           </div>
           {!isMinimized && (
-            <div className="flex flex-col overflow-hidden">
-              <span className="font-extrabold text-[17px] tracking-tight text-zinc-900  truncate">Ulil Albab</span>
-              <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Admin</span>
+            <div className="flex flex-col min-w-0">
+              <span className="font-semibold text-[15px] tracking-[-0.015em] text-zinc-900 dark:text-zinc-100 truncate leading-tight">Ulil Albab</span>
+              <span className="text-[10px] font-medium text-indigo-500 dark:text-indigo-400 uppercase tracking-wider">Super Admin Console</span>
             </div>
           )}
         </Link>
       </div>
       
-      <nav className="flex-1 px-3 py-4 space-y-4 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-300  scrollbar-track-transparent">
+      <nav className="flex-1 px-2.5 py-4 space-y-5 overflow-y-auto custom-scrollbar">
         {navGroups.map((group, groupIdx) => (
           <div key={group.label}>
             {!isMinimized ? (
-              <span className="block px-4 pb-2 text-[11px] font-extrabold uppercase tracking-widest text-zinc-400 ">
+              <span className="block px-3 pb-1.5 text-[10px] font-semibold tracking-wider text-zinc-400 dark:text-zinc-500 uppercase">
                 {group.label}
               </span>
             ) : (
-              groupIdx > 0 && <div className="my-2 border-t border-black/5 " />
+              groupIdx > 0 && <div className="my-2 border-t border-black/[0.04] dark:border-white/[0.06]" />
             )}
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               {group.items.map((item) => {
                 const isActive = pathname === item.href;
                 const Icon = item.icon;
@@ -137,15 +138,23 @@ export default function DashboardSidebar() {
                     href={item.href}
                     title={isMinimized ? item.name : undefined}
                     className={`w-full flex items-center ${
-                      isMinimized ? 'justify-center px-2 py-3' : 'gap-3.5 px-4 py-3'
-                    } rounded-2xl font-semibold text-sm transition-all duration-300 ${
+                      isMinimized ? 'justify-center px-0 py-2.5' : 'gap-2.5 px-3 py-2'
+                    } rounded-[10px] text-[13px] font-medium transition-all duration-150 ${
                       isActive 
-                        ? 'bg-white  text-accent shadow-[0_4px_20px_rgba(0,0,0,0.03)] [0_4px_20px_rgba(0,0,0,0.2)]' 
-                        : 'text-zinc-500 hover:bg-black/5  hover:text-zinc-900  active:scale-95'
+                        ? 'bg-black/[0.07] dark:bg-white/[0.12] text-zinc-900 dark:text-white font-semibold shadow-[inset_0_0_0_1px_rgba(0,0,0,0.03)]' 
+                        : 'text-zinc-600 dark:text-zinc-400 hover:bg-black/[0.04] dark:hover:bg-white/[0.05] hover:text-zinc-900 dark:hover:text-zinc-200 active:scale-[0.98]'
                     }`}
                   >
-                    <Icon size={18} className={isActive ? 'text-accent shrink-0' : 'text-zinc-400 shrink-0'} strokeWidth={isActive ? 2.5 : 2} />
-                    {!isMinimized && <span className="truncate">{item.name}</span>}
+                    <Icon 
+                      size={17} 
+                      className={`${
+                        isActive 
+                          ? 'text-zinc-900 dark:text-white' 
+                          : 'text-zinc-400 dark:text-zinc-500'
+                      } shrink-0 transition-colors`} 
+                      strokeWidth={isActive ? 2.3 : 1.8} 
+                    />
+                    {!isMinimized && <span className="truncate tracking-[-0.01em]">{item.name}</span>}
                   </Link>
                 );
               })}
@@ -154,19 +163,19 @@ export default function DashboardSidebar() {
         ))}
       </nav>
 
-      <div className="p-3 border-t border-black/[0.04] [0.04]">
+      <div className="p-2.5 border-t border-black/[0.04] dark:border-white/[0.05]">
         <button 
           onClick={handleLogout}
           disabled={isLoggingOut}
           title={isMinimized ? 'Keluar' : undefined}
           className={`w-full flex items-center ${
-            isMinimized ? 'justify-center py-3.5' : 'justify-center gap-2 px-4 py-3.5'
-          } bg-zinc-100  hover:bg-red-500 hover:text-white  text-zinc-600  rounded-2xl font-semibold text-sm transition-all duration-300 disabled:opacity-50 group`}
+            isMinimized ? 'justify-center py-2.5' : 'justify-center gap-2 px-3 py-2'
+          } hover:bg-red-500/10 text-zinc-600 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 rounded-[10px] text-[13px] font-medium transition-all duration-150 disabled:opacity-50 group active:scale-[0.98]`}
         >
           {isLoggingOut ? (
-            <Loader2 size={18} className="animate-spin shrink-0" />
+            <Loader2 size={16} className="animate-spin shrink-0" />
           ) : (
-            <LogOut size={18} className="group-hover:-translate-x-1 transition-transform shrink-0" />
+            <LogOut size={16} className="group-hover:-translate-x-0.5 transition-transform shrink-0" strokeWidth={1.8} />
           )}
           {!isMinimized && <span>{isLoggingOut ? 'Keluar...' : 'Keluar'}</span>}
         </button>

@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
     const statusHadist = searchParams.get('status_hadist');
     const sumberJenis = searchParams.get('sumber_jenis');
     const search = searchParams.get('search');
+    const tahun = searchParams.get('tahun');
 
     const supabase = await createClient();
 
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
         catatan,
         created_at,
         kelompok_hadist(id, nama_kelompok, warna_badge),
-        brosur(id, judul, tahun, slug, folder_id, folders(name))
+        brosur!inner(id, judul, tahun, slug, folder_id, folders(name))
       `)
       .order('created_at', { ascending: false });
 
@@ -44,8 +45,12 @@ export async function GET(request: NextRequest) {
       query = query.eq('kelompok_id', kelompokId);
     }
 
-    if (brosurId) {
+    if (brosurId && brosurId !== 'all') {
       query = query.eq('brosur_id', brosurId);
+    }
+
+    if (tahun && tahun !== 'all') {
+      query = query.eq('brosur.tahun', parseInt(tahun, 10));
     }
 
     if (rawiKitab && rawiKitab !== 'all') {
@@ -233,13 +238,22 @@ export async function GET(request: NextRequest) {
       
       if (searchTerms.length > 0) {
         const orConditions = searchTerms.map(term => {
-          const stripped = stripArabicHarakat(term);
-          return `kutipan_arab_gundul.ilike.%${stripped}%,kutipan_arab.ilike.%${term}%,terjemahan.ilike.%${term}%,perawi_sumber.ilike.%${term}%,rawi_kitab.ilike.%${term}%,rawi_teratas.ilike.%${term}%`;
-        }).join(',');
-        query = query.or(orConditions);
+          // Hapus karakter yang bisa merusak query Supabase (.or parser)
+          const safeTerm = term.replace(/[(),"]/g, '');
+          if (!safeTerm) return '';
+          const stripped = stripArabicHarakat(safeTerm);
+          return `kutipan_arab_gundul.ilike.%${stripped}%,kutipan_arab.ilike.%${safeTerm}%,terjemahan.ilike.%${safeTerm}%,perawi_sumber.ilike.%${safeTerm}%,rawi_kitab.ilike.%${safeTerm}%,rawi_teratas.ilike.%${safeTerm}%`;
+        }).filter(cond => cond !== '').join(',');
+        
+        if (orConditions) {
+          query = query.or(orConditions);
+        }
       } else {
-        const strippedFinalSearch = stripArabicHarakat(finalSearch || '');
-        query = query.or(`kutipan_arab_gundul.ilike.%${strippedFinalSearch}%,kutipan_arab.ilike.%${finalSearch}%,terjemahan.ilike.%${finalSearch}%,perawi_sumber.ilike.%${finalSearch}%,rawi_kitab.ilike.%${finalSearch}%,rawi_teratas.ilike.%${finalSearch}%`);
+        const safeFinalSearch = finalSearch ? finalSearch.replace(/[(),"]/g, '') : '';
+        if (safeFinalSearch) {
+          const strippedFinalSearch = stripArabicHarakat(safeFinalSearch);
+          query = query.or(`kutipan_arab_gundul.ilike.%${strippedFinalSearch}%,kutipan_arab.ilike.%${safeFinalSearch}%,terjemahan.ilike.%${safeFinalSearch}%,perawi_sumber.ilike.%${safeFinalSearch}%,rawi_kitab.ilike.%${safeFinalSearch}%,rawi_teratas.ilike.%${safeFinalSearch}%`);
+        }
       }
       
       // Async log pencarian populer yang lama (Tetap dipertahankan)

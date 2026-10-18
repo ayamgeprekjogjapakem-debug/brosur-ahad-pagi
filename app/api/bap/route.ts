@@ -1,49 +1,37 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  // Bisa mencari berdasarkan 'slug' atau 'id'
-  const slug = searchParams.get('id'); 
+  const id = searchParams.get('id');
   
-  // Inisialisasi Supabase Server Client
-  const supabase = createClient();
+  // Ini adalah contoh konten Markdown.
+  // Nantinya Anda bisa mengambil ini dari database (misal Supabase) berdasarkan 'id'
+  const markdownContent = `
+# Brosur Ahad Pagi
 
-  // Jika tidak ada ID/Slug, kembalikan daftar semua brosur
-  if (!slug) {
-    const { data, error } = await supabase
-      .from('brosur')
-      .select('id, judul, slug, tahun')
-      .order('tahun', { ascending: false })
-      .limit(10);
+Ini adalah contoh konten yang dikirim dalam format **Markdown**. Flutter dapat dengan mudah merender ini menggunakan package \`flutter_markdown\`.
 
-    if (error) {
-      return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-    }
-    
-    return NextResponse.json({ success: true, data });
-  }
+## Daftar Kajian
+- Point 1: Penjelasan Aqidah
+- Point 2: Fiqih Ibadah
+- Point 3: Akhlaq Mulia
 
-  // Jika ada ID/Slug, ambil detail spesifik dari tabel brosur
-  const { data: detailData, error: detailError } = await (await supabase)
-    .from('brosur')
-    .select('*')
-    .eq('slug', slug)
-    .single();
+## Detail Tambahan
+* Kajian rutin diadakan setiap hari Ahad pagi.
+* Terbuka untuk umum.
 
-  if (detailError) {
-    return NextResponse.json({ success: false, error: detailError.message }, { status: 404 });
-  }
+> "Sebaik-baik manusia adalah yang paling bermanfaat bagi manusia lainnya."
+  `;
 
-  // Mengembalikan data JSON (Anggap kolom markdown Anda bernama 'konten' atau 'teks')
+  // Mengembalikan response JSON yang berisi string markdown agar mudah diparsing oleh Flutter
   return NextResponse.json({
     success: true,
     data: {
-      id: detailData.id,
-      title: detailData.judul,
-      // Jika kolom Anda namanya bukan 'konten', silakan ubah di bawah ini
-      content: detailData.konten || '# Konten Belum Tersedia', 
-      tahun: detailData.tahun
+      id: id || 'default',
+      title: 'Brosur Ahad Pagi',
+      content: markdownContent,
+      createdAt: new Date().toISOString(),
     }
   });
 }
+//

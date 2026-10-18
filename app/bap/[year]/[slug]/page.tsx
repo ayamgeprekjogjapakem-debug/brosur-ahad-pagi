@@ -14,12 +14,13 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const resolvedParams = await params;
   const slug = decodeURIComponent(resolvedParams.slug);
   const searchSlug = slug.replace('BAP-(Brosur-Ahad-Pagi)-', '').trim();
+  const cleanSearch = searchSlug.replace(/^BAP-\(Brosur-Ahad-Pagi\)-/i, '').replace(/^\d{4}\d{2}\d{2}-/i, '');
   
   const supabase = await createClient();
   const { data: brosur } = await supabase
     .from('brosur')
     .select('judul, slug')
-    .ilike('slug', `%${searchSlug}%`)
+    .or(`slug.ilike.%${searchSlug}%,slug.ilike.%${cleanSearch}%`)
     .limit(1)
     .maybeSingle();
 
@@ -44,13 +45,14 @@ export default async function BrosurPage({ params }: { params: Promise<{ slug: s
   const slug = decodeURIComponent(resolvedParams.slug);
   const supabase = await createClient();
   
-  // Buat query yang sangat longgar untuk menghindari masalah karakter khusus / spasi tersembunyi
-  const searchSlug = slug.replace('BAP-(Brosur-Ahad-Pagi)-', '').trim();
+  // Buat pola pencarian slug yang fleksibel (mendukung format tanggal-judul, nama file, maupun slug raw)
+  const searchSlug = slug.replace(/^BAP-\(Brosur-Ahad-Pagi\)-/i, '').trim();
+  const cleanSearch = searchSlug.replace(/^\d{4}\d{2}\d{2}-/i, '');
   
   const { data: brosur } = await supabase
     .from('brosur')
     .select('*')
-    .ilike('slug', `%${searchSlug}%`)
+    .or(`slug.ilike.%${searchSlug}%,slug.ilike.%${cleanSearch}%,id.eq.${slug}`)
     .limit(1)
     .maybeSingle();
 

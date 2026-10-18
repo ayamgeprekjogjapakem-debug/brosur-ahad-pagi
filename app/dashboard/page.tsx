@@ -97,43 +97,59 @@ export default function DashboardPage() {
 
   return (
     <>
-      <div className="w-full max-w-5xl mx-auto">
+      <div className="w-full max-w-4xl mx-auto py-2">
         <motion.div 
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
         >
-          <header className="mb-10">
-            <h1 className="text-3xl font-extrabold mb-2 tracking-tight text-zinc-900 ">Upload File</h1>
-            <p className="text-zinc-500 font-medium max-w-xl">Unggah file arsip brosur berformat CHM, ZIP, HTML, atau PDF untuk memproses dan menambahkannya ke dalam database secara otomatis.</p>
+          {/* Apple Style Page Header */}
+          <header className="mb-8">
+            <h1 className="text-[28px] md:text-[32px] font-semibold tracking-[-0.03em] text-zinc-900 dark:text-zinc-100">
+              Upload Arsip
+            </h1>
+            <p className="text-[14px] text-zinc-500 dark:text-zinc-400 mt-1 max-w-xl font-normal leading-relaxed">
+              Pilih file arsip berformat CHM, ZIP, HTML, atau PDF untuk memproses dan menambahkan data ke sistem.
+            </p>
           </header>
 
-          <div className="bg-white/80  backdrop-blur-2xl border border-black/[0.04] [0.04] rounded-[32px] p-8 md:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
+          <div className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-2xl border border-black/[0.06] dark:border-white/[0.08] rounded-[24px] p-6 md:p-8 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)] relative overflow-hidden">
             
-            {/* Tipe Upload Selector */}
+            {/* Apple Segmented Control */}
             <div className="mb-8">
-              <label className="block text-sm font-bold text-zinc-700 mb-3">Pilih Kategori File yang Akan Diunggah:</label>
-              <div className="flex gap-4">
+              <label className="block text-[12px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2.5">
+                Kategori Berkas
+              </label>
+              <div className="grid grid-cols-2 gap-2 p-1 bg-black/[0.04] dark:bg-white/[0.06] rounded-[14px] max-w-md">
                 <button 
+                  type="button"
                   onClick={() => setUploadType('brosur')}
-                  className={`flex-1 py-4 px-6 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${uploadType === 'brosur' ? 'border-accent bg-accent/5 text-accent' : 'border-zinc-200 text-zinc-500 hover:border-zinc-300 hover:bg-zinc-50'}`}
+                  className={`py-2 px-4 rounded-[11px] text-[13px] font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
+                    uploadType === 'brosur' 
+                      ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-[0_2px_8px_rgba(0,0,0,0.08)]' 
+                      : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+                  }`}
                 >
-                  <FileText size={28} />
-                  <span className="font-bold text-lg">Brosur CHM</span>
-                  <span className="text-xs opacity-70">Untuk arsip brosur Ahad Pagi</span>
+                  <FileText size={16} strokeWidth={2} />
+                  <span>Brosur Ahad Pagi</span>
                 </button>
                 <button 
+                  type="button"
                   onClick={() => setUploadType('hadist')}
-                  className={`flex-1 py-4 px-6 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${uploadType === 'hadist' ? 'border-indigo-500 bg-indigo-500/5 text-indigo-600' : 'border-zinc-200 text-zinc-500 hover:border-zinc-300 hover:bg-zinc-50'}`}
+                  className={`py-2 px-4 rounded-[11px] text-[13px] font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
+                    uploadType === 'hadist' 
+                      ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-[0_2px_8px_rgba(0,0,0,0.08)]' 
+                      : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+                  }`}
                 >
-                  <FileText size={28} />
-                  <span className="font-bold text-lg">Hadist CHM</span>
-                  <span className="text-xs opacity-70">Untuk kitab referensi Hadist</span>
+                  <FileText size={16} strokeWidth={2} />
+                  <span>Kitab Hadist</span>
                 </button>
               </div>
             </div>
 
-            {/* Drag & Drop Area */}
-            <div className="border-2 border-dashed border-zinc-200  rounded-3xl p-12 flex flex-col items-center justify-center text-center hover:border-accent hover:bg-accent/5 transition-all duration-300 group relative">
+            {/* Apple Style Drag & Drop Area */}
+            <div className="border border-dashed border-black/[0.12] dark:border-white/[0.14] rounded-[20px] p-10 md:p-14 flex flex-col items-center justify-center text-center hover:border-zinc-400 dark:hover:border-zinc-500 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-all duration-200 group relative cursor-pointer">
               <input 
                 type="file" 
                 accept=".chm,.zip,.pdf,.html,.htm"
@@ -141,84 +157,94 @@ export default function DashboardPage() {
                 disabled={isUploading}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed" 
               />
-              <div className="w-20 h-20 bg-zinc-50  rounded-2xl flex items-center justify-center mb-5 group-hover:bg-accent group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-accent/30 transition-all duration-300">
-                <Upload size={32} className="text-zinc-400 group-hover:text-white transition-colors" />
+              <div className="w-14 h-14 bg-black/[0.03] dark:bg-white/[0.05] border border-black/[0.05] dark:border-white/[0.07] rounded-[16px] flex items-center justify-center mb-4 group-hover:scale-105 transition-all duration-200 shadow-sm">
+                <Upload size={22} className="text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors" strokeWidth={1.8} />
               </div>
-              <h3 className="font-extrabold text-xl mb-1.5 text-zinc-900 ">Pilih atau letakkan file di sini</h3>
-              <p className="text-sm font-medium text-zinc-500">Mendukung file berformat .chm, .zip, .pdf, atau .html</p>
+              <h3 className="font-semibold text-[15px] mb-1 text-zinc-900 dark:text-zinc-100 tracking-[-0.01em]">
+                Pilih atau seret berkas ke sini
+              </h3>
+              <p className="text-[13px] text-zinc-400 dark:text-zinc-500">
+                Format yang didukung: .chm, .zip, .pdf, atau .html
+              </p>
             </div>
 
             {/* Selected File Details */}
             {selectedFile && (
-              <div className="mt-8 flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 bg-zinc-50  rounded-2xl border border-black/[0.04] [0.04] gap-4">
+              <motion.div 
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-[#F5F5F7] dark:bg-zinc-800/60 rounded-[16px] border border-black/[0.04] dark:border-white/[0.06] gap-4"
+              >
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-accent/20 rounded-lg">
-                    <FileText className="text-accent" size={24} />
+                  <div className="p-2.5 bg-white dark:bg-zinc-700/60 rounded-[12px] border border-black/[0.04] dark:border-white/[0.06] shadow-sm">
+                    <FileText className="text-zinc-700 dark:text-zinc-300" size={20} strokeWidth={1.8} />
                   </div>
                   <div className="overflow-hidden">
-                    <p className="font-bold text-sm truncate max-w-[200px] sm:max-w-[300px]">{selectedFile.name}</p>
-                    <p className="text-xs text-zinc-500">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                    <p className="font-medium text-[13px] text-zinc-900 dark:text-zinc-100 truncate max-w-[200px] sm:max-w-[320px] tracking-tight">{selectedFile.name}</p>
+                    <p className="text-[11px] text-zinc-400 mt-0.5">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
                   </div>
                 </div>
                 <button 
                   onClick={handleUpload}
                   disabled={isUploading}
-                  className="w-full sm:w-auto bg-accent text-white px-5 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-accent/90 disabled:opacity-50 transition-colors"
+                  className="w-full sm:w-auto bg-zinc-900 hover:bg-black dark:bg-zinc-100 dark:hover:bg-white text-white dark:text-zinc-950 px-4 py-2 rounded-[11px] font-medium text-[13px] flex items-center justify-center gap-2 disabled:opacity-50 transition-all active:scale-95 shadow-sm"
                 >
-                  {isUploading ? <Loader2 className="animate-spin" size={16} /> : 'Mulai Upload'}
+                  {isUploading ? <Loader2 className="animate-spin" size={15} /> : 'Mulai Unggah'}
                 </button>
-              </div>
+              </motion.div>
             )}
 
             {/* Upload Status */}
             {uploadStatus && (
               <motion.div 
-                initial={{ opacity: 0, y: 5 }}
+                initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`mt-6 p-4 rounded-xl flex items-center gap-3 font-medium text-sm border ${
+                className={`mt-5 p-3.5 rounded-[14px] flex items-center gap-2.5 text-[13px] font-medium border ${
                   uploadStatus.type === 'success' 
-                    ? 'bg-green-500/10 border-green-500/20 text-green-600 ' 
-                    : 'bg-red-500/10 border-red-500/20 text-red-600 '
+                    ? 'bg-emerald-500/[0.08] border-emerald-500/20 text-emerald-700 dark:text-emerald-400' 
+                    : 'bg-red-500/[0.08] border-red-500/20 text-red-600 dark:text-red-400'
                 }`}
               >
-                {uploadStatus.type === 'success' ? <CheckCircle size={18} /> : <div className="w-2 h-2 rounded-full bg-red-500 shrink-0" />}
+                {uploadStatus.type === 'success' ? <CheckCircle size={16} strokeWidth={2} /> : <div className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />}
                 {uploadStatus.message}
               </motion.div>
             )}
             
-            <div className="mt-8 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl text-sm text-blue-700 ">
-              <strong className="block mb-1">ℹ️ Penyimpanan Cloud Aktif</strong>
-              File yang Anda unggah kini langsung disimpan dengan aman di Supabase Storage, membuatnya dapat diakses dari mana saja tanpa bergantung pada sistem file lokal server.
+            <div className="mt-8 pt-5 border-t border-black/[0.05] dark:border-white/[0.06] flex items-start gap-3">
+              <span className="text-zinc-400 dark:text-zinc-500 text-xs mt-0.5">ⓘ</span>
+              <p className="text-[12px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                Berkas yang Anda unggah disimpan langsung di cloud storage Supabase. Pastikan ukuran berkas tidak melebihi kuota penyimpanan yang tersedia.
+              </p>
             </div>
           </div>
         </motion.div>
       </div>
 
-      {/* Freeze Screen Overlay for Upload Progress */}
+      {/* Freeze Screen Overlay for Upload Progress (Apple sheet/modal style) */}
       {isUploading && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center p-6">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-md flex flex-col items-center justify-center p-6">
           <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
+            initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white  rounded-3xl p-8 max-w-md w-full shadow-2xl flex flex-col items-center text-center"
+            transition={{ duration: 0.2 }}
+            className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl rounded-[24px] p-8 max-w-sm w-full border border-black/[0.08] dark:border-white/[0.1] shadow-[0_24px_48px_rgba(0,0,0,0.18)] flex flex-col items-center text-center"
           >
-            <div className="w-20 h-20 bg-accent/10 rounded-full flex items-center justify-center mb-6 relative">
-              <Loader2 className="animate-spin text-accent" size={40} />
-              <div className="absolute inset-0 border-4 border-accent/20 rounded-full"></div>
+            <div className="w-14 h-14 bg-black/[0.04] dark:bg-white/[0.06] rounded-full flex items-center justify-center mb-5">
+              <Loader2 className="animate-spin text-zinc-900 dark:text-zinc-100" size={26} strokeWidth={2} />
             </div>
             
-            <h3 className="text-2xl font-extrabold mb-2">Mengunggah File...</h3>
-            <p className="text-zinc-500 text-sm mb-8">
-              Mohon jangan menutup halaman ini. File {selectedFile?.name} sedang diunggah ke Cloud.
+            <h3 className="text-[17px] font-semibold mb-1 text-zinc-900 dark:text-zinc-100 tracking-[-0.015em]">Mengunggah Berkas</h3>
+            <p className="text-zinc-400 dark:text-zinc-500 text-[13px] mb-6 line-clamp-1">
+              {selectedFile?.name}
             </p>
 
-            <div className="w-full bg-zinc-100  rounded-full h-4 mb-3 overflow-hidden relative">
+            <div className="w-full bg-black/[0.06] dark:bg-white/[0.1] rounded-full h-2 mb-3 overflow-hidden">
               <div 
-                className="bg-accent h-full transition-all duration-300 ease-out absolute left-0 top-0"
+                className="bg-zinc-900 dark:bg-zinc-100 h-full transition-all duration-200 ease-out rounded-full"
                 style={{ width: `${uploadProgress}%` }}
-              ></div>
+              />
             </div>
-            <p className="font-bold text-accent text-2xl">{uploadProgress}%</p>
+            <p className="font-semibold text-zinc-700 dark:text-zinc-300 text-[13px] tabular-nums">{uploadProgress}%</p>
           </motion.div>
         </div>
       )}
