@@ -1,0 +1,9 @@
+# Wrangler Configuration for Cloudflare Pages / Workers
+name = "brosur-ahad-pagi"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".vercel/output/static"
+
+# Environment Variables (isi di Cloudflare Dashboard > Settings > Variables)
+# NEXT_PUBLIC_SUPABASE_URL = "https://your-project.supabase.co"
+# NEXT_PUBLIC_SUPABASE_ANON_KEY = "your-anon-key"
