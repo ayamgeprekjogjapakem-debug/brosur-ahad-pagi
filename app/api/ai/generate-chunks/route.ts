@@ -3,12 +3,6 @@ import { createClient } from '@supabase/supabase-js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import * as cheerio from 'cheerio';
 
-// Supabase Setup
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-
 // Fungsi pemotong teks cerdas (Chunking dengan Overlap)
 function chunkText(text: string, maxWords: number = 300, overlapWords: number = 50): string[] {
   const words = text.split(/\s+/);
@@ -25,6 +19,10 @@ function chunkText(text: string, maxWords: number = 300, overlapWords: number = 
 
 export async function POST(req: Request) {
   try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key';
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
     // === 1. LOAD SETTINGS ===
     const { data: settings } = await supabase.from('app_settings').select('*').eq('id', 1).single();
     const chatModel = settings?.chat_model || 'google/gemini-2.5-flash';
