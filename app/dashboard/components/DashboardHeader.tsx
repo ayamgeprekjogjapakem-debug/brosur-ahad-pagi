@@ -59,7 +59,7 @@ export default function DashboardHeader({ email: initialEmail, role: initialRole
   };
 
   const getPageTitle = (path: string) => {
-    if (path === '/dashboard') return 'Upload & Konversi CHM';
+    if (path === '/dashboard') return 'Upload & Konversi Berkas';
     if (path.startsWith('/dashboard/arsip')) return 'Arsip Brosur';
     if (path.startsWith('/dashboard/data')) return 'Database Brosur';
     if (path.startsWith('/dashboard/ai-kajian')) return 'Generator Kajian AI';
@@ -76,50 +76,52 @@ export default function DashboardHeader({ email: initialEmail, role: initialRole
   const initial = (email || 'A').charAt(0).toUpperCase();
 
   return (
-    <header className="w-full bg-[#FBFBFD]/80 dark:bg-[#161617]/80 backdrop-blur-2xl border-b border-black/[0.06] dark:border-white/[0.08] px-5 py-3 flex items-center justify-between sticky top-0 z-30 select-none">
-      <div className="flex items-center gap-3">
-        {/* Apple style traffic dots decoration or sidebar toggle */}
-        <div className="flex items-center gap-1.5 mr-1">
-          <div className="w-3 h-3 rounded-full bg-[#FF5F56]/90 border border-[#E0443E]/40" />
-          <div className="w-3 h-3 rounded-full bg-[#FFBD2E]/90 border border-[#DEA123]/40" />
-          <div className="w-3 h-3 rounded-full bg-[#27C93F]/90 border border-[#1AAB29]/40" />
+    <header className="h-14 border-b border-slate-200/80 px-4 sm:px-6 flex items-center justify-between gap-3 bg-white shrink-0 z-10 select-none">
+      {/* Sisi Kiri: Mac Controls & Header Title */}
+      <div className="flex items-center gap-3 min-w-0">
+        {/* macOS 3 Dots */}
+        <div className="flex items-center gap-1.5 pr-1">
+          <span className="w-3 h-3 rounded-full bg-rose-500 inline-block cursor-pointer" />
+          <span className="w-3 h-3 rounded-full bg-amber-400 inline-block cursor-pointer" />
+          <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block cursor-pointer" />
         </div>
 
         <button
           onClick={handleToggleSidebar}
           title={isSidebarMinimized ? 'Tampilkan Sidebar' : 'Sembunyikan Sidebar'}
-          className="p-1.5 rounded-[8px] hover:bg-black/[0.05] dark:hover:bg-white/[0.08] text-zinc-500 dark:text-zinc-400 transition-colors hidden md:flex items-center justify-center active:scale-95"
+          className="text-slate-400 hover:text-slate-700 p-1 rounded-md transition"
         >
-          {isSidebarMinimized ? <PanelLeftOpen size={16} strokeWidth={1.8} /> : <PanelLeftClose size={16} strokeWidth={1.8} />}
+          <PanelLeftClose size={14} strokeWidth={1.8} />
         </button>
 
-        <div className="h-4 w-[1px] bg-black/[0.06] dark:bg-white/[0.08] hidden md:block" />
+        <span className="text-slate-200 font-light hidden sm:inline">|</span>
 
-        <div className="flex items-center gap-2">
-          <h1 className="text-[14px] md:text-[15px] font-semibold text-zinc-900 dark:text-zinc-100 tracking-[-0.01em]">
-            {getPageTitle(pathname)}
-          </h1>
-        </div>
+        <h1 className="text-sm font-semibold text-slate-900 truncate">
+          {getPageTitle(pathname)}
+        </h1>
       </div>
 
-      <div className="flex items-center gap-2.5">
-        <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 bg-black/[0.04] dark:bg-white/[0.06] text-zinc-600 dark:text-zinc-300 font-medium text-[11px] rounded-full tracking-wide">
-          <ShieldCheck size={13} className="text-emerald-500" strokeWidth={2} />
+      {/* Sisi Kanan: Super Admin Status & User Profil */}
+      <div className="flex items-center gap-3 shrink-0">
+        {/* Super-Admin Badge (Harmoni Hijau) */}
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200/60 text-emerald-700 text-[10.5px] font-semibold tracking-wide">
+          <ShieldCheck size={12} className="text-emerald-600" />
           <span className="uppercase">{role}</span>
-        </span>
+        </div>
 
+        {/* Akun Profil */}
         <div className="relative">
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="flex items-center gap-2 p-1 pl-2.5 bg-black/[0.03] dark:bg-white/[0.05] hover:bg-black/[0.06] dark:hover:bg-white/[0.09] rounded-full transition-all border border-black/[0.05] dark:border-white/[0.07] active:scale-95"
+            className="flex items-center gap-2 pl-1 cursor-pointer"
           >
-            <span className="text-[12px] font-medium text-zinc-700 dark:text-zinc-300 hidden md:inline-block max-w-[150px] truncate tracking-tight">
+            <span className="text-xs font-medium text-slate-600 hidden md:inline">
               {email}
             </span>
-            <div className="w-7 h-7 rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 font-semibold text-[11px] flex items-center justify-center shadow-sm">
+            <div className="w-7 h-7 rounded-full bg-slate-900 text-white font-bold flex items-center justify-center text-xs">
               {initial}
             </div>
-            <ChevronDown size={12} className="text-zinc-400 dark:text-zinc-500 mr-1" strokeWidth={2} />
+            <ChevronDown size={11} className="text-slate-400" />
           </button>
 
           {isMenuOpen && (
@@ -128,18 +130,18 @@ export default function DashboardHeader({ email: initialEmail, role: initialRole
                 className="fixed inset-0 z-10" 
                 onClick={() => setIsMenuOpen(false)} 
               />
-              <div className="absolute right-0 mt-2 w-56 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl border border-black/[0.08] dark:border-white/[0.1] rounded-[16px] shadow-[0_16px_36px_rgba(0,0,0,0.12)] p-1.5 z-20 animate-in fade-in zoom-in-95 duration-100">
-                <div className="px-3 py-2 border-b border-black/[0.04] dark:border-white/[0.06] mb-1">
-                  <p className="text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Akun Masuk</p>
-                  <p className="text-[13px] font-semibold text-zinc-900 dark:text-zinc-100 truncate mt-0.5">{email}</p>
-                  <p className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 capitalize">{role}</p>
+              <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 z-20">
+                <div className="px-3 py-2 border-b border-slate-100 mb-1">
+                  <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Akun Masuk</p>
+                  <p className="text-xs font-semibold text-slate-900 truncate mt-0.5">{email}</p>
+                  <p className="text-[10.5px] font-medium text-emerald-600 capitalize">{role}</p>
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-red-600 dark:text-red-400 hover:bg-red-500/10 rounded-[10px] font-medium text-[13px] transition-colors"
+                  className="w-full flex items-center gap-2 px-3 py-2 text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-medium transition-colors"
                 >
-                  <LogOut size={15} strokeWidth={1.8} />
-                  <span>Keluar</span>
+                  <LogOut size={13} strokeWidth={1.8} />
+                  <span>Keluar Akun</span>
                 </button>
               </div>
             </>

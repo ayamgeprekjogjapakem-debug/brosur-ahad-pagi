@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft, CheckCircle, XCircle, Loader2, PlayCircle, Database } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, AlertTriangle, Loader2, PlayCircle, Database, RefreshCw, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -71,95 +71,110 @@ export default function CompareQuranPage() {
   };
 
   return (
-    <main className="p-8 md:p-12 w-full max-w-4xl mx-auto">
-      <Link href="/dashboard/quran" className="inline-flex items-center gap-2 text-zinc-500 hover:text-accent font-bold mb-6 transition-colors">
-        <ArrowLeft size={18} /> Kembali ke Data Quran
+    <div className="w-full max-w-4xl mx-auto py-6 md:py-8 font-sans antialiased text-slate-800 select-none space-y-6">
+      <Link 
+        href="/dashboard/quran" 
+        className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-emerald-700 transition"
+      >
+        <ArrowLeft size={14} /> <span>Kembali ke Data Quran</span>
       </Link>
 
-      <header className="mb-10">
-        <h1 className="text-3xl font-extrabold mb-2">Komparasi Data Kemenag</h1>
-        <p className="text-zinc-500">Mengecek perbedaan data di database lokal Anda dengan API Kemenag (EQuran).</p>
-      </header>
+      {/* Header Banner */}
+      <div>
+        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
+          Komparasi Data{' '}
+          <span className="bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 bg-clip-text text-transparent font-extrabold">
+            Kemenag RI
+          </span>
+        </h2>
+        <p className="text-xs sm:text-sm text-slate-500 mt-1 font-normal leading-relaxed">
+          Mengecek perbedaan data surah dan ayat di basis data lokal Anda dengan API resmi Kemenag (EQuran).
+        </p>
+      </div>
 
       {isChecking ? (
-        <div className="bg-white  border border-black/5  rounded-3xl p-12 flex flex-col items-center justify-center shadow-sm">
-          <Loader2 className="w-12 h-12 text-accent animate-spin mb-4" />
-          <h2 className="text-xl font-bold mb-2">Sedang Mengecek Pembaruan...</h2>
-          <p className="text-zinc-500 text-sm">Menghubungkan ke API EQuran.id</p>
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-12 flex flex-col items-center justify-center text-center">
+          <Loader2 className="w-10 h-10 text-emerald-600 animate-spin mb-3" />
+          <h3 className="text-sm font-bold text-slate-900">Sedang Mengecek Pembaruan...</h3>
+          <p className="text-xs text-slate-500 mt-1">Menghubungkan ke API Kemenag / EQuran.id</p>
         </div>
       ) : syncResult && !syncResult.success ? (
-        <div className="bg-red-50  border border-red-200  rounded-3xl p-8 flex flex-col items-center justify-center text-center">
-          <XCircle className="w-16 h-16 text-red-500 mb-4" />
-          <h2 className="text-xl font-bold text-red-700  mb-2">Pengecekan Gagal</h2>
-          <p className="text-red-600/80  mb-6">{syncResult.error}</p>
-          <button onClick={checkUpdates} className="bg-red-500 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-red-600 transition-colors">
+        <div className="bg-rose-50 border border-rose-200/80 rounded-2xl p-6 flex flex-col items-center text-center">
+          <XCircle className="w-10 h-10 text-rose-500 mb-2" />
+          <h3 className="text-sm font-bold text-rose-800">Pengecekan Gagal</h3>
+          <p className="text-xs text-rose-600 mt-1 mb-4">{syncResult.error}</p>
+          <button 
+            onClick={checkUpdates} 
+            className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold transition"
+          >
             Coba Lagi
           </button>
         </div>
       ) : syncResult ? (
-        <div className="bg-white  border border-black/5  rounded-3xl p-8 shadow-sm">
-          <div className="flex items-center justify-between mb-8 pb-8 border-b border-black/5 ">
-            <div className="flex items-center gap-4">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
+            <div className="flex items-center gap-3.5">
               {syncResult.needsUpdate ? (
-                <div className="w-16 h-16 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
-                  <Database size={32} />
+                <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 border border-amber-200/60 flex items-center justify-center shrink-0">
+                  <Database size={24} />
                 </div>
               ) : (
-                <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
-                  <CheckCircle size={32} />
+                <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200/60 flex items-center justify-center shrink-0">
+                  <CheckCircle2 size={24} />
                 </div>
               )}
               
               <div>
-                <h2 className="text-2xl font-bold mb-1">
-                  {syncResult.needsUpdate ? 'Pembaruan Ditemukan' : 'Sistem Up-to-Date'}
-                </h2>
-                <p className="text-zinc-500 text-sm">{syncResult.message}</p>
+                <h3 className="text-lg font-bold text-slate-900">
+                  {syncResult.needsUpdate ? 'Pembaruan Data Ditemukan' : 'Basis Data Sudah Sesuai (Up-to-Date)'}
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">{syncResult.message}</p>
               </div>
             </div>
 
             {!syncResult.needsUpdate && (
               <button 
                 onClick={handleApplyUpdates}
-                className="text-accent hover:underline text-sm font-bold"
+                className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 hover:underline shrink-0"
               >
-                Force Update (Paksa Sinkron)
+                Paksa Sinkron Ulang
               </button>
             )}
           </div>
 
-          <div className="space-y-6 mb-8">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 bg-zinc-50  rounded-2xl border border-black/5 ">
-                <p className="text-zinc-500 text-xs font-bold uppercase mb-1">Data Lokal (Supabase)</p>
-                <p className="text-2xl font-black">{syncResult.localSurahsCount} Surah</p>
-              </div>
-              <div className="p-4 bg-zinc-50  rounded-2xl border border-black/5 ">
-                <p className="text-zinc-500 text-xs font-bold uppercase mb-1">Data Kemenag (EQuran)</p>
-                <p className="text-2xl font-black">{syncResult.externalSurahsCount} Surah</p>
-              </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="p-4 bg-slate-50/70 rounded-xl border border-slate-200/70">
+              <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider block mb-1">Data Lokal (Supabase)</span>
+              <span className="text-2xl font-bold text-slate-900 font-mono">{syncResult.localSurahsCount || 0}</span>
+              <span className="text-xs text-slate-500 block">Surah tersimpan</span>
             </div>
-
-            {syncResult.changes && syncResult.changes.length > 0 && (
-              <div>
-                <h3 className="font-bold text-sm mb-3">Detail Perubahan:</h3>
-                <ul className="space-y-2">
-                  {syncResult.changes.map((c: string, i: number) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-zinc-600  bg-amber-50  p-3 rounded-xl">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 shrink-0"></span> {c}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            <div className="p-4 bg-emerald-50/50 rounded-xl border border-emerald-200/60">
+              <span className="text-emerald-700 text-[10px] font-bold uppercase tracking-wider block mb-1">Data Kemenag (EQuran)</span>
+              <span className="text-2xl font-bold text-emerald-800 font-mono">{syncResult.externalSurahsCount || 114}</span>
+              <span className="text-xs text-emerald-600 block">Surah resmi</span>
+            </div>
           </div>
+
+          {syncResult.changes && syncResult.changes.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Perbedaan yang Ditemukan:</h4>
+              <ul className="space-y-1.5">
+                {syncResult.changes.map((c: string, i: number) => (
+                  <li key={i} className="flex items-start gap-2 text-xs text-amber-800 bg-amber-50/70 border border-amber-200/60 p-3 rounded-xl">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0"></span> 
+                    <span className="leading-relaxed">{c}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {syncResult.needsUpdate && !isApplying && (
             <button 
               onClick={handleApplyUpdates}
-              className="w-full bg-accent text-white py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 hover:bg-accent/90 transition-colors shadow-lg shadow-accent/20"
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-semibold text-xs flex items-center justify-center gap-2 transition"
             >
-              <PlayCircle size={24} /> Mulai Sinkronisasi (Unduh ke Database)
+              <PlayCircle size={16} /> <span>Mulai Unduh & Sinkronkan ke Database</span>
             </button>
           )}
         </div>
@@ -167,25 +182,24 @@ export default function CompareQuranPage() {
 
       {/* Fullscreen Overlay for Progress */}
       {isApplying && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center p-8">
-          <div className="bg-white  rounded-3xl p-8 max-w-md w-full text-center">
-            <Loader2 className="w-16 h-16 text-accent animate-spin mx-auto mb-6" />
-            <h2 className="text-2xl font-bold mb-2">Sinkronisasi Berjalan</h2>
-            <p className="text-zinc-500 mb-8">Memproses Surah ke-{currentSurah} dari 114...</p>
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center p-6">
+          <div className="bg-white rounded-2xl p-6 sm:p-8 max-w-sm w-full text-center border border-slate-200">
+            <Loader2 className="w-10 h-10 text-emerald-600 animate-spin mx-auto mb-4" />
+            <h3 className="text-base font-bold text-slate-900 mb-1">Sinkronisasi Sedang Berjalan</h3>
+            <p className="text-xs text-slate-500 mb-5">Memproses Surah ke-{currentSurah} dari 114...</p>
             
-            <div className="w-full h-4 bg-zinc-100  rounded-full overflow-hidden mb-2">
+            <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden mb-2">
               <div 
-                className="h-full bg-accent transition-all duration-300 ease-out" 
+                className="h-full bg-emerald-600 transition-all duration-300 ease-out" 
                 style={{ width: `${progress}%` }}
               ></div>
             </div>
-            <div className="font-black text-accent text-lg">{progress}% Selesai</div>
+            <div className="font-bold text-emerald-600 text-xs font-mono">{progress}% Selesai</div>
             
-            <p className="text-xs text-zinc-400 mt-6 mt-4">Mohon jangan tutup halaman ini hingga proses selesai.</p>
+            <p className="text-[11px] text-slate-400 mt-4">Mohon tunggu hingga seluruh surah tersimpan ke basis data.</p>
           </div>
         </div>
       )}
-
-    </main>
+    </div>
   );
 }

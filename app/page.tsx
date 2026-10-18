@@ -197,13 +197,19 @@ export default function MakkahPortal() {
 
   useEffect(() => {
     fetch('/api/search/popular')
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) return { topics: [] };
+        return res.json();
+      })
       .then(data => {
-        if (data.topics && data.topics.length > 0) {
+        if (data && data.topics && data.topics.length > 0) {
           setPopularTopics(data.topics);
         }
       })
-      .catch(err => console.error('Gagal memuat topik populer:', err));
+      .catch(err => {
+        // Fallback default
+        setPopularTopics([]);
+      });
   }, []);
 
   return (

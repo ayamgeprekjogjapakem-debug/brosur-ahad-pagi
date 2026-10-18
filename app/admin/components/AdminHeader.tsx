@@ -42,10 +42,13 @@ export default function AdminHeader({ email: initialEmail, role: initialRole = '
     if (path === '/admin') return 'Dashboard';
     if (path.startsWith('/admin/data-brosur')) return 'Data Brosur';
     if (path.startsWith('/admin/data-quran')) return 'Data Quran';
+    if (path.startsWith('/admin/hadist-9-imam')) return 'Hadist 9 Imam';
+    if (path.startsWith('/admin/hadist')) return 'Hadist Brosur';
     if (path.startsWith('/admin/kalender')) return 'Kalender';
     if (path.startsWith('/admin/notifikasi')) return 'Notifikasi';
     if (path.startsWith('/admin/akun')) return 'Akun';
     if (path.startsWith('/admin/management-akun')) return 'Management Akun';
+    if (path.startsWith('/admin/super-admin')) return 'Super Admin Console';
     return 'Admin';
   };
 

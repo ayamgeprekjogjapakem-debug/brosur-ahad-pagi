@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Search, Bookmark, BookOpen, ScrollText, Users, X, Menu, CalendarDays, BrainCircuit, Settings, BookMarked } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -194,13 +195,19 @@ export default function MainSidebar({
             className={`flex items-center ${!isSidebarOpen ? 'justify-center' : 'gap-3'} group text-left cursor-pointer outline-none w-full`}
             title={!isSidebarOpen ? 'Pustaka MTA' : undefined}
           >
-            <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white shadow-sm transition-transform group-hover:scale-105 shrink-0">
-              <BookOpen className="w-4 h-4" />
+            <div className="relative w-8 h-8 rounded-lg overflow-hidden shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+              <Image
+                src="/images/logo_rb.png"
+                alt="Logo Pustaka"
+                fill
+                sizes="32px"
+                className="object-contain"
+              />
             </div>
             {isSidebarOpen && (
               <div className="flex flex-col overflow-hidden">
                 <h1 className="text-[13px] font-extrabold text-slate-900 leading-tight truncate">Pustaka MTA</h1>
-                <p className="text-[9px] font-bold text-emerald-600 tracking-widest uppercase truncate">v1.0 Makkah</p>
+                <p className="text-[9px] font-bold text-emerald-600 tracking-widest uppercase truncate">Brosur Ahad Pagi</p>
               </div>
             )}
           </Link>

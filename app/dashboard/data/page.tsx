@@ -577,136 +577,179 @@ export default function DataBrosurPage() {
   };
 
   return (
-    <main className="p-8 md:p-12 w-full max-w-7xl mx-auto">
-      <header className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="w-full max-w-7xl mx-auto py-6 md:py-8 font-sans antialiased text-slate-800 select-none space-y-6">
+      {/* Header Banner Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold mb-2 flex items-center gap-3">
-            <Database className="text-accent" /> Data Brosur & Koleksi
-          </h1>
-          <p className="text-zinc-500">Kelola brosur dan master koleksi (kategori) arsip Anda.</p>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/70 text-emerald-700 text-xs font-medium mb-2">
+            <Database size={12} className="text-emerald-600" />
+            <span>Pustaka Data & Koleksi</span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
+            Data Brosur &{' '}
+            <span className="bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 bg-clip-text text-transparent font-extrabold">
+              Koleksi Arsip
+            </span>
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1 font-normal leading-relaxed">
+            Kelola data brosur, indeks pencarian, dan master koleksi kategori arsip Anda.
+          </p>
         </div>
         
         {activeTab === 'brosur' ? (
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap items-center gap-2.5">
             <button
               onClick={handleVectorSync}
               disabled={isVectorSyncing || syncStatus.unsynced === 0}
-              className="bg-zinc-900  text-white  px-5 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-zinc-800 transition-colors disabled:opacity-50 shrink-0"
+              className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-semibold flex items-center justify-center gap-2 transition disabled:opacity-50 shrink-0"
             >
-              {isVectorSyncing ? <Loader2 size={18} className="animate-spin" /> : <Database size={18} />}
-              {isVectorSyncing 
-                ? 'Menyinkronkan...' 
-                : syncStatus.unsynced > 0 
-                  ? `Sinkron AI (${syncStatus.unsynced} tertinggal)` 
-                  : 'AI Tersinkron Penuh'}
+              {isVectorSyncing ? <Loader2 size={14} className="animate-spin" /> : <Database size={14} />}
+              <span>
+                {isVectorSyncing 
+                  ? 'Menyinkronkan...' 
+                  : syncStatus.unsynced > 0 
+                    ? `Sinkron AI (${syncStatus.unsynced} tertinggal)` 
+                    : 'AI Tersinkron Penuh'}
+              </span>
             </button>
             <Link 
               href="/dashboard/data/create" 
-              className="bg-accent text-white px-5 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-accent/90 transition-colors shrink-0"
+              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center justify-center gap-2 transition shrink-0 active:scale-[0.98]"
             >
-              <Plus size={18} /> Tambah Brosur
+              <Plus size={14} /> <span>Tambah Brosur</span>
             </Link>
           </div>
         ) : (
           <Link 
             href="/dashboard/data/folder/create" 
-            className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-blue-700 transition-colors shrink-0"
+            className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center justify-center gap-2 transition shrink-0 active:scale-[0.98]"
           >
-            <Plus size={18} /> Buat Koleksi Baru
+            <Plus size={14} /> <span>Buat Koleksi Baru</span>
           </Link>
         )}
-      </header>
+      </div>
 
-      {/* Kapasitas Database Widget */}
+      {/* Estimasi Kapasitas Database Widget */}
       {capacity && (
-        <div className="mb-8 bg-white  border border-black/5  rounded-2xl p-5 flex flex-col md:flex-row items-center gap-6 shadow-sm">
-          <div className="flex-1 w-full">
-            <div className="flex justify-between items-end mb-2">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 flex flex-col md:flex-row items-center gap-6 shadow-none">
+          <div className="flex-1 w-full space-y-2">
+            <div className="flex justify-between items-end">
               <div>
-                <div className="text-sm font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
-                  <Database size={14} /> Estimasi Kapasitas Database
+                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Database size={13} className="text-emerald-600" />
+                  <span>Estimasi Kapasitas Basis Data</span>
                 </div>
-                <div className="font-bold text-lg mt-1">
-                  {(capacity.estimatedBytesUsed / (1024 * 1024)).toFixed(2)} MB <span className="text-zinc-400 text-sm font-medium">dari {capacity.limitBytes / (1024 * 1024)} MB (Free Tier)</span>
+                <div className="text-base font-bold text-slate-800 mt-1">
+                  {(capacity.estimatedBytesUsed / (1024 * 1024)).toFixed(2)} MB{' '}
+                  <span className="text-slate-400 text-xs font-normal">
+                    dari {capacity.limitBytes / (1024 * 1024)} MB (Free Tier)
+                  </span>
                 </div>
               </div>
-              <div className="text-accent font-extrabold text-xl">
+              <div className="text-emerald-600 font-extrabold text-lg">
                 {capacity.percentageUsed.toFixed(2)}%
               </div>
             </div>
-            <div className="w-full bg-zinc-100  rounded-full h-2.5 overflow-hidden">
+            <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
               <div 
-                className={`h-full rounded-full transition-all duration-1000 ${capacity.percentageUsed > 90 ? 'bg-red-500' : capacity.percentageUsed > 75 ? 'bg-amber-500' : 'bg-accent'}`}
+                className={`h-full rounded-full transition-all duration-500 ${
+                  capacity.percentageUsed > 90 ? 'bg-rose-500' : capacity.percentageUsed > 75 ? 'bg-amber-500' : 'bg-emerald-500'
+                }`}
                 style={{ width: `${Math.min(100, capacity.percentageUsed)}%` }}
-              ></div>
+              />
             </div>
           </div>
           
-          <div className="flex gap-4 md:border-l md:border-black/5 md: md:pl-6 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
-            <button onClick={() => changeTab('brosur')} className="flex flex-col text-center min-w-[80px] hover:bg-black/5 p-2 rounded-xl transition-colors cursor-pointer group">
-              <span className="text-xl font-black text-zinc-800 group-hover:text-accent transition-colors">{capacity.tables.brosur}</span>
-              <span className="text-xs font-bold text-zinc-500">Brosur</span>
-              <span className="text-[10px] text-zinc-400 mt-1">Tab di bawah</span>
+          <div className="flex gap-4 md:border-l md:border-slate-100 md:pl-6 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+            <button 
+              onClick={() => changeTab('brosur')} 
+              className="flex flex-col text-center min-w-[76px] hover:bg-slate-50 p-2 rounded-xl transition cursor-pointer"
+            >
+              <span className="text-base font-bold text-slate-800">{capacity.tables.brosur}</span>
+              <span className="text-xs text-slate-500 font-medium">Brosur</span>
+              <span className="text-[10px] text-slate-400">Tab di bawah</span>
             </button>
-            <Link href="/dashboard/hadist-api" className="flex flex-col text-center min-w-[80px] hover:bg-black/5 p-2 rounded-xl transition-colors cursor-pointer group">
-              <span className="text-xl font-black text-zinc-800 group-hover:text-amber-600 transition-colors">{capacity.tables.hadist}</span>
-              <span className="text-xs font-bold text-zinc-500">Hadist</span>
-              <span className="text-[10px] text-zinc-400 mt-1">Menu Tarik API</span>
+            <Link 
+              href="/dashboard/hadist-api" 
+              className="flex flex-col text-center min-w-[76px] hover:bg-slate-50 p-2 rounded-xl transition cursor-pointer"
+            >
+              <span className="text-base font-bold text-slate-800">{capacity.tables.hadist}</span>
+              <span className="text-xs text-slate-500 font-medium">Hadist</span>
+              <span className="text-[10px] text-slate-400">Tarik API</span>
             </Link>
-            <div className="flex flex-col text-center min-w-[80px] p-2">
-              <span className="text-xl font-black text-zinc-800 ">{capacity.totalRecords}</span>
-              <span className="text-xs font-bold text-zinc-500">Total Baris</span>
-              <span className="text-[10px] text-zinc-400 mt-1">Seluruh DB</span>
+            <div className="flex flex-col text-center min-w-[76px] p-2">
+              <span className="text-base font-bold text-slate-800">{capacity.totalRecords}</span>
+              <span className="text-xs text-slate-500 font-medium">Total Baris</span>
+              <span className="text-[10px] text-slate-400">Semua tabel</span>
             </div>
           </div>
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="flex flex-wrap items-center gap-2 mb-6 border-b border-black/5  pb-2">
+      {/* Segmented Control Tabs */}
+      <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-200/80 pb-2.5">
         <button 
           onClick={() => changeTab('brosur')}
-          className={`flex items-center gap-2 px-6 py-3 rounded-t-xl font-bold transition-colors ${activeTab === 'brosur' ? 'bg-white  border-t border-l border-r border-black/5  text-accent' : 'text-zinc-500 hover:text-zinc-900  hover:bg-black/5 '}`}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition ${
+            activeTab === 'brosur' 
+              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60 shadow-none' 
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-transparent'
+          }`}
         >
-          <FileText size={18} /> Brosur Terisi ({activeTab === 'brosur' ? totalBrosurs : '...'})
+          <FileText size={14} className={activeTab === 'brosur' ? 'text-emerald-600' : 'text-slate-400'} />
+          <span>Brosur Terisi ({activeTab === 'brosur' ? totalBrosurs : '...'})</span>
         </button>
+
         <button 
           onClick={() => changeTab('folder')}
-          className={`flex items-center gap-2 px-6 py-3 rounded-t-xl font-bold transition-colors ${activeTab === 'folder' ? 'bg-white  border-t border-l border-r border-black/5  text-blue-600' : 'text-zinc-500 hover:text-zinc-900  hover:bg-black/5 '}`}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition ${
+            activeTab === 'folder' 
+              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60 shadow-none' 
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-transparent'
+          }`}
         >
-          <FolderArchive size={18} /> Master Koleksi ({folders.length})
+          <FolderArchive size={14} className={activeTab === 'folder' ? 'text-emerald-600' : 'text-slate-400'} />
+          <span>Master Koleksi ({folders.length})</span>
         </button>
+
         <button 
           onClick={() => changeTab('vektor')}
-          className={`flex items-center gap-2 px-6 py-3 rounded-t-xl font-bold transition-colors ${activeTab === 'vektor' ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-zinc-900  hover:bg-black/5 '}`}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition ${
+            activeTab === 'vektor' 
+              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60 shadow-none' 
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-transparent'
+          }`}
         >
-          <Database size={18} /> Vektor AI ({syncStatus.synced})
+          <Database size={14} className={activeTab === 'vektor' ? 'text-emerald-600' : 'text-slate-400'} />
+          <span>Vektor AI ({syncStatus.synced})</span>
         </button>
       </div>
 
-      <div className="bg-white  border border-black/5  rounded-3xl p-6 shadow-sm rounded-tl-none">
+      {/* Main Content Container */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-5 sm:p-6 shadow-none space-y-5">
         
-        <div className="mb-6 flex flex-col md:flex-row items-center gap-4">
-          <div className="relative flex-1 w-full">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
+        {/* Toolbar & Filters */}
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
             <input 
               type="text" 
               placeholder={activeTab === 'brosur' ? "Cari judul atau tahun brosur..." : "Cari nama koleksi..."}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-zinc-50  border border-zinc-200  rounded-xl py-3 pl-12 pr-4 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition"
             />
           </div>
           
           {activeTab === 'brosur' && (
-            <>
+            <div className="flex flex-wrap items-center gap-2">
               <select
                 value={filterFolder}
                 onChange={(e) => {
                   setFilterFolder(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full md:w-auto bg-zinc-50  border border-zinc-200  rounded-xl py-3 px-4 focus:outline-none focus:border-accent transition-all text-sm"
+                className="bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 focus:outline-none"
               >
                 <option value="">Semua Koleksi</option>
                 <option value="none">Tanpa Koleksi</option>
@@ -721,7 +764,7 @@ export default function DataBrosurPage() {
                   setFilterTahun(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full md:w-auto bg-zinc-50  border border-zinc-200  rounded-xl py-3 px-4 focus:outline-none focus:border-accent transition-all text-sm"
+                className="bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 focus:outline-none"
               >
                 <option value="">Semua Tahun</option>
                 {availableYears.map(year => (
@@ -735,7 +778,7 @@ export default function DataBrosurPage() {
                   setSortBy(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full md:w-auto bg-zinc-50  border border-zinc-200  rounded-xl py-3 px-4 focus:outline-none focus:border-accent transition-all text-sm"
+                className="bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 focus:outline-none"
               >
                 <option value="tahun_desc">Tahun (Terbaru)</option>
                 <option value="tahun_asc">Tahun (Terlama)</option>
@@ -749,42 +792,47 @@ export default function DataBrosurPage() {
                   setItemsPerPage(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="w-full md:w-auto bg-zinc-50  border border-zinc-200  rounded-xl py-3 px-4 focus:outline-none focus:border-accent transition-all text-sm"
+                className="bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 focus:outline-none"
               >
                 <option value={10}>10 per hal</option>
                 <option value={20}>20 per hal</option>
                 <option value={50}>50 per hal</option>
                 <option value={100}>100 per hal</option>
-                <option value={500}>500 per hal</option>
-                <option value={1000}>1000 per hal</option>
               </select>
-            </>
-          )}
-          
-          {activeTab === 'brosur' && totalBrosurs > 0 && (
-            <button 
-              onClick={handleDeleteFiltered}
-              disabled={isEmptyingTable}
-              className="w-full md:w-auto bg-red-500/10 text-red-600  px-5 py-3 rounded-xl font-bold text-sm hover:bg-red-500 hover:text-white disabled:opacity-50 transition-colors shrink-0 flex items-center justify-center gap-2 border border-red-500/20"
-            >
-              {isEmptyingTable ? <Loader2 className="animate-spin" size={16} /> : <><Trash2 size={16} /> {filterFolder ? (filterFolder === 'none' ? 'Hapus Tanpa Koleksi' : 'Hapus Koleksi') : 'Hapus Semua'}</>}
-            </button>
+
+              {totalBrosurs > 0 && (
+                <button 
+                  onClick={handleDeleteFiltered}
+                  disabled={isEmptyingTable}
+                  className="bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 px-3 py-2 rounded-xl text-xs font-semibold disabled:opacity-50 transition shrink-0 flex items-center justify-center gap-1.5"
+                >
+                  {isEmptyingTable ? (
+                    <Loader2 className="animate-spin" size={13} />
+                  ) : (
+                    <>
+                      <Trash2 size={13} />
+                      <span>{filterFolder ? (filterFolder === 'none' ? 'Hapus Tanpa Koleksi' : 'Hapus Koleksi') : 'Hapus Semua'}</span>
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
           )}
         </div>
 
         {/* Action Bar Muncul Jika Ada Brosur Terpilih */}
         {activeTab === 'brosur' && selectedBrosurs.length > 0 && (
-          <div className="mb-6 bg-accent/10 border border-accent/20 rounded-xl p-4 flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="font-bold flex items-center gap-2">
-              <CheckSquare className="text-accent" size={20} />
-              <span className="text-accent">{selectedBrosurs.length} Brosur Terpilih</span>
+          <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-xl p-3.5 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 text-xs">
+            <div className="font-semibold text-emerald-800 flex items-center gap-2">
+              <CheckSquare className="text-emerald-600" size={16} />
+              <span>{selectedBrosurs.length} Brosur Terpilih</span>
             </div>
             
-            <div className="flex items-center gap-3 w-full md:w-auto">
+            <div className="flex flex-wrap items-center gap-2">
               <select 
                 value={bulkFolderId}
                 onChange={(e) => setBulkFolderId(e.target.value)}
-                className="bg-white  border border-black/10  rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-accent flex-1 md:w-48"
+                className="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 focus:outline-none flex-1 md:w-48"
               >
                 <option value="" disabled>-- Pindah ke Koleksi --</option>
                 {folders.map(f => (
@@ -795,218 +843,225 @@ export default function DataBrosurPage() {
               <button 
                 onClick={handleBulkMove}
                 disabled={isUpdatingBulk || !bulkFolderId}
-                className="bg-accent text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-accent/90 disabled:opacity-50 transition-colors shrink-0 flex items-center gap-2"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-lg font-semibold text-xs transition disabled:opacity-50 shrink-0 flex items-center gap-1.5 active:scale-95"
               >
-                {isUpdatingBulk ? <Loader2 className="animate-spin" size={16} /> : 'Terapkan'}
+                {isUpdatingBulk ? <Loader2 className="animate-spin" size={13} /> : 'Terapkan'}
               </button>
               
               <button 
                 onClick={handleBulkDelete}
                 disabled={isUpdatingBulk}
-                className="bg-red-500/10 text-red-600  px-4 py-2 rounded-lg font-bold text-sm hover:bg-red-500 hover:text-white disabled:opacity-50 transition-colors shrink-0 flex items-center gap-2"
+                className="bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 px-3.5 py-1.5 rounded-lg font-semibold text-xs transition disabled:opacity-50 shrink-0 flex items-center gap-1.5"
               >
-                {isUpdatingBulk ? <Loader2 className="animate-spin" size={16} /> : <><Trash2 size={16} /> Hapus Terpilih</>}
+                {isUpdatingBulk ? <Loader2 className="animate-spin" size={13} /> : <><Trash2 size={13} /> Hapus Terpilih</>}
               </button>
             </div>
           </div>
         )}
 
         {loading ? (
-          <div className="py-24 flex flex-col items-center justify-center text-zinc-500">
-            <div className="relative flex items-center justify-center w-14 h-14 mb-6">
-              <div className="absolute w-full h-full border-[1.5px] border-teal-500/10 rounded-full"></div>
-              <div className="absolute w-full h-full border-[1.5px] border-transparent border-t-teal-500 rounded-full animate-spin" style={{ animationDuration: '1s', animationTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)' }}></div>
-            </div>
-            <p className="text-sm font-medium text-teal-600/70 tracking-widest uppercase animate-pulse">Memuat Data...</p>
+          <div className="py-20 flex flex-col items-center justify-center text-slate-400 gap-3">
+            <Loader2 className="animate-spin text-emerald-600" size={28} />
+            <p className="text-xs font-medium">Memuat data brosur...</p>
           </div>
         ) : activeTab === 'brosur' ? (
           /* TAB BROSUR */
           brosurs.length === 0 ? (
-            <div className="py-20 text-center text-zinc-500 border-2 border-dashed border-zinc-200  rounded-2xl">
-              <p>Tidak ada brosur yang ditemukan.</p>
+            <div className="py-16 text-center text-slate-400 space-y-1">
+              <FileText size={32} className="mx-auto text-slate-300 mb-2" />
+              <p className="text-xs font-semibold text-slate-600">Tidak ada brosur yang ditemukan</p>
+              <p className="text-[11px] text-slate-400">Silakan sesuaikan filter pencarian atau tambah brosur baru.</p>
             </div>
           ) : (
             <>
               <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                <thead>
-                  <tr className="border-b border-black/5  text-zinc-500 text-sm">
-                    <th className="p-4 w-12">
-                      <input 
-                        type="checkbox" 
-                        className="w-4 h-4 accent-accent cursor-pointer rounded"
-                        checked={brosurs.length > 0 && selectedBrosurs.length === brosurs.length}
-                        onChange={handleSelectAll}
-                      />
-                    </th>
-                    <th className="p-4 font-bold">Judul</th>
-                    <th className="p-4 font-bold">Tahun</th>
-                    <th className="p-4 font-bold">Koleksi</th>
-                    <th className="p-4 font-bold text-right">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {brosurs.map((brosur) => (
-                    <tr key={brosur.id} className={`border-b border-black/5  hover:bg-black/[0.02] [0.02] transition-colors ${selectedBrosurs.includes(brosur.id) ? 'bg-accent/5 ' : ''}`}>
-                      <td className="p-4">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50/70 border-b border-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                      <th className="py-3 px-4 w-10">
                         <input 
                           type="checkbox" 
-                          className="w-4 h-4 accent-accent cursor-pointer rounded"
-                          checked={selectedBrosurs.includes(brosur.id)}
-                          onChange={() => handleSelectOne(brosur.id)}
+                          className="w-3.5 h-3.5 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                          checked={brosurs.length > 0 && selectedBrosurs.length === brosurs.length}
+                          onChange={handleSelectAll}
                         />
-                      </td>
-                      <td className="p-4 font-bold max-w-[200px] truncate" title={brosur.judul}>
-                        {brosur.judul}
-                      </td>
-                      <td className="p-4">
-                        <span className="bg-accent/10 text-accent px-3 py-1 rounded-full text-xs font-bold">
-                          {brosur.tahun}
-                        </span>
-                      </td>
-                      <td className="p-4 text-sm text-zinc-500">
-                        {brosur.folders ? (
-                          <span className="flex items-center gap-1"><FolderArchive size={14} className="text-blue-500"/> {brosur.folders.name}</span>
-                        ) : (
-                          <span className="italic text-zinc-400">Tidak ada koleksi</span>
-                        )}
-                      </td>
-                      <td className="p-4 text-right flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => handleDownloadBrosur(brosur.id, brosur.judul)}
-                          disabled={downloadingId === brosur.id}
-                          className="p-2 bg-green-500/10 text-green-600  hover:bg-green-500 hover:text-white rounded-lg transition-colors disabled:opacity-50"
-                          title="Download Teks Brosur"
-                        >
-                          {downloadingId === brosur.id ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />}
-                        </button>
-                        <Link 
-                          href={`/dashboard/data/edit/${brosur.id}`}
-                          className="p-2 bg-blue-500/10 text-blue-600  hover:bg-blue-500 hover:text-white rounded-lg transition-colors"
-                          title="Edit Brosur"
-                        >
-                          <Edit2 size={16} />
-                        </Link>
-                        <button 
-                          onClick={() => handleDeleteBrosur(brosur.id, brosur.judul)}
-                          disabled={deletingId === brosur.id}
-                          className="p-2 bg-red-500/10 text-red-600  hover:bg-red-500 hover:text-white rounded-lg transition-colors disabled:opacity-50"
-                          title="Hapus Brosur"
-                        >
-                          {deletingId === brosur.id ? <Loader2 className="animate-spin" size={16} /> : <Trash2 size={16} />}
-                        </button>
-                      </td>
+                      </th>
+                      <th className="py-3 px-4">Judul Brosur</th>
+                      <th className="py-3 px-4">Tahun</th>
+                      <th className="py-3 px-4">Koleksi</th>
+                      <th className="py-3 px-4 text-right">Aksi</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-xs">
+                    {brosurs.map((brosur) => (
+                      <tr key={brosur.id} className={`hover:bg-slate-50/60 transition-colors ${selectedBrosurs.includes(brosur.id) ? 'bg-emerald-50/30' : ''}`}>
+                        <td className="py-3 px-4">
+                          <input 
+                            type="checkbox" 
+                            className="w-3.5 h-3.5 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                            checked={selectedBrosurs.includes(brosur.id)}
+                            onChange={() => handleSelectOne(brosur.id)}
+                          />
+                        </td>
+                        <td className="py-3 px-4 font-semibold text-slate-800 max-w-xs sm:max-w-md truncate" title={brosur.judul}>
+                          {brosur.judul}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-medium">
+                            {brosur.tahun}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-500 text-xs">
+                          {brosur.folders ? (
+                            <span className="flex items-center gap-1.5"><FolderArchive size={13} className="text-emerald-600"/> {brosur.folders.name}</span>
+                          ) : (
+                            <span className="italic text-slate-400">Tanpa koleksi</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              onClick={() => handleDownloadBrosur(brosur.id, brosur.judul)}
+                              disabled={downloadingId === brosur.id}
+                              className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-slate-100 rounded-lg transition disabled:opacity-50"
+                              title="Unduh Teks Brosur"
+                            >
+                              {downloadingId === brosur.id ? <Loader2 className="animate-spin" size={14} /> : <Download size={14} />}
+                            </button>
+                            <Link 
+                              href={`/dashboard/data/edit/${brosur.id}`}
+                              className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition"
+                              title="Edit Brosur"
+                            >
+                              <Edit2 size={14} />
+                            </Link>
+                            <button 
+                              onClick={() => handleDeleteBrosur(brosur.id, brosur.judul)}
+                              disabled={deletingId === brosur.id}
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition disabled:opacity-50"
+                              title="Hapus Brosur"
+                            >
+                              {deletingId === brosur.id ? <Loader2 className="animate-spin" size={14} /> : <Trash2 size={14} />}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             
-            {/* PAGINATION CONTROLS */}
-            <div className="mt-6 flex flex-col md:flex-row items-center justify-between gap-4 border-t border-black/5  pt-6">
-              <div className="text-sm text-zinc-500 font-medium">
-                Menampilkan <span className="font-bold text-zinc-900 ">{brosurs.length > 0 ? ((currentPage - 1) * itemsPerPage) + 1 : 0}</span> - <span className="font-bold text-zinc-900 ">{Math.min(currentPage * itemsPerPage, totalBrosurs)}</span> dari <span className="font-bold text-zinc-900 ">{totalBrosurs}</span> brosur
-              </div>
-              <div className="flex items-center gap-2">
-                <button 
-                  disabled={currentPage === 1 || loading}
-                  onClick={() => setCurrentPage(prev => prev - 1)}
-                  className="px-4 py-2 border border-zinc-200  rounded-xl disabled:opacity-50 hover:bg-black/5  transition-colors font-medium text-sm"
-                >
-                  Sebelumnya
-                </button>
-                <div className="px-4 py-2 rounded-xl bg-accent/10 text-accent font-bold text-sm">
-                  {currentPage}
+              {/* PAGINATION CONTROLS */}
+              <div className="p-3 bg-slate-50/50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
+                <div className="text-slate-500">
+                  Menampilkan <strong className="text-slate-900">{brosurs.length > 0 ? ((currentPage - 1) * itemsPerPage) + 1 : 0}</strong> - <strong className="text-slate-900">{Math.min(currentPage * itemsPerPage, totalBrosurs)}</strong> dari <strong className="text-slate-900">{totalBrosurs}</strong> brosur
                 </div>
-                <button 
-                  disabled={currentPage * itemsPerPage >= totalBrosurs || loading}
-                  onClick={() => setCurrentPage(prev => prev + 1)}
-                  className="px-4 py-2 border border-zinc-200  rounded-xl disabled:opacity-50 hover:bg-black/5  transition-colors font-medium text-sm"
-                >
-                  Selanjutnya
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button 
+                    disabled={currentPage === 1 || loading}
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg disabled:opacity-40 hover:bg-slate-50 transition text-xs font-medium"
+                  >
+                    Sebelumnya
+                  </button>
+                  <span className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-800 font-semibold text-xs">
+                    {currentPage} / {Math.max(1, Math.ceil(totalBrosurs / itemsPerPage))}
+                  </span>
+                  <button 
+                    disabled={currentPage * itemsPerPage >= totalBrosurs || loading}
+                    onClick={() => setCurrentPage(prev => prev + 1)}
+                    className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg disabled:opacity-40 hover:bg-slate-50 transition text-xs font-medium"
+                  >
+                    Selanjutnya
+                  </button>
+                </div>
               </div>
-            </div>
             </>
           )
         ) : activeTab === 'folder' ? (
           /* TAB FOLDER */
           filteredFolders.length === 0 ? (
-            <div className="py-20 text-center text-zinc-500 border-2 border-dashed border-zinc-200  rounded-2xl">
-              <p>Tidak ada koleksi yang ditemukan.</p>
+            <div className="py-16 text-center text-slate-400 space-y-1">
+              <FolderArchive size={32} className="mx-auto text-slate-300 mb-2" />
+              <p className="text-xs font-semibold text-slate-600">Tidak ada koleksi yang ditemukan</p>
+              <p className="text-[11px] text-slate-400">Silakan buat koleksi baru menggunakan tombol Buat Koleksi Baru.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {filteredFolders.map((folder) => (
-                <div key={folder.id} className="border border-zinc-200  rounded-2xl p-6 flex flex-col hover:border-blue-500/50 transition-colors group bg-zinc-50 ">
-                  <div className="flex items-start justify-between mb-4">
+                <div key={folder.id} className="border border-slate-200/80 rounded-2xl p-5 flex flex-col hover:border-emerald-300 transition-colors bg-slate-50/40">
+                  <div className="flex items-start justify-between mb-3.5">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-colors">
-                        <FolderArchive size={24} />
+                      <div className="w-10 h-10 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center justify-center text-emerald-600 shrink-0">
+                        <FolderArchive size={20} />
                       </div>
                       <div>
-                        <h3 className="font-bold text-lg flex items-center gap-2">
-                          {folder.name}
-                          <span className="text-xs font-bold text-zinc-600 bg-zinc-200 px-2 py-0.5 rounded-full">{folder.stats?.total || 0} Brosur</span>
+                        <h3 className="font-semibold text-sm text-slate-800 flex items-center gap-2">
+                          <span>{folder.name}</span>
+                          <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-full font-mono">
+                            {folder.stats?.total || 0} brosur
+                          </span>
                         </h3>
-                        <p className="text-xs text-zinc-500 font-mono">/{folder.slug}</p>
+                        <p className="text-[11px] text-slate-400 font-mono">/{folder.slug}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
                       <Link 
                         href={`/dashboard/data/folder/edit/${folder.id}`}
-                        className="p-2 bg-black/5  hover:bg-blue-500 hover:text-white rounded-lg transition-colors"
+                        className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition"
+                        title="Edit Koleksi"
                       >
-                        <Edit2 size={16} />
+                        <Edit2 size={14} />
                       </Link>
                       <button 
                         onClick={() => handleDeleteFolder(folder.id, folder.name)}
                         disabled={deletingId === folder.id}
-                        className="p-2 bg-black/5  hover:bg-red-500 hover:text-white rounded-lg transition-colors"
+                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                        title="Hapus Koleksi"
                       >
-                        {deletingId === folder.id ? <Loader2 className="animate-spin" size={16} /> : <Trash2 size={16} />}
+                        {deletingId === folder.id ? <Loader2 className="animate-spin" size={14} /> : <Trash2 size={14} />}
                       </button>
                     </div>
                   </div>
-                  <p className="text-sm text-zinc-600  line-clamp-2 flex-1 mb-4">
-                    {folder.description || <span className="italic opacity-50">Tidak ada deskripsi</span>}
+                  <p className="text-xs text-slate-600 line-clamp-2 flex-1 mb-3.5 leading-relaxed">
+                    {folder.description || <span className="italic text-slate-400">Tidak ada deskripsi</span>}
                   </p>
                   
                   {folder.stats && (
-                    <div className="mb-4">
-                      <div className="flex items-center justify-between text-xs font-bold mb-1">
-                        <span className="text-zinc-500">Status Teks Bersih</span>
-                        <span className={folder.stats.clean === folder.stats.total && folder.stats.total > 0 ? "text-emerald-500" : "text-amber-500"}>
+                    <div className="mb-4 space-y-1">
+                      <div className="flex items-center justify-between text-[11px] font-medium">
+                        <span className="text-slate-500">Status Teks Bersih</span>
+                        <span className={folder.stats.clean === folder.stats.total && folder.stats.total > 0 ? "text-emerald-600 font-semibold" : "text-amber-600 font-semibold"}>
                           {folder.stats.clean} / {folder.stats.total}
                         </span>
                       </div>
-                      <div className="w-full bg-zinc-200  rounded-full h-1.5 overflow-hidden">
+                      <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
                         <div 
                           className={`h-full rounded-full transition-all ${folder.stats.clean === folder.stats.total && folder.stats.total > 0 ? "bg-emerald-500" : "bg-amber-500"}`}
                           style={{ width: `${folder.stats.total > 0 ? (folder.stats.clean / folder.stats.total) * 100 : 0}%` }}
-                        ></div>
+                        />
                       </div>
                     </div>
                   )}
 
-                  <div className="mt-auto flex flex-col gap-2">
+                  <div className="mt-auto flex flex-col sm:flex-row gap-2 pt-2 border-t border-slate-200/50">
                     <button
                       onClick={() => handleGenerateTeks(folder.id, folder.name)}
-                      className={`w-full py-2 font-bold rounded-xl transition-colors flex items-center justify-center gap-2 text-sm ${
+                      className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 ${
                         folder.stats?.clean === folder.stats?.total && folder.stats?.total > 0 
-                          ? 'bg-emerald-500/10 text-emerald-600  hover:bg-emerald-500 hover:text-white'
-                          : 'bg-blue-500/10 text-blue-600  hover:bg-blue-500 hover:text-white'
+                          ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200/60'
+                          : 'bg-slate-900 hover:bg-black text-white'
                       }`}
                     >
-                      <Settings size={16} /> 
-                      {folder.stats?.clean === folder.stats?.total && folder.stats?.total > 0 ? 'Regenerate Teks' : 'Generate Teks Bersih'}
+                      <Settings size={13} /> 
+                      <span>{folder.stats?.clean === folder.stats?.total && folder.stats?.total > 0 ? 'Regenerasi Teks' : 'Generate Teks Bersih'}</span>
                     </button>
                     
                     <button
                       onClick={() => handleStandardizeArabic(folder.id, folder.name)}
-                      className="w-full py-2 font-bold rounded-xl transition-colors flex items-center justify-center gap-2 text-sm bg-purple-500/10 text-purple-600  hover:bg-purple-500 hover:text-white"
+                      className="py-1.5 px-3 rounded-lg text-xs font-semibold bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200/60 transition flex items-center justify-center gap-1.5"
                     >
-                      <Settings size={16} /> Standarisasi Arabic
+                      <Settings size={13} /> <span>Standarisasi Arabic</span>
                     </button>
                   </div>
                 </div>
@@ -1015,17 +1070,21 @@ export default function DataBrosurPage() {
           )
         ) : (
           /* TAB VEKTOR */
-          <div className="space-y-4">
+          <div className="space-y-3">
              {vektors.length === 0 && !loading ? (
-                <div className="py-20 text-center text-zinc-500 border-2 border-dashed border-zinc-200  rounded-2xl">
-                  <p>Belum ada brosur yang disinkronisasi menjadi Vektor.</p>
+                <div className="py-16 text-center text-slate-400 space-y-1">
+                  <Database size={32} className="mx-auto text-slate-300 mb-2" />
+                  <p className="text-xs font-semibold text-slate-600">Belum ada brosur yang disinkronisasi menjadi Vektor</p>
                 </div>
              ) : (
                 vektors.map(v => (
-                  <div key={v.id} className="p-5 border border-zinc-200  rounded-xl bg-zinc-50  hover:border-blue-500/30 transition-colors">
-                    <h3 className="font-bold text-lg mb-2 flex items-center gap-2"><Database size={16} className="text-blue-500" /> {v.judul_brosur}</h3>
-                    <p className="text-sm text-zinc-700  mb-4">{v.content}</p>
-                    <div className="text-xs font-mono text-emerald-600  bg-emerald-500/10 p-2 rounded-lg truncate">
+                  <div key={v.id} className="p-4 border border-slate-200/80 rounded-xl bg-slate-50/40 space-y-2">
+                    <h3 className="font-semibold text-xs text-slate-800 flex items-center gap-2">
+                      <Database size={13} className="text-emerald-600" /> 
+                      <span>{v.judul_brosur}</span>
+                    </h3>
+                    <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">{v.content}</p>
+                    <div className="text-[11px] font-mono text-emerald-700 bg-emerald-50 border border-emerald-200/60 p-2 rounded-lg truncate">
                        Vektor: [ {v.embedding?.slice(0, 8).join(', ')} ... ] (Total 768 dimensi vektor tersimpan)
                     </div>
                   </div>
@@ -1054,6 +1113,6 @@ export default function DataBrosurPage() {
           </div>
         </div>
       )}
-    </main>
+    </div>
   );
 }

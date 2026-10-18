@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { 
   BookOpen, Upload, LogOut, Loader2, FileStack, Settings, 
@@ -13,10 +14,6 @@ import { createClient } from '@/utils/supabase/client';
 export default function DashboardSidebar() {
   const pathname = usePathname();
   const router = useRouter();
-
-  if (pathname.startsWith('/dashboard/hadist9imam')) {
-    return null;
-  }
 
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -57,7 +54,7 @@ export default function DashboardSidebar() {
     {
       label: 'KONTEN & ARSIP',
       items: [
-        { name: 'Upload CHM', href: '/dashboard', icon: Upload },
+        { name: 'Upload Berkas', href: '/dashboard', icon: Upload },
         { name: 'Arsip Brosur', href: '/dashboard/arsip', icon: FileStack },
         { name: 'Data Brosur', href: '/dashboard/data', icon: Database },
         { name: 'Analisis Pencarian', href: '/dashboard/search-analyzer', icon: Search },
@@ -100,33 +97,34 @@ export default function DashboardSidebar() {
   return (
     <aside 
       className={`${
-        isMinimized ? 'w-[74px]' : 'w-64'
-      } bg-[#FBFBFD]/90 dark:bg-[#161617]/90 backdrop-blur-3xl md:rounded-[24px] border border-black/[0.06] dark:border-white/[0.08] hidden md:flex flex-col shrink-0 h-full relative z-20 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] ${isMounted ? 'transition-all duration-300 ease-out' : ''} overflow-hidden select-none`}
+        isMinimized ? 'w-[72px]' : 'w-64'
+      } bg-white border-r border-slate-200/80 hidden md:flex flex-col shrink-0 h-full relative z-30 ${isMounted ? 'transition-all duration-300 ease-out' : ''} overflow-hidden select-none`}
     >
-      {/* Apple style app window top pill / branding */}
-      <div className={`px-5 py-5 flex items-center ${isMinimized ? 'justify-center' : 'justify-start'} border-b border-black/[0.04] dark:border-white/[0.05]`}>
+      {/* Logo & Brand Header */}
+      <div className={`h-16 flex items-center px-4 border-b border-slate-100 gap-3 shrink-0 ${isMinimized ? 'justify-center' : 'justify-start'}`}>
         <Link href="/" className="flex items-center gap-3 group" title="Ke Beranda">
-          <div className="w-9 h-9 rounded-[10px] bg-gradient-to-b from-zinc-800 to-zinc-950 dark:from-zinc-100 dark:to-zinc-300 text-white dark:text-zinc-950 flex items-center justify-center shadow-sm group-hover:scale-105 active:scale-95 transition-all duration-200 shrink-0">
-            <BookOpen size={18} strokeWidth={2.2} />
+          <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200/80 text-emerald-600 flex items-center justify-center shrink-0 font-bold text-sm">
+            <BookMarked size={18} className="text-emerald-600" />
           </div>
           {!isMinimized && (
             <div className="flex flex-col min-w-0">
-              <span className="font-semibold text-[15px] tracking-[-0.015em] text-zinc-900 dark:text-zinc-100 truncate leading-tight">Ulil Albab</span>
-              <span className="text-[10px] font-medium text-indigo-500 dark:text-indigo-400 uppercase tracking-wider">Super Admin Console</span>
+              <span className="text-sm font-semibold tracking-tight text-slate-900 truncate">Brosur Ahad Pagi</span>
+              <span className="text-[9.5px] font-bold tracking-wider text-emerald-600 uppercase">SUPER ADMIN CONSOLE</span>
             </div>
           )}
         </Link>
       </div>
       
-      <nav className="flex-1 px-2.5 py-4 space-y-5 overflow-y-auto custom-scrollbar">
+      {/* Navigasi Menu Items */}
+      <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-5 text-xs text-slate-600 custom-scrollbar">
         {navGroups.map((group, groupIdx) => (
           <div key={group.label}>
             {!isMinimized ? (
-              <span className="block px-3 pb-1.5 text-[10px] font-semibold tracking-wider text-zinc-400 dark:text-zinc-500 uppercase">
+              <span className="block px-2 mb-1.5 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
                 {group.label}
               </span>
             ) : (
-              groupIdx > 0 && <div className="my-2 border-t border-black/[0.04] dark:border-white/[0.06]" />
+              groupIdx > 0 && <div className="my-2 border-t border-slate-100" />
             )}
             <div className="space-y-0.5">
               {group.items.map((item) => {
@@ -138,23 +136,23 @@ export default function DashboardSidebar() {
                     href={item.href}
                     title={isMinimized ? item.name : undefined}
                     className={`w-full flex items-center ${
-                      isMinimized ? 'justify-center px-0 py-2.5' : 'gap-2.5 px-3 py-2'
-                    } rounded-[10px] text-[13px] font-medium transition-all duration-150 ${
+                      isMinimized ? 'justify-center px-0 py-2' : 'gap-2.5 px-2.5 py-1.5'
+                    } rounded-xl text-xs transition ${
                       isActive 
-                        ? 'bg-black/[0.07] dark:bg-white/[0.12] text-zinc-900 dark:text-white font-semibold shadow-[inset_0_0_0_1px_rgba(0,0,0,0.03)]' 
-                        : 'text-zinc-600 dark:text-zinc-400 hover:bg-black/[0.04] dark:hover:bg-white/[0.05] hover:text-zinc-900 dark:hover:text-zinc-200 active:scale-[0.98]'
+                        ? 'bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200/60 shadow-none' 
+                        : 'text-slate-600 hover:text-emerald-700 hover:bg-emerald-50/50 border border-transparent'
                     }`}
                   >
                     <Icon 
-                      size={17} 
+                      size={15} 
                       className={`${
                         isActive 
-                          ? 'text-zinc-900 dark:text-white' 
-                          : 'text-zinc-400 dark:text-zinc-500'
-                      } shrink-0 transition-colors`} 
-                      strokeWidth={isActive ? 2.3 : 1.8} 
+                          ? 'text-emerald-600' 
+                          : 'text-slate-400 group-hover:text-emerald-600'
+                      } shrink-0 w-4 text-center`} 
+                      strokeWidth={isActive ? 2.2 : 1.8} 
                     />
-                    {!isMinimized && <span className="truncate tracking-[-0.01em]">{item.name}</span>}
+                    {!isMinimized && <span className="truncate">{item.name}</span>}
                   </Link>
                 );
               })}
@@ -163,19 +161,24 @@ export default function DashboardSidebar() {
         ))}
       </nav>
 
-      <div className="p-2.5 border-t border-black/[0.04] dark:border-white/[0.05]">
+      {/* Footer Sidebar */}
+      <div className="p-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-full bg-slate-900 text-white font-bold flex items-center justify-center text-[11px]">
+            N
+          </div>
+          {!isMinimized && <span className="text-slate-400 text-[11px]">v2.4.0-prod</span>}
+        </div>
         <button 
           onClick={handleLogout}
           disabled={isLoggingOut}
           title={isMinimized ? 'Keluar' : undefined}
-          className={`w-full flex items-center ${
-            isMinimized ? 'justify-center py-2.5' : 'justify-center gap-2 px-3 py-2'
-          } hover:bg-red-500/10 text-zinc-600 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 rounded-[10px] text-[13px] font-medium transition-all duration-150 disabled:opacity-50 group active:scale-[0.98]`}
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition text-xs font-medium disabled:opacity-50"
         >
           {isLoggingOut ? (
-            <Loader2 size={16} className="animate-spin shrink-0" />
+            <Loader2 size={13} className="animate-spin shrink-0" />
           ) : (
-            <LogOut size={16} className="group-hover:-translate-x-0.5 transition-transform shrink-0" strokeWidth={1.8} />
+            <LogOut size={13} className="shrink-0" strokeWidth={1.8} />
           )}
           {!isMinimized && <span>{isLoggingOut ? 'Keluar...' : 'Keluar'}</span>}
         </button>

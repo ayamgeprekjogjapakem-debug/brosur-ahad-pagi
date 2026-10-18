@@ -3,7 +3,9 @@
 import React, { useEffect, useState } from 'react';
 import { 
   FileStack, Trash2, Download, Loader2, Edit2,
-  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight 
+  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
+  FolderArchive, FileText, Database, Sparkles, X, Check,
+  HardDrive, Calendar, ArrowRight, ShieldAlert, Folder
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
@@ -15,6 +17,7 @@ export default function ArsipPage() {
   const [isRenaming, setIsRenaming] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [searchQuery, setSearchQuery] = useState('');
   const supabase = createClient();
   const router = useRouter();
 
@@ -30,16 +33,15 @@ export default function ArsipPage() {
   const [collapsedFolders, setCollapsedFolders] = useState<Record<string, boolean>>({});
   const [extractDestination, setExtractDestination] = useState<'brosur' | 'hadist_chm'>('brosur');
 
-  // Fake Progress Bar Simulation
+  // Progress Bar Simulation
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isExtracting) {
       setExtractProgress(0);
       interval = setInterval(() => {
-        setExtractProgress(prev => {
+        setExtractProgress((prev) => {
           if (prev >= 99) return 99;
-          // Progress semakin lambat mendekati 99
-          const increment = prev < 50 ? (Math.random() * 2 + 1) : (Math.random() * 0.5 + 0.1);
+          const increment = prev < 50 ? Math.random() * 2 + 1 : Math.random() * 0.5 + 0.1;
           return Math.min(prev + increment, 99);
         });
       }, 1000);
@@ -51,10 +53,11 @@ export default function ArsipPage() {
 
   const fetchFiles = async () => {
     setIsLoading(true);
-    const { data, error } = await supabase.storage.from('chm-uploads').list('', { sortBy: { column: 'created_at', order: 'desc' } });
+    const { data, error } = await supabase.storage.from('chm-uploads').list('', {
+      sortBy: { column: 'created_at', order: 'desc' },
+    });
     if (!error && data) {
-      // Hilangkan file .emptyFolderPlaceholder
-      setFiles(data.filter(f => f.name !== '.emptyFolderPlaceholder'));
+      setFiles(data.filter((f) => f.name !== '.emptyFolderPlaceholder'));
     }
     setIsLoading(false);
   };
@@ -63,45 +66,49 @@ export default function ArsipPage() {
     fetchFiles();
   }, []);
 
+  const filteredFiles = files.filter((f) =>
+    (f.name || '').toLowerCase().includes(searchQuery.toLowerCase().trim())
+  );
+
   useEffect(() => {
     setCurrentPage(1);
-  }, [files.length, pageSize]);
+  }, [filteredFiles.length, pageSize]);
 
-  // Pagination kalkulasi
-  const totalItems = files.length;
+  // Pagination calculation
+  const totalItems = filteredFiles.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const startIndex = (currentPage - 1) * pageSize;
   const endIndex = Math.min(startIndex + pageSize, totalItems);
-  const paginatedFiles = files.slice(startIndex, endIndex);
+  const paginatedFiles = filteredFiles.slice(startIndex, endIndex);
 
   const handlePreview = async (fileName: string) => {
-    if (!fileName.endsWith('.zip') && !fileName.endsWith('.chm') && !fileName.endsWith('.pdf') && !fileName.endsWith('.html') && !fileName.endsWith('.htm')) {
-      alert('Hanya file berformat .zip, .chm, .pdf, atau .html yang dapat diekstrak ke Database.');
+    const valid = ['.zip', '.chm', '.pdf', '.html', '.htm'];
+    if (!valid.some((ext) => fileName.endsWith(ext))) {
+      alert('Hanya berkas berformat .zip, .chm, .pdf, atau .html yang dapat diekstrak ke Database.');
       return;
     }
-    
+
     setIsPreviewing(true);
     setCurrentArchiveName(fileName);
     setPreviewFiles([]);
     setSelectedFiles([]);
     setCollapsedFolders({});
-    
+
     try {
       const res = await fetch('/api/extract', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileName, action: 'preview' })
+        body: JSON.stringify({ fileName, action: 'preview' }),
       });
-      
+
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Terjadi kesalahan saat preview.');
-      
+      if (!res.ok) throw new Error(data.error || 'Terjadi kesalahan saat pratinjau berkas.');
+
       setPreviewFiles(data.files || []);
-      // Default: centang semua file HTML yang ditemukan
       setSelectedFiles(data.files || []);
       setIsExtractModalOpen(true);
     } catch (err: any) {
-      alert(`Gagal mengambil preview file: ${err.message}`);
+      alert(`Gagal mengambil pratinjau berkas: ${err.message}`);
     } finally {
       setIsPreviewing(false);
     }
@@ -109,61 +116,56 @@ export default function ArsipPage() {
 
   const handleProcessExtract = async () => {
     if (selectedFiles.length === 0) {
-      alert('Pilih setidaknya satu file untuk diekstrak.');
+      alert('Pilih setidaknya satu berkas untuk diekstrak.');
       return;
     }
 
-    if (!confirm(`Apakah Anda yakin ingin mengekstrak ${selectedFiles.length} file terpilih ke Database?`)) return;
-    
+    if (!confirm(`Apakah Anda yakin ingin mengekstrak ${selectedFiles.length} berkas terpilih ke Database?`)) return;
+
     setIsExtractModalOpen(false);
     setIsExtracting(currentArchiveName);
-    
+
     try {
       const res = await fetch('/api/extract', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          fileName: currentArchiveName, 
+        body: JSON.stringify({
+          fileName: currentArchiveName,
           action: 'extract',
           selectedFiles: selectedFiles,
-          destination: extractDestination
-        })
+          destination: extractDestination,
+        }),
       });
-      
+
       const data = await res.json();
-      
-      if (!res.ok) throw new Error(data.error || 'Terjadi kesalahan.');
-      
-      alert(data.message || 'Ekstraksi berhasil!');
+      if (!res.ok) throw new Error(data.error || 'Terjadi kesalahan pemrosesan.');
+
+      alert(data.message || 'Ekstraksi berkas berhasil diselesaikan!');
       router.refresh();
     } catch (err: any) {
-      alert(`Gagal mengekstrak: ${err.message}`);
+      alert(`Gagal mengekstrak berkas: ${err.message}`);
     } finally {
       setIsExtracting(null);
     }
   };
 
   const handleToggleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedFiles(previewFiles);
-    } else {
-      setSelectedFiles([]);
-    }
+    setSelectedFiles(checked ? previewFiles : []);
   };
 
   const handleToggleFolder = (folderFiles: string[], checked: boolean) => {
     if (checked) {
-      setSelectedFiles(prev => Array.from(new Set([...prev, ...folderFiles])));
+      setSelectedFiles((prev) => Array.from(new Set([...prev, ...folderFiles])));
     } else {
-      setSelectedFiles(prev => prev.filter(f => !folderFiles.includes(f)));
+      setSelectedFiles((prev) => prev.filter((f) => !folderFiles.includes(f)));
     }
   };
 
   const handleToggleFile = (file: string, checked: boolean) => {
     if (checked) {
-      setSelectedFiles(prev => [...prev, file]);
+      setSelectedFiles((prev) => [...prev, file]);
     } else {
-      setSelectedFiles(prev => prev.filter(f => f !== file));
+      setSelectedFiles((prev) => prev.filter((f) => f !== file));
     }
   };
 
@@ -178,36 +180,35 @@ export default function ArsipPage() {
 
   const handleCollapseAll = (collapse: boolean) => {
     const newState: Record<string, boolean> = {};
-    Object.keys(groupedFiles).forEach(folder => {
+    Object.keys(groupedFiles).forEach((folder) => {
       newState[folder] = collapse;
     });
     setCollapsedFolders(newState);
   };
 
   const handleRename = async (oldName: string) => {
-    const newName = prompt('Masukkan nama file baru (termasuk ekstensi .chm, .zip, atau .pdf):', oldName);
+    const newName = prompt('Masukkan nama berkas baru (termasuk ekstensi .chm, .zip, atau .pdf):', oldName);
     if (!newName || newName === oldName) return;
 
-    if (!newName.endsWith('.chm') && !newName.endsWith('.zip') && !newName.endsWith('.pdf') && !newName.endsWith('.html') && !newName.endsWith('.htm')) {
-      alert('Ekstensi file harus tetap .chm, .zip, .pdf, atau .html');
+    const valid = ['.chm', '.zip', '.pdf', '.html', '.htm'];
+    if (!valid.some((ext) => newName.endsWith(ext))) {
+      alert('Ekstensi berkas harus tetap .chm, .zip, .pdf, atau .html');
       return;
     }
 
     setIsRenaming(oldName);
-    
-    // Gunakan copy + remove sebagai pengganti move untuk menghindari isu RLS 'Object not found'
     const { error: copyError } = await supabase.storage.from('chm-uploads').copy(oldName, newName);
-    
+
     if (copyError) {
       alert(`Gagal menduplikasi nama baru: ${copyError.message}`);
     } else {
       const { data: removeData, error: removeError } = await supabase.storage.from('chm-uploads').remove([oldName]);
       if (removeError) {
-         alert(`Nama baru berhasil dibuat, tapi gagal menghapus nama lama: ${removeError.message}`);
+        alert(`Nama baru berhasil dibuat, tetapi gagal menghapus nama lama: ${removeError.message}`);
       } else if (removeData && removeData.length === 0) {
-         alert('Nama baru berhasil dibuat, tapi gagal menghapus nama lama (mungkin karena batasan akses/RLS).');
+        alert('Nama baru berhasil dibuat, tetapi nama lama tidak dapat dihapus.');
       }
-      setFiles(prev => prev.map(f => f.name === oldName ? { ...f, name: newName } : f));
+      setFiles((prev) => prev.map((f) => (f.name === oldName ? { ...f, name: newName } : f)));
       router.refresh();
     }
     setIsRenaming(null);
@@ -215,17 +216,17 @@ export default function ArsipPage() {
 
   const handleDelete = async (fileName: string) => {
     if (!confirm(`Apakah Anda yakin ingin menghapus arsip "${fileName}"?`)) return;
-    
+
     setIsDeleting(fileName);
     const { data, error } = await supabase.storage.from('chm-uploads').remove([fileName]);
-    
+
     if (error) {
-      alert(`Gagal menghapus file: ${error.message}`);
+      alert(`Gagal menghapus berkas: ${error.message}`);
     } else if (data && data.length === 0) {
-      alert('Gagal menghapus file: File tidak ditemukan atau ditolak oleh aturan akses (RLS).');
+      alert('Gagal menghapus berkas: Berkas tidak ditemukan atau ditolak oleh izin penyimpanan.');
     } else {
-      setFiles(prev => prev.filter(f => f.name !== fileName));
-      router.refresh(); // Segarkan route agar halaman beranda juga terupdate
+      setFiles((prev) => prev.filter((f) => f.name !== fileName));
+      router.refresh();
     }
     setIsDeleting(null);
   };
@@ -235,161 +236,233 @@ export default function ArsipPage() {
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto">
-      <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-extrabold mb-2 flex items-center gap-3">
-            <FileStack className="text-accent" size={32} />
-            Manajemen Arsip
-          </h1>
-          <p className="text-zinc-500">
-            Kelola file mentah (CHM/ZIP) yang telah diunggah ke Supabase Storage.
-          </p>
+    <div className="w-full max-w-5xl mx-auto py-6 md:py-8 font-sans antialiased text-slate-800 select-none space-y-6">
+      {/* Header Banner Section */}
+      <div className="text-center space-y-2.5">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/70 text-emerald-700 text-xs font-medium">
+          <Sparkles size={12} className="text-emerald-600" />
+          <span>Pusat Penyimpanan Berkas</span>
         </div>
-      </header>
 
-      <div className="bg-white  border border-black/5  rounded-3xl shadow-sm overflow-hidden">
-        {isLoading ? (
-          <div className="p-12 flex flex-col items-center justify-center text-zinc-400">
-            <Loader2 className="animate-spin mb-4" size={32} />
-            <p>Memuat daftar arsip...</p>
+        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
+          Kelola Berkas &{' '}
+          <span className="bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 bg-clip-text text-transparent font-extrabold">
+            Arsip Mentah
+          </span>
+        </h2>
+
+        <p className="text-xs sm:text-sm text-slate-500 max-w-xl mx-auto leading-relaxed font-normal">
+          Kelola berkas mentah (CHM, ZIP, PDF, HTML) yang telah tersimpan di Cloud Storage untuk diekstrak ke basis data.
+        </p>
+      </div>
+
+      {/* Main Table Card */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-none space-y-0">
+        {/* Table Top Controls */}
+        <div className="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white">
+          <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+            <FolderArchive size={16} className="text-emerald-600" />
+            <span>Daftar Berkas Arsip</span>
+            <span className="ml-1 text-[11px] font-normal text-slate-400 font-mono">
+              ({totalItems} berkas)
+            </span>
           </div>
-        ) : files.length === 0 ? (
-          <div className="p-12 text-center text-zinc-500">
-            <p>Belum ada file arsip yang diunggah.</p>
+
+          <div className="flex items-center gap-2.5">
+            <input
+              type="text"
+              placeholder="Cari nama berkas..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition w-full sm:w-56"
+            />
+          </div>
+        </div>
+
+        {/* Content */}
+        {isLoading ? (
+          <div className="py-20 flex flex-col items-center justify-center text-slate-400 gap-3">
+            <Loader2 className="animate-spin text-emerald-600" size={28} />
+            <p className="text-xs font-medium">Memuat daftar arsip...</p>
+          </div>
+        ) : filteredFiles.length === 0 ? (
+          <div className="py-16 text-center text-slate-400 space-y-1">
+            <FolderArchive size={32} className="mx-auto text-slate-300 mb-2" />
+            <p className="text-xs font-semibold text-slate-600">Belum ada berkas arsip yang ditemukan</p>
+            <p className="text-[11px] text-slate-400">Silakan unggah berkas baru melalui menu Upload Berkas.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-zinc-50  border-b border-black/5  text-sm">
-                  <th className="p-4 font-bold">Nama File</th>
-                  <th className="p-4 font-bold">Ukuran</th>
-                  <th className="p-4 font-bold">Tanggal Unggah</th>
-                  <th className="p-4 font-bold text-right">Aksi</th>
+                <tr className="bg-slate-50/70 border-b border-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  <th className="py-3 px-5">Nama Berkas</th>
+                  <th className="py-3 px-5">Ukuran</th>
+                  <th className="py-3 px-5">Tanggal Unggah</th>
+                  <th className="py-3 px-5 text-right">Aksi</th>
                 </tr>
               </thead>
-              <tbody>
-                {paginatedFiles.map((file) => (
-                  <tr key={file.name} className="border-b border-black/5  hover:bg-black/5  transition-colors">
-                    <td className="p-4 font-medium">{file.name}</td>
-                    <td className="p-4 text-zinc-500 text-sm">{(file.metadata?.size / 1024 / 1024).toFixed(2)} MB</td>
-                    <td className="p-4 text-zinc-500 text-sm">{new Date(file.created_at).toLocaleString('id-ID')}</td>
-                    <td className="p-4 text-right flex items-center justify-end gap-2">
-                      {(file.name.endsWith('.zip') || file.name.endsWith('.chm') || file.name.endsWith('.pdf') || file.name.endsWith('.html') || file.name.endsWith('.htm')) && (
-                        <button 
-                          onClick={() => handlePreview(file.name)}
-                          disabled={isExtracting === file.name || isRenaming === file.name || isPreviewing}
-                          className="px-3 py-2 bg-accent/10 text-accent hover:bg-accent hover:text-white rounded-lg transition-colors flex items-center justify-center font-bold text-xs disabled:opacity-50"
-                          title="Pilih dan Ekstrak langsung ke Database sebagai HTML"
-                        >
-                          {(isExtracting === file.name || (isPreviewing && currentArchiveName === file.name)) ? <Loader2 className="animate-spin" size={16} /> : 'Ekstrak to Database'}
-                        </button>
-                      )}
-                      {file.name.endsWith('.pdf') && (
-                        <button 
-                          onClick={() => router.push(`/dashboard/data/create?pdf=${encodeURIComponent(file.name)}`)}
-                          className="px-3 py-2 bg-purple-500/10 text-purple-600  hover:bg-purple-500 hover:text-white rounded-lg transition-colors flex items-center justify-center font-bold text-xs"
-                          title="Edit / Lengkapi Teks PDF di Form"
-                        >
-                          Lengkapi Data
-                        </button>
-                      )}
-                      <button 
-                        onClick={() => handleRename(file.name)}
-                        disabled={isRenaming === file.name}
-                        className="p-2 bg-yellow-500/10 text-yellow-600  hover:bg-yellow-500 hover:text-white rounded-lg transition-colors flex items-center justify-center disabled:opacity-50"
-                        title="Ubah Nama File"
-                      >
-                        {isRenaming === file.name ? <Loader2 className="animate-spin" size={18} /> : <Edit2 size={18} />}
-                      </button>
-                      <a 
-                        href={getPublicUrl(file.name)} 
-                        target="_blank" 
-                        rel="noreferrer"
-                        download
-                        className="p-2 bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 rounded-lg transition-colors flex items-center justify-center"
-                        title="Unduh File"
-                      >
-                        <Download size={18} />
-                      </a>
-                      <button 
-                        onClick={() => handleDelete(file.name)}
-                        disabled={isDeleting === file.name}
-                        className="p-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg transition-colors flex items-center justify-center disabled:opacity-50"
-                        title="Hapus File"
-                      >
-                        {isDeleting === file.name ? <Loader2 className="animate-spin" size={18} /> : <Trash2 size={18} />}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+              <tbody className="divide-y divide-slate-100 text-xs">
+                {paginatedFiles.map((file) => {
+                  const ext = file.name.split('.').pop()?.toLowerCase();
+                  const isZip = ext === 'zip';
+                  const isPdf = ext === 'pdf';
+                  const isChm = ext === 'chm';
+
+                  return (
+                    <tr key={file.name} className="hover:bg-slate-50/60 transition-colors">
+                      <td className="py-3.5 px-5">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                            {isZip ? (
+                              <FolderArchive size={15} />
+                            ) : isPdf ? (
+                              <FileText size={15} className="text-rose-500" />
+                            ) : isChm ? (
+                              <FileStack size={15} className="text-emerald-700" />
+                            ) : (
+                              <FileText size={15} />
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-slate-800 text-xs truncate max-w-xs sm:max-w-md">
+                              {file.name}
+                            </p>
+                            <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                              ID: {file.id?.slice(0, 8) || 'storage'}...
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className="py-3.5 px-5 text-slate-500 font-mono text-[11px]">
+                        {(file.metadata?.size / 1024 / 1024).toFixed(2)} MB
+                      </td>
+
+                      <td className="py-3.5 px-5 text-slate-500 text-xs">
+                        {new Date(file.created_at).toLocaleDateString('id-ID', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                        })}
+                      </td>
+
+                      <td className="py-3.5 px-5 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {(isZip || isChm || isPdf || ext === 'html' || ext === 'htm') && (
+                            <button
+                              onClick={() => handlePreview(file.name)}
+                              disabled={isExtracting === file.name || isRenaming === file.name || isPreviewing}
+                              className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/60 rounded-lg text-xs font-semibold transition active:scale-95 disabled:opacity-50"
+                              title="Pilih dan Ekstrak ke Database"
+                            >
+                              {isExtracting === file.name || (isPreviewing && currentArchiveName === file.name) ? (
+                                <Loader2 className="animate-spin" size={13} />
+                              ) : (
+                                'Ekstrak to Database'
+                              )}
+                            </button>
+                          )}
+
+                          {isPdf && (
+                            <button
+                              onClick={() => router.push(`/dashboard/data/create?pdf=${encodeURIComponent(file.name)}`)}
+                              className="px-2.5 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/60 rounded-lg text-xs font-semibold transition"
+                              title="Lengkapi data teks PDF"
+                            >
+                              Lengkapi Data
+                            </button>
+                          )}
+
+                          <button
+                            onClick={() => handleRename(file.name)}
+                            disabled={isRenaming === file.name}
+                            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition"
+                            title="Ubah nama berkas"
+                          >
+                            {isRenaming === file.name ? <Loader2 className="animate-spin" size={14} /> : <Edit2 size={14} />}
+                          </button>
+
+                          <a
+                            href={getPublicUrl(file.name)}
+                            target="_blank"
+                            rel="noreferrer"
+                            download
+                            className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-slate-100 rounded-lg transition"
+                            title="Unduh berkas"
+                          >
+                            <Download size={14} />
+                          </a>
+
+                          <button
+                            onClick={() => handleDelete(file.name)}
+                            disabled={isDeleting === file.name}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition disabled:opacity-50"
+                            title="Hapus berkas"
+                          >
+                            {isDeleting === file.name ? <Loader2 className="animate-spin" size={14} /> : <Trash2 size={14} />}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
 
-            {/* Footer Pagination Bar */}
+            {/* Pagination Controls */}
             {!isLoading && totalItems > 0 && (
-              <div className="p-4 bg-zinc-50  border-t border-zinc-200  flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-3 text-xs md:text-sm font-medium text-zinc-600 ">
-                  <div className="flex items-center gap-2">
-                    <span>Tampilkan:</span>
-                    <select
-                      value={pageSize}
-                      onChange={(e) => setPageSize(Number(e.target.value))}
-                      className="bg-white  border border-zinc-300  text-zinc-900  rounded-xl px-3 py-1.5 text-xs md:text-sm font-bold focus:outline-none focus:ring-2 focus:ring-accent/50"
-                    >
-                      <option value={10}>10</option>
-                      <option value={20}>20</option>
-                      <option value={50}>50</option>
-                      <option value={100}>100</option>
-                    </select>
-                    <span>baris</span>
-                  </div>
-                  <span className="text-zinc-400">|</span>
-                  <span>
-                    Menampilkan <strong className="text-zinc-900 ">{startIndex + 1}</strong> -{' '}
-                    <strong className="text-zinc-900 ">{endIndex}</strong> dari{' '}
-                    <strong className="text-zinc-900 ">{totalItems}</strong> file
+              <div className="p-4 bg-slate-50/50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-500">Tampilkan:</span>
+                  <select
+                    value={pageSize}
+                    onChange={(e) => setPageSize(Number(e.target.value))}
+                    className="bg-white border border-slate-200 text-slate-800 rounded-lg px-2 py-1 text-xs font-medium focus:outline-none"
+                  >
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                  </select>
+                  <span className="text-slate-400">|</span>
+                  <span className="text-slate-500">
+                    Menampilkan <strong className="text-slate-900">{startIndex + 1}</strong> -{' '}
+                    <strong className="text-slate-900">{endIndex}</strong> dari{' '}
+                    <strong className="text-slate-900">{totalItems}</strong> berkas
                   </span>
                 </div>
 
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1">
                   <button
                     onClick={() => setCurrentPage(1)}
                     disabled={currentPage === 1}
-                    title="Halaman Pertama"
-                    className="p-2 rounded-xl bg-white  border border-zinc-200  text-zinc-600  hover:bg-zinc-100  disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 transition"
                   >
-                    <ChevronsLeft size={16} />
+                    <ChevronsLeft size={14} />
                   </button>
                   <button
                     onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                     disabled={currentPage === 1}
-                    title="Halaman Sebelumnya"
-                    className="p-2 rounded-xl bg-white  border border-zinc-200  text-zinc-600  hover:bg-zinc-100  disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 transition"
                   >
-                    <ChevronLeft size={16} />
+                    <ChevronLeft size={14} />
                   </button>
-
-                  <div className="px-3 py-1.5 text-xs md:text-sm font-bold bg-white  border border-zinc-200  rounded-xl">
+                  <span className="px-3 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700">
                     {currentPage} / {totalPages}
-                  </div>
-
+                  </span>
                   <button
                     onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
                     disabled={currentPage === totalPages}
-                    title="Halaman Selanjutnya"
-                    className="p-2 rounded-xl bg-white  border border-zinc-200  text-zinc-600  hover:bg-zinc-100  disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 transition"
                   >
-                    <ChevronRight size={16} />
+                    <ChevronRight size={14} />
                   </button>
                   <button
                     onClick={() => setCurrentPage(totalPages)}
                     disabled={currentPage === totalPages}
-                    title="Halaman Terakhir"
-                    className="p-2 rounded-xl bg-white  border border-zinc-200  text-zinc-600  hover:bg-zinc-100  disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 transition"
                   >
-                    <ChevronsRight size={16} />
+                    <ChevronsRight size={14} />
                   </button>
                 </div>
               </div>
@@ -400,97 +473,87 @@ export default function ArsipPage() {
 
       {/* Selective Extraction Modal */}
       {isExtractModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white  border border-black/5  rounded-3xl shadow-xl w-full max-w-3xl flex flex-col max-h-[85vh] overflow-hidden animate-in fade-in zoom-in-95">
-            <div className="p-6 border-b border-black/5  flex justify-between items-center bg-zinc-50 ">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-xl w-full max-w-2xl flex flex-col max-h-[85vh] overflow-hidden">
+            <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
               <div>
-                <h3 className="text-xl font-bold">Pilih File untuk Diekstrak</h3>
-                <p className="text-sm text-zinc-500 mt-1">
-                  Arsip: <span className="font-semibold text-zinc-900 ">{currentArchiveName}</span>
+                <h3 className="text-sm font-bold text-slate-900">Pilih Berkas untuk Diekstrak</h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Arsip: <span className="font-semibold text-slate-800">{currentArchiveName}</span>
                 </p>
               </div>
-              <div className="bg-accent/10 text-accent px-3 py-1.5 rounded-lg text-sm font-bold">
+              <div className="bg-emerald-50 text-emerald-700 border border-emerald-200/60 px-2.5 py-1 rounded-lg text-xs font-semibold">
                 {selectedFiles.length} / {previewFiles.length} Dipilih
               </div>
             </div>
-            
-            <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
-              <div className="mb-4 pb-4 border-b border-black/5  flex flex-wrap gap-2">
-                <button 
+
+            <div className="p-5 overflow-y-auto flex-1 space-y-4 custom-scrollbar text-xs">
+              <div className="flex flex-wrap gap-2 pb-3 border-b border-slate-100">
+                <button
                   onClick={() => handleToggleSelectAll(true)}
-                  className="px-4 py-2 text-sm font-bold bg-accent/10 text-accent hover:bg-accent hover:text-white rounded-lg transition-colors flex-1 min-w-[140px]"
+                  className="px-3 py-1.5 text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg transition"
                 >
                   Centang Semua
                 </button>
-                <button 
+                <button
                   onClick={() => handleToggleSelectAll(false)}
-                  className="px-4 py-2 text-sm font-bold bg-zinc-100  text-zinc-600  hover:bg-zinc-200  rounded-lg transition-colors flex-1 min-w-[140px]"
+                  className="px-3 py-1.5 text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-lg transition"
                 >
                   Bersihkan Centang
                 </button>
-                <button 
+                <button
                   onClick={() => handleCollapseAll(true)}
-                  className="px-4 py-2 text-sm font-bold bg-blue-500/10 text-blue-600  hover:bg-blue-500 hover:text-white rounded-lg transition-colors flex-1 min-w-[140px]"
+                  className="px-3 py-1.5 text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-lg transition"
                 >
                   Tutup Semua Folder
                 </button>
-                <button 
+                <button
                   onClick={() => handleCollapseAll(false)}
-                  className="px-4 py-2 text-sm font-bold bg-emerald-500/10 text-emerald-600  hover:bg-emerald-500 hover:text-white rounded-lg transition-colors flex-1 min-w-[140px]"
+                  className="px-3 py-1.5 text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-lg transition"
                 >
                   Buka Semua Folder
                 </button>
               </div>
-              
-              <div className="flex flex-col gap-6">
+
+              <div className="space-y-4">
                 {Object.entries(groupedFiles).map(([folder, folderFiles]) => {
-                  const isAllFolderSelected = folderFiles.every(f => selectedFiles.includes(f));
-                  const isSomeFolderSelected = folderFiles.some(f => selectedFiles.includes(f)) && !isAllFolderSelected;
+                  const isAllFolderSelected = folderFiles.every((f) => selectedFiles.includes(f));
                   const isCollapsed = collapsedFolders[folder] || false;
-                  
+
                   return (
-                    <div key={folder} className="border border-black/5  rounded-2xl overflow-hidden">
-                      <div className="bg-black/5  px-4 py-3 flex items-center justify-between">
-                        <label className="flex items-center gap-3 cursor-pointer">
-                          <input 
+                    <div key={folder} className="border border-slate-200/80 rounded-xl overflow-hidden">
+                      <div className="bg-slate-50 px-3.5 py-2.5 flex items-center justify-between">
+                        <label className="flex items-center gap-2.5 cursor-pointer">
+                          <input
                             type="checkbox"
-                            className="w-5 h-5 accent-accent shrink-0"
+                            className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500"
                             checked={isAllFolderSelected}
-                            ref={(input) => { if (input) input.indeterminate = isSomeFolderSelected; }}
                             onChange={(e) => handleToggleFolder(folderFiles, e.target.checked)}
                           />
-                          <span className="font-bold text-zinc-800  flex items-center gap-2 select-none">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path></svg>
+                          <span className="font-semibold text-slate-800 flex items-center gap-2">
+                            <Folder size={14} className="text-emerald-600" />
                             {folder}
                           </span>
                         </label>
-                        <div className="flex items-center gap-3">
-                          <span className="text-xs font-bold text-zinc-500 bg-black/5  px-2 py-1 rounded-md">
-                            {folderFiles.length} file
-                          </span>
-                          <button 
-                            onClick={() => setCollapsedFolders(prev => ({ ...prev, [folder]: !isCollapsed }))}
-                            className="p-1 hover:bg-black/10  rounded transition-colors text-zinc-500"
-                            title={isCollapsed ? "Tampilkan File" : "Sembunyikan File"}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${isCollapsed ? '' : 'rotate-180'}`}><polyline points="6 9 12 15 18 9"></polyline></svg>
-                          </button>
-                        </div>
+                        <span className="text-[10px] text-slate-400 font-mono">
+                          {folderFiles.length} berkas
+                        </span>
                       </div>
-                      
+
                       {!isCollapsed && (
-                        <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-2 bg-white ">
+                        <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-2 bg-white">
                           {folderFiles.map((file, idx) => (
-                            <label key={idx} className="flex items-start gap-3 cursor-pointer p-2.5 border border-black/5  hover:border-accent/50 hover:bg-accent/5 rounded-xl transition-all">
-                              <input 
+                            <label
+                              key={idx}
+                              className="flex items-center gap-2 p-2 border border-slate-100 hover:bg-slate-50 rounded-lg cursor-pointer transition text-xs"
+                            >
+                              <input
                                 type="checkbox"
-                                className="w-5 h-5 accent-accent mt-0.5 shrink-0"
+                                className="w-3.5 h-3.5 rounded text-emerald-600 focus:ring-emerald-500 shrink-0"
                                 checked={selectedFiles.includes(file)}
                                 onChange={(e) => handleToggleFile(file, e.target.checked)}
                               />
-                              <span className="text-sm font-medium break-all line-clamp-2 text-zinc-700 ">
-                                {file.split('/').pop()}
-                              </span>
+                              <span className="text-slate-700 truncate">{file.split('/').pop()}</span>
                             </label>
                           ))}
                         </div>
@@ -499,41 +562,36 @@ export default function ArsipPage() {
                   );
                 })}
               </div>
-              
-              {previewFiles.length === 0 && (
-                <div className="text-center p-8 text-zinc-500">
-                  Tidak ditemukan file HTML/HTM di dalam arsip ini.
-                </div>
-              )}
             </div>
-            
-            <div className="p-6 border-t border-black/5  flex justify-between items-center gap-3 bg-zinc-50 ">
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-semibold text-zinc-600">Simpan ke:</span>
-                <select 
+
+            <div className="p-4 border-t border-slate-100 flex items-center justify-between gap-3 bg-slate-50/50">
+              <div className="flex items-center gap-2 text-xs">
+                <span className="font-medium text-slate-600">Simpan ke:</span>
+                <select
                   value={extractDestination}
-                  onChange={(e) => setExtractDestination(e.target.value as 'brosur' | 'hadist_chm')}
-                  className="px-3 py-2 border border-black/10 rounded-xl bg-white text-sm font-medium text-zinc-800 outline-none focus:ring-2 focus:ring-accent/50"
+                  onChange={(e) => setExtractDestination(e.target.value as any)}
+                  className="px-2.5 py-1.5 border border-slate-200 rounded-lg bg-white text-xs text-slate-800 focus:outline-none"
                 >
                   <option value="brosur">Koleksi Brosur</option>
-                  <option value="hadist_chm">Koleksi Hadist 9 Imam (CHM)</option>
+                  <option value="hadist_chm">Koleksi Hadist (CHM)</option>
                 </select>
               </div>
-              <div className="flex gap-3">
+
+              <div className="flex items-center gap-2">
                 <button
                   onClick={() => setIsExtractModalOpen(false)}
-                  className="px-6 py-2.5 rounded-xl font-bold text-zinc-600 hover:bg-zinc-200   transition-colors"
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition"
                 >
                   Batal
                 </button>
-              <button
-                onClick={handleProcessExtract}
-                disabled={selectedFiles.length === 0}
-                className="px-6 py-2.5 rounded-xl font-bold bg-accent text-white hover:bg-accent/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg shadow-accent/20"
-              >
-                Proses Ekstrak
-              </button>
-            </div>
+                <button
+                  onClick={handleProcessExtract}
+                  disabled={selectedFiles.length === 0}
+                  className="px-5 py-2 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition disabled:opacity-50"
+                >
+                  Proses Ekstrak
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -541,39 +599,27 @@ export default function ArsipPage() {
 
       {/* Fullscreen Extraction Loader / Overlay */}
       {isExtracting && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-white/60  backdrop-blur-xl">
-          <div className="w-full max-w-xl bg-white  border border-black/5  shadow-2xl rounded-[32px] p-8 md:p-12 text-center relative overflow-hidden flex flex-col items-center">
-            
-            <Loader2 className="animate-spin text-accent mb-6" size={56} strokeWidth={2} />
-            
-            <h2 className="text-2xl font-extrabold text-zinc-900  mb-2">
-              Mengekstrak Arsip
-            </h2>
-            <p className="text-zinc-500 font-medium mb-8 max-w-sm">
-              Sistem sedang memproses file "{isExtracting}" secara otomatis ke dalam Database.
-            </p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
+          <div className="w-full max-w-md bg-white border border-slate-200 rounded-2xl p-8 text-center flex flex-col items-center space-y-4 shadow-xl">
+            <Loader2 className="animate-spin text-emerald-600" size={40} />
+            <div>
+              <h3 className="text-base font-bold text-slate-900">Mengekstrak Arsip</h3>
+              <p className="text-xs text-slate-500 mt-1 max-w-xs truncate">
+                {isExtracting}
+              </p>
+            </div>
 
-            {/* Progress Bar Container */}
-            <div className="w-full bg-black/5  rounded-full h-4 mb-4 relative overflow-hidden">
-              <div 
-                className="absolute top-0 left-0 h-full bg-accent transition-all duration-1000 ease-out rounded-full" 
+            <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+              <div
+                className="bg-emerald-500 h-full rounded-full transition-all duration-300"
                 style={{ width: `${extractProgress}%` }}
-              ></div>
+              />
             </div>
 
-            <div className="flex w-full items-center justify-between text-sm font-bold text-zinc-500 mb-8">
-              <span>Mendekode Teks Arab...</span>
-              <span className="text-accent">{Math.floor(extractProgress)}%</span>
+            <div className="flex items-center justify-between w-full text-xs text-slate-500 font-mono">
+              <span>Mengekstrak konten...</span>
+              <span className="font-bold text-emerald-600">{Math.floor(extractProgress)}%</span>
             </div>
-            
-            <div className="bg-red-500/10 text-red-600  px-4 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-widest flex items-center gap-2">
-              <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-              </span>
-              Layar Dikunci, Mohon Jangan Tutup Halaman Ini
-            </div>
-
           </div>
         </div>
       )}

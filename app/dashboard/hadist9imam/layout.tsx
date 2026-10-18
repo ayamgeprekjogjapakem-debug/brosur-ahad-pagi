@@ -1,5 +1,5 @@
 import React from 'react';
-import HadistSidebar from './components/HadistSidebar';
+import Hadist9ImamNavTabs from './components/Hadist9ImamNavTabs';
 
 export default function Hadist9ImamLayout({
   children,
@@ -7,9 +7,9 @@ export default function Hadist9ImamLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="w-full h-full flex font-sans bg-[#fbfbfd]">
-      <HadistSidebar />
-      <div className="flex-1 overflow-hidden flex flex-col relative z-10">
+    <div className="flex flex-col w-full h-full min-h-0 bg-[#fafafa]">
+      <Hadist9ImamNavTabs />
+      <div className="flex-1 w-full overflow-y-auto relative">
         {children}
       </div>
     </div>

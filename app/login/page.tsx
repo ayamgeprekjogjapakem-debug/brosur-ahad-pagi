@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { BookOpen, Lock, Mail, ArrowRight, Loader2 } from 'lucide-react';
+import { Sparkles, Lock, Mail, ArrowRight, Loader2, ShieldCheck, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 
@@ -26,10 +27,10 @@ export default function LoginPage() {
           .eq('id', session.user.id)
           .single();
 
-        if (profile?.role === 'admin') {
-          router.replace('/admin');
-        } else {
+        if (profile?.role === 'super-admin') {
           router.replace('/dashboard');
+        } else {
+          router.replace('/admin');
         }
       }
     };
@@ -43,10 +44,10 @@ export default function LoginPage() {
           .eq('id', session.user.id)
           .single();
 
-        if (profile?.role === 'admin') {
-          router.replace('/admin');
-        } else {
+        if (profile?.role === 'super-admin') {
           router.replace('/dashboard');
+        } else {
+          router.replace('/admin');
         }
       }
     });
@@ -67,7 +68,7 @@ export default function LoginPage() {
     });
 
     if (signInError) {
-      setError(signInError.message);
+      setError(signInError.message || 'Email atau kata sandi tidak sesuai.');
       setIsLoading(false);
       return;
     }
@@ -79,95 +80,147 @@ export default function LoginPage() {
         .eq('id', data.user.id)
         .single();
 
-      if (profile?.role === 'admin') {
-        router.push('/admin');
-      } else {
+      if (profile?.role === 'super-admin') {
         router.push('/dashboard');
+      } else {
+        router.push('/admin');
       }
     } else {
-      router.push('/dashboard');
+      router.push('/admin');
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#fafafa] [#0a0a0a] flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background Decor */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-accent/20 blur-[120px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-accent/10 blur-[100px] rounded-full pointer-events-none" />
-
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md relative z-10"
-      >
-        <Link href="/" className="flex items-center justify-center gap-2 mb-8 group">
-          <div className="w-12 h-12 bg-accent rounded-2xl flex items-center justify-center shadow-lg shadow-accent/20 group-hover:scale-105 transition-transform">
-            <BookOpen className="text-white" size={24} />
+    <div className="min-h-screen bg-[#FAFAFA] text-zinc-900 font-sans flex flex-col justify-between p-4 sm:p-6 antialiased selection:bg-emerald-50 selection:text-emerald-700">
+      
+      {/* Top Clean Minimalist Header (Logo Utama logo_rb.png) */}
+      <header className="max-w-md w-full mx-auto flex items-center justify-center pt-8 pb-3">
+        <Link href="/" className="flex flex-col items-center gap-2 group text-center">
+          <div className="relative w-16 h-16 rounded-2xl overflow-hidden shadow-sm group-hover:scale-105 transition-transform duration-200">
+            <Image
+              src="/images/logo_rb.png"
+              alt="Logo Pustaka Brosur Ahad Pagi"
+              fill
+              sizes="64px"
+              priority
+              className="object-contain"
+            />
           </div>
-          <span className="font-extrabold text-2xl tracking-tight">Brosur Ahad Pagi</span>
+          <div className="flex flex-col items-center">
+            <span className="font-bold text-base tracking-tight text-zinc-900">Brosur Ahad Pagi</span>
+            <span className="text-[11px] text-zinc-400 font-medium">Pustaka & Konsol Administrasi</span>
+          </div>
         </Link>
+      </header>
 
-        <div className="bg-white/70  backdrop-blur-xl border border-black/5  rounded-3xl p-8 shadow-2xl">
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold mb-2">Selamat Datang</h1>
-            <p className="text-zinc-500 text-sm">Masuk untuk mengelola arsip brosur.</p>
-          </div>
+      {/* Main Authentication Card - Clean Gemini Emerald Palette */}
+      <div className="flex-1 flex items-center justify-center py-6">
+        <motion.div 
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+          className="w-full max-w-[400px]"
+        >
+          {/* Card Wrapper with Clean Gemini Style */}
+          <div className="bg-white rounded-3xl border border-zinc-200/80 p-7 sm:p-9 shadow-xs hover:shadow-sm transition-all space-y-6">
+            
+            {/* Header Title */}
+            <div className="space-y-1.5 text-center">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-semibold">
+                <Sparkles size={13} className="text-emerald-600" />
+                <span>Masuk Sistem</span>
+              </div>
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900">
+                Selamat Datang
+              </h1>
+              <p className="text-xs text-zinc-500 leading-relaxed">
+                Silakan masukkan email dan kata sandi untuk mengelola data brosur dan sistem.
+              </p>
+            </div>
 
-          <form onSubmit={handleLogin} className="space-y-4">
+            {/* Error Banner */}
             {error && (
-              <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-500 text-sm rounded-xl text-center font-medium">
-                {error}
-              </div>
+              <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-2xl flex items-center gap-2 font-medium"
+              >
+                <AlertCircle size={15} className="shrink-0 text-red-600" />
+                <span>{error}</span>
+              </motion.div>
             )}
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest pl-1">Email</label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
-                <input 
-                  type="email" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@admin.com"
-                  required
-                  className="w-full bg-black/5  border border-transparent focus:border-accent/50 focus:bg-white  rounded-xl pl-12 pr-4 py-3.5 text-sm outline-none transition-all"
-                />
+
+            {/* Form */}
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-zinc-700 block pl-1">
+                  Alamat Email
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" size={16} />
+                  <input 
+                    type="email" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="nama@email.com"
+                    required
+                    className="w-full bg-zinc-50 hover:bg-white focus:bg-white border border-zinc-200 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-zinc-900 placeholder:text-zinc-400 outline-none transition-all font-medium"
+                  />
+                </div>
               </div>
-            </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest pl-1">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
-                <input 
-                  type="password" 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  className="w-full bg-black/5  border border-transparent focus:border-accent/50 focus:bg-white  rounded-xl pl-12 pr-4 py-3.5 text-sm outline-none transition-all"
-                />
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between pl-1">
+                  <label className="text-xs font-semibold text-zinc-700">
+                    Kata Sandi
+                  </label>
+                </div>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" size={16} />
+                  <input 
+                    type="password" 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                    className="w-full bg-zinc-50 hover:bg-white focus:bg-white border border-zinc-200 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-zinc-900 placeholder:text-zinc-400 outline-none transition-all font-medium"
+                  />
+                </div>
               </div>
+
+              {/* Submit Pill Button (Emerald Green - Selaras dengan Admin Console) */}
+              <button 
+                type="submit" 
+                disabled={isLoading}
+                className="w-full mt-2 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-semibold flex items-center justify-center gap-2 shadow-xs transition active:scale-[0.99] disabled:opacity-60 cursor-pointer"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="animate-spin" size={15} />
+                    <span>Memverifikasi...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Masuk ke Konsol</span>
+                    <ArrowRight size={15} />
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* Security Assurance (Tanpa kata Supabase) */}
+            <div className="pt-2 border-t border-zinc-100 flex items-center justify-center gap-1.5 text-[11px] text-zinc-400">
+              <ShieldCheck size={13} className="text-emerald-600" />
+              <span>Akses terautentikasi & terenkripsi aman</span>
             </div>
-
-            <button 
-              type="submit" 
-              disabled={isLoading}
-              className="w-full bg-accent text-white rounded-xl py-3.5 font-bold flex items-center justify-center gap-2 hover:bg-accent/90 transition-colors disabled:opacity-70 mt-2"
-            >
-              {isLoading ? <Loader2 className="animate-spin" size={18} /> : (
-                <>
-                  <span>Masuk ke Dashboard</span>
-                  <ArrowRight size={18} />
-                </>
-              )}
-            </button>
-          </form>
-
-          <div className="mt-6 text-center text-sm text-zinc-500">
-            Belum punya akun? <Link href="/register" className="text-accent font-bold hover:underline">Daftar di sini</Link>
           </div>
-        </div>
-      </motion.div>
+        </motion.div>
+      </div>
+
+      {/* Footer Minimalist */}
+      <footer className="max-w-md w-full mx-auto text-center pb-4 text-xs text-zinc-400">
+        <p>&copy; {new Date().getFullYear()} Brosur Ahad Pagi</p>
+      </footer>
     </div>
   );
 }

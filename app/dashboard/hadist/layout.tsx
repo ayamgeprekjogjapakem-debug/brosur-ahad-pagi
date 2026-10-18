@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import HadistSidebar from './components/HadistSidebar';
+import HadistNavTabs from './components/HadistNavTabs';
 
 export default function HadistLayout({
   children,
@@ -9,9 +9,9 @@ export default function HadistLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col md:flex-row h-full w-full bg-white/75  rounded-3xl overflow-hidden">
-      <HadistSidebar />
-      <div className="flex-1 w-full h-full overflow-y-auto relative flex flex-col">
+    <div className="flex flex-col w-full h-full min-h-0 bg-[#fafafa]">
+      <HadistNavTabs />
+      <div className="flex-1 w-full overflow-y-auto relative">
         {children}
       </div>
     </div>

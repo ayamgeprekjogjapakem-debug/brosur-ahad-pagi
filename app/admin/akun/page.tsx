@@ -225,9 +225,12 @@ export default function AdminAkunPage() {
               />
             </div>
 
-            <p className="text-[11px] text-zinc-400">
-              Pastikan kata sandi Anda kuat untuk mengamankan hak akses administrasi brosur.
-            </p>
+            <div className="p-3 bg-emerald-50 border border-emerald-200/80 rounded-xl space-y-1 text-emerald-800">
+              <span className="font-semibold block">Sinkronisasi Web & Mobile:</span>
+              <p className="text-[11px] text-emerald-700">
+                Kata sandi baru ini akan langsung aktif dan digunakan untuk masuk ke dashboard web maupun login di aplikasi mobile.
+              </p>
+            </div>
 
             <button
               type="submit"

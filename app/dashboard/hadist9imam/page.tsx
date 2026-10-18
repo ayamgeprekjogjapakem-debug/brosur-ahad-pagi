@@ -346,101 +346,134 @@ export default function Hadist9ImamPage() {
   };
 
   return (
-    <div className="flex-1 w-full h-full overflow-y-auto bg-[#fbfbfd] p-6 md:p-10">
-      <div className="max-w-6xl mx-auto">
-        {/* Header - Apple Style */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-zinc-900 mb-2">
-              Koleksi <span className="text-emerald-600">Hadist</span>
-            </h1>
-            <p className="text-zinc-500 font-medium">Manajemen perpustakaan kitab dan vektorisasi AI.</p>
+    <div className="w-full max-w-7xl mx-auto py-6 md:py-8 font-sans antialiased text-slate-800 select-none space-y-6">
+      {/* Header Banner Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/70 text-emerald-700 text-xs font-medium mb-2">
+            <BookOpen size={12} className="text-emerald-600" />
+            <span>Pustaka Kitab 9 Imam</span>
           </div>
-          <div className="flex items-center gap-3">
-            {activeTab === 'vektor' && (
-              <button 
-                onClick={handleSyncAI}
-                disabled={isVectorSyncing || syncStatus.unsynced === 0}
-                className="bg-zinc-900 text-white px-6 py-2.5 rounded-full font-medium flex items-center gap-2 hover:bg-zinc-800 transition-all shadow-md disabled:opacity-50"
-              >
-                {isVectorSyncing ? <Loader2 size={16} className="animate-spin" /> : <Database size={16} />}
-                {isVectorSyncing ? 'Menyinkronkan...' : syncStatus.unsynced > 0 ? `Sinkron AI (${syncStatus.unsynced})` : 'AI Tersinkron'}
-              </button>
-            )}
-            {activeTab === 'folder' && (
-              <button 
-                onClick={() => {
-                  setNewFolderName('Buku 1 • Kitab 2');
-                  setIsFolderModalOpen(true);
-                }}
-                className="bg-emerald-600 text-white px-5 py-2.5 rounded-full font-medium flex items-center gap-2 hover:bg-emerald-500 transition-all shadow-md shadow-emerald-500/20 active:scale-95"
-              >
-                <FolderPlus size={16} /> Tambah Kategori
-              </button>
-            )}
-            <Link 
-              href="/dashboard/hadist9imam/search" 
-              className="bg-white border border-emerald-200 text-emerald-700 px-6 py-2.5 rounded-full font-medium flex items-center gap-2 hover:bg-emerald-50 transition-all shadow-sm"
-            >
-              <Search size={16} /> Cari Hadist
-            </Link>
-            <Link 
-              href="/dashboard/hadist9imam/upload" 
-              className="bg-zinc-900 text-white px-6 py-2.5 rounded-full font-medium flex items-center gap-2 hover:bg-zinc-800 transition-all shadow-md"
-            >
-              <Plus size={16} /> Upload Kitab
-            </Link>
-          </div>
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
+            Koleksi{' '}
+            <span className="bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 bg-clip-text text-transparent font-extrabold">
+              Hadist 9 Imam
+            </span>
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1 font-normal leading-relaxed">
+            Manajemen perpustakaan kitab induk, ekstraksi CHM, pencarian kontekstual, dan sinkronisasi vektor AI.
+          </p>
         </div>
 
-        {/* Apple Style Pill Tabs */}
-        <div className="flex bg-zinc-200/50 p-1 rounded-2xl w-fit mb-8 border border-black/[0.02]">
-          <button 
-            onClick={() => changeTab('hadist_chm')}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all ${activeTab === 'hadist_chm' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-700'}`}
-          >
-            <FileText size={16} /> Koleksi Hadist {activeTab === 'hadist_chm' && <span className="ml-1 bg-zinc-100 text-zinc-500 py-0.5 px-2 rounded-md text-xs">{totalHadists}</span>}
-          </button>
-          <button 
-            onClick={() => changeTab('folder')}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all ${activeTab === 'folder' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-700'}`}
-          >
-            <FolderArchive size={16} /> Kategori Kitab
-          </button>
-          <button 
-            onClick={() => changeTab('vektor')}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all ${activeTab === 'vektor' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-700'}`}
-          >
-            <Cpu size={16} /> Sinkronisasi AI {syncStatus.unsynced > 0 ? (
-              <span className="ml-1 bg-amber-100 text-amber-800 py-0.5 px-2 rounded-md text-xs font-bold">
-                {syncStatus.unsynced} tertinggal
+        <div className="flex flex-wrap items-center gap-2.5">
+          {activeTab === 'vektor' && (
+            <button 
+              onClick={handleSyncAI}
+              disabled={isVectorSyncing || syncStatus.unsynced === 0}
+              className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-semibold flex items-center justify-center gap-2 transition disabled:opacity-50 shrink-0"
+            >
+              {isVectorSyncing ? <Loader2 size={14} className="animate-spin" /> : <Database size={14} />}
+              <span>
+                {isVectorSyncing 
+                  ? 'Menyinkronkan...' 
+                  : syncStatus.unsynced > 0 
+                    ? `Sinkron AI (${syncStatus.unsynced} tertinggal)` 
+                    : 'AI Tersinkron Penuh'}
               </span>
-            ) : (
-              <span className="ml-1 bg-emerald-100 text-emerald-700 py-0.5 px-2 rounded-md text-xs">
-                {syncStatus.synced}
-              </span>
-            )}
-          </button>
+            </button>
+          )}
+          {activeTab === 'folder' && (
+            <button 
+              onClick={() => {
+                setNewFolderName('Buku 1 • Kitab 2');
+                setIsFolderModalOpen(true);
+              }}
+              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center justify-center gap-2 transition shrink-0 active:scale-[0.98]"
+            >
+              <FolderPlus size={14} /> <span>Tambah Kategori</span>
+            </button>
+          )}
+          <Link 
+            href="/dashboard/hadist9imam/search" 
+            className="px-4 py-2 rounded-xl bg-white border border-slate-200/80 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center justify-center gap-2 transition shrink-0"
+          >
+            <Search size={14} className="text-slate-400" /> <span>Cari Hadist</span>
+          </Link>
+          <Link 
+            href="/dashboard/hadist9imam/upload" 
+            className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center justify-center gap-2 transition shrink-0 active:scale-[0.98]"
+          >
+            <Plus size={14} /> <span>Upload Kitab CHM</span>
+          </Link>
         </div>
+      </div>
 
-        {/* Content Area - Glassmorphism Card */}
-        <div className="bg-white/80 backdrop-blur-xl border border-black/[0.04] rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.02)] overflow-hidden">
+      {/* Segmented Control Tabs */}
+      <div className="flex items-center gap-1.5 p-1 bg-slate-200/60 rounded-xl w-fit border border-slate-200/80">
+        <button
+          onClick={() => changeTab('hadist_chm')}
+          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+            activeTab === 'hadist_chm'
+              ? 'bg-white text-emerald-700 border border-slate-200/60 shadow-none'
+              : 'text-slate-600 hover:text-slate-900 border border-transparent'
+          }`}
+        >
+          <FileText size={14} /> <span>Koleksi Hadist</span>
+          {activeTab === 'hadist_chm' && (
+            <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200/60 px-1.5 py-0.2 rounded-md font-mono">
+              {totalHadists}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => changeTab('folder')}
+          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+            activeTab === 'folder'
+              ? 'bg-white text-emerald-700 border border-slate-200/60 shadow-none'
+              : 'text-slate-600 hover:text-slate-900 border border-transparent'
+          }`}
+        >
+          <FolderArchive size={14} /> <span>Kategori Kitab</span>
+        </button>
+        <button
+          onClick={() => changeTab('vektor')}
+          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+            activeTab === 'vektor'
+              ? 'bg-white text-emerald-700 border border-slate-200/60 shadow-none'
+              : 'text-slate-600 hover:text-slate-900 border border-transparent'
+          }`}
+        >
+          <Cpu size={14} /> <span>Sinkronisasi AI</span>
+          {syncStatus.unsynced > 0 ? (
+            <span className="text-[10px] bg-amber-50 text-amber-700 border border-amber-200/60 px-1.5 py-0.2 rounded-md font-mono font-bold">
+              {syncStatus.unsynced} tertinggal
+            </span>
+          ) : (
+            <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200/60 px-1.5 py-0.2 rounded-md font-mono">
+              {syncStatus.synced}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* Main Content Container Card */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-none">
           
           {/* Kelompok Per Kategori Kitab 9 Imam (Shahih & Sunan) */}
           {activeTab === 'hadist_chm' && (
-            <div className="px-6 pt-5 pb-3 border-b border-black/[0.04] bg-white/50">
-              <div className="flex items-center justify-between mb-2.5">
+            <div className="px-5 py-3.5 border-b border-slate-200/80 bg-slate-50/50">
+              <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <BookOpen size={16} className="text-emerald-600" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-zinc-700">
+                  <BookOpen size={14} className="text-emerald-600" />
+                  <span className="text-xs font-semibold text-slate-700">
                     Kategori Kitab Hadits (Shahih & Sunan)
                   </span>
                 </div>
-                <span className="text-xs text-zinc-400">
+                <span className="text-xs text-slate-400">
                   {selectedBook === 'ALL' ? 'Menampilkan semua kitab' : NINE_BOOKS.find(b => b.key === selectedBook)?.label}
                 </span>
               </div>
-              <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
                 {NINE_BOOKS.map((book) => {
                   const isSelected = selectedBook === book.key;
                   const queryParams = new URLSearchParams();
@@ -456,10 +489,10 @@ export default function Hadist9ImamPage() {
                         e.preventDefault();
                         handleSelectBook(book.key);
                       }}
-                      className={`whitespace-nowrap px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
+                      className={`whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-semibold transition border ${
                         isSelected
-                          ? 'bg-zinc-900 text-white border-zinc-900 shadow-sm shadow-zinc-900/20'
-                          : 'bg-zinc-50 hover:bg-zinc-100 text-zinc-600 border-zinc-200/80 hover:text-zinc-900'
+                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-none'
+                          : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-200/80 hover:text-slate-900'
                       }`}
                     >
                       {book.short}
@@ -471,20 +504,20 @@ export default function Hadist9ImamPage() {
           )}
 
           {(activeTab === 'hadist_chm' || activeTab === 'vektor') && (
-            <div className="p-4 border-b border-black/[0.03] flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="p-3.5 border-b border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-3 bg-white">
               <div className="relative w-full sm:max-w-md">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" size={16} />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
                 <input 
                   type="text" 
                   placeholder={activeTab === 'hadist_chm' ? `Cari judul hadist ${selectedBook !== 'ALL' ? `di ${selectedBook}` : ''}...` : 'Cari hadist...'}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full bg-zinc-50/50 border border-zinc-200 rounded-full py-2.5 pl-10 pr-4 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all text-sm"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-9 pr-3.5 focus:outline-none focus:border-emerald-500 focus:bg-white transition text-xs text-slate-800"
                 />
               </div>
 
               {activeTab === 'hadist_chm' && (
-                <div className="flex items-center gap-2 self-end sm:self-auto text-xs text-zinc-500">
+                <div className="flex items-center gap-2 self-end sm:self-auto text-xs text-slate-500">
                   <span className="whitespace-nowrap">Baris per hal:</span>
                   <select
                     value={itemsPerPage}
@@ -519,41 +552,41 @@ export default function Hadist9ImamPage() {
                     <th className="p-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Judul Hadist</th>
                     <th className="p-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Tahun</th>
                     <th className="p-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Kategori</th>
-                    <th className="p-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider text-right">Aksi</th>
+                    <th className="p-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Aksi</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-black/[0.02]">
+                <tbody className="divide-y divide-slate-100">
                   {hadists.map((h, idx) => (
-                    <tr key={h.id} className="hover:bg-zinc-50/30 transition-colors">
-                      <td className="p-4 align-top">
+                    <tr key={h.id} className="hover:bg-slate-50/70 transition-colors">
+                      <td className="p-3.5 align-top">
                         {renderChmCode(h.id)}
                       </td>
-                      <td className="p-4 text-sm font-medium text-zinc-900 align-top">{h.judul}</td>
-                      <td className="p-4 text-sm text-zinc-500 align-top">{h.tahun || '-'}</td>
-                      <td className="p-4 text-sm text-zinc-500 align-top">
+                      <td className="p-3.5 text-xs font-semibold text-slate-800 align-top leading-relaxed">{h.judul}</td>
+                      <td className="p-3.5 text-xs text-slate-500 align-top font-mono">{h.tahun || '-'}</td>
+                      <td className="p-3.5 text-xs text-slate-500 align-top">
                         {h.folders_hadist ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 text-xs font-medium">
+                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-medium border border-emerald-200/60">
                             <FolderArchive size={12}/> {h.folders_hadist.name}
                           </span>
                         ) : (
-                          <span className="italic text-zinc-400 text-xs">Tanpa Kategori</span>
+                          <span className="italic text-slate-400 text-xs">Tanpa Kategori</span>
                         )}
                       </td>
-                      <td className="p-4 text-sm text-right align-top">
+                      <td className="p-3.5 text-xs text-right align-top">
                         <Link 
                           href={`/dashboard/hadist9imam/${h.id}`}
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-zinc-100 text-zinc-600 hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
+                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-50 text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200/70 transition"
                           title="Lihat Detail"
                         >
-                          <Eye size={16} />
+                          <Eye size={14} />
                         </Link>
                       </td>
                     </tr>
                   ))}
                   {hadists.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="p-12 text-center text-zinc-400 text-sm">
-                        <BookOpen className="w-8 h-8 mx-auto mb-2 text-zinc-300" />
+                      <td colSpan={5} className="p-12 text-center text-slate-400 text-xs">
+                        <BookOpen className="w-7 h-7 mx-auto mb-2 text-slate-300" />
                         Tidak ada data hadist ditemukan {selectedBook !== 'ALL' ? `untuk ${selectedBook}` : ''}.
                       </td>
                     </tr>
@@ -563,9 +596,9 @@ export default function Hadist9ImamPage() {
 
               {/* Modern Pagination Controls */}
               {totalHadists > 0 && (
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-black/[0.03] bg-zinc-50/40">
-                  <span className="text-xs text-zinc-500">
-                    Menampilkan <span className="font-semibold text-zinc-900">{(currentPage - 1) * itemsPerPage + 1}</span> - <span className="font-semibold text-zinc-900">{Math.min(currentPage * itemsPerPage, totalHadists)}</span> dari <span className="font-semibold text-zinc-900">{totalHadists}</span> hadist
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-5 py-3.5 border-t border-slate-200/80 bg-slate-50/40">
+                  <span className="text-xs text-slate-500">
+                    Menampilkan <span className="font-semibold text-slate-900">{(currentPage - 1) * itemsPerPage + 1}</span> - <span className="font-semibold text-slate-900">{Math.min(currentPage * itemsPerPage, totalHadists)}</span> dari <span className="font-semibold text-slate-900">{totalHadists}</span> hadist
                   </span>
                   
                   <div className="flex items-center gap-1.5">
@@ -573,7 +606,7 @@ export default function Hadist9ImamPage() {
                       onClick={() => handleSelectPage(1)}
                       disabled={currentPage === 1}
                       title="Halaman Pertama"
-                      className="px-2.5 h-[34px] rounded-xl border border-zinc-200 text-zinc-600 hover:bg-zinc-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors bg-white text-xs font-medium"
+                      className="px-2.5 h-8 rounded-lg border border-slate-200/80 text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition bg-white text-xs font-medium"
                     >
                       Awal
                     </button>
@@ -581,9 +614,9 @@ export default function Hadist9ImamPage() {
                       onClick={() => handleSelectPage(Math.max(1, currentPage - 1))}
                       disabled={currentPage === 1}
                       title="Sebelumnya"
-                      className="w-[34px] h-[34px] rounded-xl border border-zinc-200 text-zinc-600 hover:bg-zinc-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors bg-white flex items-center justify-center"
+                      className="w-8 h-8 rounded-lg border border-slate-200/80 text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition bg-white flex items-center justify-center"
                     >
-                      <ChevronLeft size={16} />
+                      <ChevronLeft size={14} />
                     </button>
 
                     <div className="flex items-center gap-1 mx-1">
@@ -882,7 +915,6 @@ export default function Hadist9ImamPage() {
             )}
           </div>
         </div>
-      </div>
 
       {/* Modal Dialog Tambah Kategori */}
       {isFolderModalOpen && (
