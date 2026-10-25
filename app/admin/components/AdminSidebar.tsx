@@ -7,7 +7,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { 
   LayoutDashboard, Database, BookOpen, Calendar, Bell,
   User, UserCog, LogOut, Sparkles, X, ScrollText, Library,
-  KeyRound, Shield, CheckCircle2, ShieldAlert, BellRing, Megaphone
+  KeyRound, Shield, CheckCircle2, ShieldAlert, BellRing, Megaphone, MessageSquare
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 
@@ -84,23 +84,35 @@ export default function AdminSidebar() {
 
   const navGroups = [
     {
-      label: 'MENU UTAMA',
+      label: 'RINGKASAN',
       items: [
         { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-        { name: 'Pengumuman', href: '/admin/pengumuman', icon: Megaphone },
+      ],
+    },
+    {
+      label: 'KONTEN DAKWAH',
+      items: [
         { name: 'Data Brosur', href: '/admin/data-brosur', icon: Database },
         { name: 'Data Quran', href: '/admin/data-quran', icon: BookOpen },
         { name: 'Hadist Brosur', href: '/admin/hadist', icon: ScrollText },
         { name: 'Hadist 9 Imam', href: '/admin/hadist-9-imam', icon: Library },
-        { name: 'Kalender', href: '/admin/kalender', icon: Calendar },
+        { name: 'Kalender Kajian', href: '/admin/kalender', icon: Calendar },
+      ],
+    },
+    {
+      label: 'KOMUNIKASI & JAMAAH',
+      items: [
+        { name: 'Pengumuman', href: '/admin/pengumuman', icon: Megaphone, badge: 'Warta' },
+        { name: 'Konsultasi Hadist', href: '/admin/help', icon: MessageSquare, badge: 'WA' },
         { name: 'Kotak Masukan', href: '/admin/notifikasi', icon: Bell },
       ],
     },
     {
-      label: 'SETTING',
+      label: 'PENGATURAN & AKSES',
       items: [
-        { name: 'Akun', href: '/admin/akun', icon: User },
-        { name: 'Management Akun', href: '/admin/management-akun', icon: UserCog },
+        { name: 'Kode Akses', href: '/admin/kode-akses', icon: KeyRound },
+        { name: 'Akun Saya', href: '/admin/akun', icon: User },
+        { name: 'Manajemen Akun', href: '/admin/management-akun', icon: UserCog },
         ...(currentUser?.role === 'super-admin' 
           ? [{ name: 'Super Admin', href: '/dashboard', icon: ShieldAlert }] 
           : []),
@@ -158,13 +170,21 @@ export default function AdminSidebar() {
         </div>
         
         {/* Navigation Clean Gemini Style */}
-        <nav className="flex-1 px-3 py-2 space-y-6 overflow-y-auto custom-scrollbar">
-          {navGroups.map((group) => (
-            <div key={group.label} className="space-y-1">
+        <nav className="flex-1 px-3 py-3 space-y-5 overflow-y-auto custom-scrollbar">
+          {navGroups.map((group, groupIdx) => (
+            <div 
+              key={group.label} 
+              className={`space-y-1 ${groupIdx > 0 ? 'pt-3 border-t border-zinc-200/50' : ''}`}
+            >
               {(!isMinimized || isMobileOpen) && (
-                <span className="block px-3 py-1 text-[11px] font-medium tracking-wider text-zinc-400">
-                  {group.label}
-                </span>
+                <div className="px-3 py-1 flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                    {group.label}
+                  </span>
+                  <span className="text-[9px] font-medium text-zinc-300">
+                    {group.items.length}
+                  </span>
+                </div>
               )}
               <div className="space-y-0.5">
                 {group.items.map((item) => {
@@ -172,25 +192,40 @@ export default function AdminSidebar() {
                     ? pathname === '/admin' 
                     : pathname === item.href || pathname.startsWith(`${item.href}/`);
                   const Icon = item.icon;
+                  const badge = (item as any).badge;
+
                   return (
                     <Link 
                       key={item.name} 
                       href={item.href}
                       title={isMinimized && !isMobileOpen ? item.name : undefined}
                       className={`w-full flex items-center ${
-                        isMinimized && !isMobileOpen ? 'justify-center px-0 h-10' : 'gap-3 px-3.5 py-2.5'
-                      } rounded-xl text-sm font-medium transition-all duration-150 ${
+                        isMinimized && !isMobileOpen ? 'justify-center px-0 h-10' : 'gap-3 px-3 py-2'
+                      } rounded-xl text-xs sm:text-sm font-medium transition-all duration-150 ${
                         isActive 
-                          ? 'bg-emerald-50 text-emerald-700 font-semibold' 
-                          : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100/70'
+                          ? 'bg-emerald-50 text-emerald-800 font-semibold shadow-2xs' 
+                          : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100/80'
                       }`}
                     >
                       <Icon 
-                        size={18} 
+                        size={17} 
                         strokeWidth={isActive ? 2.2 : 1.8} 
-                        className={isActive ? 'text-emerald-600' : 'text-zinc-400 group-hover:text-zinc-600'} 
+                        className={`shrink-0 transition-colors ${
+                          isActive ? 'text-emerald-600' : 'text-zinc-400 group-hover:text-zinc-600'
+                        }`} 
                       />
-                      {(!isMinimized || isMobileOpen) && <span>{item.name}</span>}
+                      {(!isMinimized || isMobileOpen) && (
+                        <>
+                          <span className="truncate">{item.name}</span>
+                          {badge ? (
+                            <span className="ml-auto px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200/60 shrink-0">
+                              {badge}
+                            </span>
+                          ) : isActive ? (
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 ml-auto shrink-0" />
+                          ) : null}
+                        </>
+                      )}
                     </Link>
                   );
                 })}

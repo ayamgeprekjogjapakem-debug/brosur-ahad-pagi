@@ -69,6 +69,7 @@ export async function POST(request: Request) {
       isPinned = false,
       sendPushNotification: shouldNotify = true,
       targetTopic = 'semua_pengguna',
+      brosurSlug,
     } = body;
 
     if (!judul || !konten) {
@@ -92,14 +93,16 @@ export async function POST(request: Request) {
         fcmResult = await sendPushNotification({
           targetType: 'topic',
           target: targetTopic,
-          title: `📢 ${judul}`,
+          title: judul,
           body: ringkasan || konten.substring(0, 140) + '...',
-          screen: 'detail_pengumuman',
-          slug: slug,
+          screen: kategori === 'brosur' && brosurSlug ? 'detail_brosur' : 'detail_pengumuman',
+          slug: kategori === 'brosur' && brosurSlug ? brosurSlug : slug,
           imageUrl: bannerUrl || undefined,
           extraData: {
-            type: 'pengumuman',
+            type: kategori === 'brosur' && brosurSlug ? 'brosur' : 'pengumuman',
             kategori,
+            ...(brosurSlug ? { brosur_slug: brosurSlug, slug_brosur: brosurSlug } : {}),
+            pengumuman_slug: slug,
           },
         });
 
@@ -107,12 +110,12 @@ export async function POST(request: Request) {
         try {
           await supabase.from('push_notification_logs').insert([
             {
-              title: `📢 ${judul}`,
+              title: judul,
               body: ringkasan || konten.substring(0, 140),
               target_type: 'topic',
               target: targetTopic,
-              screen: 'detail_pengumuman',
-              slug: slug,
+              screen: kategori === 'brosur' && brosurSlug ? 'detail_brosur' : 'detail_pengumuman',
+              slug: kategori === 'brosur' && brosurSlug ? brosurSlug : slug,
               image_url: bannerUrl || null,
               sender_id: user.id,
               sender_email: user.email,
@@ -146,6 +149,7 @@ export async function POST(request: Request) {
       notified_at: fcmResult?.success ? new Date().toISOString() : null,
       author_id: user.id,
       author_name: authorName,
+      brosur_slug: brosurSlug?.trim() || null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };

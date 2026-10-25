@@ -138,8 +138,8 @@ export async function sendPushNotification(payload: FcmPayload): Promise<FcmSend
       android: {
         priority: 'high',
         notification: {
-          sound: 'default',
-          channel_id: 'pustaka_notifications_channel',
+          sound: 'tawakkal',
+          channel_id: 'pustaka_notifications_v3',
           click_action: 'FLUTTER_NOTIFICATION_CLICK',
         },
       },

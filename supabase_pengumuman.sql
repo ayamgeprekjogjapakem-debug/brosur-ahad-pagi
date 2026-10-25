@@ -19,9 +19,13 @@ CREATE TABLE IF NOT EXISTS public.pengumuman (
     notified_at TIMESTAMPTZ,
     author_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
     author_name TEXT,
+    brosur_slug TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Migrasi jika tabel sudah ada sebelumnya
+ALTER TABLE public.pengumuman ADD COLUMN IF NOT EXISTS brosur_slug TEXT;
 
 -- Indexing
 CREATE INDEX IF NOT EXISTS idx_pengumuman_created_at ON public.pengumuman(created_at DESC);
