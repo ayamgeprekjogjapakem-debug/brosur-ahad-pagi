@@ -7,7 +7,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { 
   BookOpen, Upload, LogOut, Loader2, FileStack, Settings, 
   UserCog, Database, MessageSquare, Activity, ShieldBan,
-  ChevronLeft, ChevronRight, BookMarked, Sparkles, Key, Bot, Settings2, Search, Calendar
+  ChevronLeft, ChevronRight, BookMarked, Sparkles, Key, Bot, Settings2, Search, Calendar, BellRing, Megaphone
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 
@@ -62,6 +62,7 @@ export default function DashboardSidebar() {
         { name: 'Hadist 9 Imam', href: '/dashboard/hadist9imam', icon: BookMarked },
         { name: 'Hadist dari API', href: '/dashboard/hadist-api', icon: BookOpen },
         { name: 'Data Quran', href: '/dashboard/quran', icon: BookOpen },
+        { name: 'Pengumuman & Warta', href: '/dashboard/pengumuman', icon: Megaphone },
         { name: 'Kotak Masukan', href: '/dashboard/masukan', icon: MessageSquare },
         { name: 'Kalender', href: '/dashboard/kalender', icon: Calendar },
       ],
@@ -87,6 +88,7 @@ export default function DashboardSidebar() {
     {
       label: 'SISTEM & APP',
       items: [
+        { name: 'Push Notifikasi Mobile', href: '/dashboard/push-notifikasi', icon: BellRing },
         { name: 'App Control', href: '/dashboard/app-settings', icon: Settings },
         { name: 'Kalibrasi Kalender', href: '/dashboard/kalibrasi', icon: Settings2 },
         { name: 'Pengaturan Web', href: '/dashboard/settings', icon: Settings },

@@ -7,7 +7,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { 
   LayoutDashboard, Database, BookOpen, Calendar, Bell,
   User, UserCog, LogOut, Sparkles, X, ScrollText, Library,
-  KeyRound, Shield, CheckCircle2, ShieldAlert
+  KeyRound, Shield, CheckCircle2, ShieldAlert, BellRing, Megaphone
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 
@@ -87,12 +87,14 @@ export default function AdminSidebar() {
       label: 'MENU UTAMA',
       items: [
         { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+        { name: 'Pengumuman', href: '/admin/pengumuman', icon: Megaphone },
+        { name: 'Push Notifikasi Mobile', href: '/admin/push-notifikasi', icon: BellRing },
         { name: 'Data Brosur', href: '/admin/data-brosur', icon: Database },
         { name: 'Data Quran', href: '/admin/data-quran', icon: BookOpen },
         { name: 'Hadist Brosur', href: '/admin/hadist', icon: ScrollText },
         { name: 'Hadist 9 Imam', href: '/admin/hadist-9-imam', icon: Library },
         { name: 'Kalender', href: '/admin/kalender', icon: Calendar },
-        { name: 'Notifikasi', href: '/admin/notifikasi', icon: Bell },
+        { name: 'Kotak Masukan', href: '/admin/notifikasi', icon: Bell },
       ],
     },
     {
