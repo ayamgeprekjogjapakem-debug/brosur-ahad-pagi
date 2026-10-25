@@ -108,9 +108,8 @@ Jika aplikasi Next.js Anda dideploy ke Cloudflare Pages:
    npm run dev
    ```
 2. Buka halaman admin di browser:
-   * **`http://localhost:3000/admin/notifikasi`** (Admin)
-   * atau **`http://localhost:3000/dashboard/push-notifikasi`** (Super Admin)
-3. Perhatikan indikator status di pojok kanan atas:
+   * **`http://localhost:3000/admin/pengumuman`** (Admin & Super Admin)
+3. Di halaman ini, setiap pembuatan atau siaran pengumuman dapat langsung mengirimkan Push Notifikasi ke seluruh ponsel jamaah (topik `semua_pengguna`).
    * **Sebelum Diisi:** Berwarna kuning: `FCM Standby (Mode Uji Coba)`
    * **Setelah Diisi & Valid:** Berwarna hijau menyala dengan titik berkedip:
      ```text

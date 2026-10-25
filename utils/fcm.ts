@@ -194,3 +194,14 @@ export async function sendPushNotification(payload: FcmPayload): Promise<FcmSend
     };
   }
 }
+
+export function getFcmConfigStatus() {
+  const projectId = process.env.FIREBASE_PROJECT_ID;
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+  const isConfigured = Boolean(projectId && clientEmail && privateKey && !privateKey.includes('your-private-key'));
+  return {
+    configured: isConfigured,
+    projectId: isConfigured ? projectId : null,
+  };
+}

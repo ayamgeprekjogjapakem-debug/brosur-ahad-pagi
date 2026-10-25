@@ -88,7 +88,6 @@ export default function AdminSidebar() {
       items: [
         { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
         { name: 'Pengumuman', href: '/admin/pengumuman', icon: Megaphone },
-        { name: 'Push Notifikasi Mobile', href: '/admin/push-notifikasi', icon: BellRing },
         { name: 'Data Brosur', href: '/admin/data-brosur', icon: Database },
         { name: 'Data Quran', href: '/admin/data-quran', icon: BookOpen },
         { name: 'Hadist Brosur', href: '/admin/hadist', icon: ScrollText },

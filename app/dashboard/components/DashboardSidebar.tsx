@@ -88,7 +88,6 @@ export default function DashboardSidebar() {
     {
       label: 'SISTEM & APP',
       items: [
-        { name: 'Push Notifikasi Mobile', href: '/dashboard/push-notifikasi', icon: BellRing },
         { name: 'App Control', href: '/dashboard/app-settings', icon: Settings },
         { name: 'Kalibrasi Kalender', href: '/dashboard/kalibrasi', icon: Settings2 },
         { name: 'Pengaturan Web', href: '/dashboard/settings', icon: Settings },

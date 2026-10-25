@@ -51,6 +51,19 @@ export default function PengumumanManager({ role }: Props) {
 
   // Resend State
   const [resendingId, setResendingId] = useState<string | null>(null);
+  const [fcmStatus, setFcmStatus] = useState<{ configured: boolean; projectId?: string | null } | null>(null);
+
+  const fetchFcmStatus = async () => {
+    try {
+      const res = await fetch('/api/notifications/status');
+      const data = await res.json();
+      if (data.success) {
+        setFcmStatus(data);
+      }
+    } catch {
+      // ignore
+    }
+  };
 
   const fetchItems = async () => {
     setLoading(true);
@@ -69,6 +82,7 @@ export default function PengumumanManager({ role }: Props) {
 
   useEffect(() => {
     fetchItems();
+    fetchFcmStatus();
   }, []);
 
   const resetForm = () => {
@@ -255,13 +269,28 @@ export default function PengumumanManager({ role }: Props) {
           </p>
         </div>
 
-        <button
-          onClick={() => handleOpenModal()}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-medium text-xs sm:text-sm shadow-xs transition shrink-0"
-        >
-          <Plus size={16} />
-          <span>Buat Pengumuman Baru</span>
-        </button>
+        <div className="flex items-center gap-2.5 shrink-0">
+          {fcmStatus && (
+            <div
+              className={`hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-semibold ${
+                fcmStatus.configured
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : 'bg-amber-50 text-amber-700 border-amber-200'
+              }`}
+            >
+              <span className={`w-2 h-2 rounded-full ${fcmStatus.configured ? 'bg-emerald-500 animate-pulse' : 'bg-amber-400'}`} />
+              <span>{fcmStatus.configured ? `FCM Aktif (${fcmStatus.projectId})` : 'FCM Simulasi'}</span>
+            </div>
+          )}
+
+          <button
+            onClick={() => handleOpenModal()}
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-medium text-xs sm:text-sm shadow-xs transition"
+          >
+            <Plus size={16} />
+            <span>Buat Pengumuman Baru</span>
+          </button>
+        </div>
       </div>
 
       {/* 2. Filter & Pencarian */}
