@@ -13,31 +13,26 @@ import {
 import { motion } from 'framer-motion';
 import MainSidebar from '@/app/components/MainSidebar';
 import HeaderUserDropdown from '@/app/components/HeaderUserDropdown';
+import { buildHighlightSpans } from '@/utils/searchHelper';
 
 const HighlightText = ({ text, highlight }: { text: string; highlight: string | string[] }) => {
   if (!text) return <>{text}</>;
   
-  const highlights = Array.isArray(highlight) ? highlight : [highlight];
-  const validHighlights = highlights
-    .map(h => h?.trim())
-    .filter(h => h && h.length > 2)
-    .sort((a, b) => b.length - a.length);
+  const spans = buildHighlightSpans(text, highlight);
+  if (!spans || spans.length === 0) return <>{text}</>;
 
-  if (validHighlights.length === 0) return <>{text}</>;
-
-  const escapedTerms = validHighlights.map(h => h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-  const pattern = escapedTerms.join('|').replace(/wudu|wudhu|wudlu/gi, '(?:wudu|wudhu|wudlu)');
-
-  const regex = new RegExp(`(${pattern})`, 'gi');
-  const parts = text.split(regex);
-  
   return (
     <>
-      {parts.map((part, i) =>
-        i % 2 !== 0 ? (
-          <span key={i} className="bg-emerald-200/60 text-emerald-900 rounded-[2px] font-medium">{part}</span>
+      {spans.map((span, i) =>
+        span.isMatch ? (
+          <mark
+            key={i}
+            className="bg-amber-300 text-amber-950 font-bold px-1 rounded shadow-xs mx-0.5 inline-block"
+          >
+            {span.text}
+          </mark>
         ) : (
-          <span key={i}>{part}</span>
+          <span key={i}>{span.text}</span>
         )
       )}
     </>
@@ -58,6 +53,29 @@ export default function MakkahPortal() {
   const [visibleCount, setVisibleCount] = useState(10);
   const pathname = usePathname();
   const router = useRouter();
+
+  const activeHighlightTerms = React.useMemo(() => {
+    const list: string[] = [];
+    if (searchMeta?.highlight_terms && Array.isArray(searchMeta.highlight_terms)) {
+      list.push(...searchMeta.highlight_terms);
+    }
+    if (searchMeta?.search_terms_used && Array.isArray(searchMeta.search_terms_used)) {
+      list.push(...searchMeta.search_terms_used);
+    }
+    if (searchMeta?.query_koreksi) {
+      list.push(searchMeta.query_koreksi);
+    }
+    if (searchMeta?.originalQuery) {
+      list.push(searchMeta.originalQuery);
+    }
+    if (searchMeta?.kata_kunci_konteks) {
+      list.push(...searchMeta.kata_kunci_konteks.split(' '));
+    }
+    if (searchQuery) {
+      list.push(searchQuery);
+    }
+    return list;
+  }, [searchMeta, searchQuery]);
 
   const getShareText = (item: any) => {
     const sumber = item.sumber_jenis === 'quran'
@@ -130,13 +148,16 @@ export default function MakkahPortal() {
       const res = await fetch(`/api/hadist/items?search=${encodeURIComponent(query)}`);
       const data = await res.json();
       if (res.ok) {
+        const meta = data.search_meta || {};
         setSearchResults(data.items || []);
         setSearchSuggestions(data.suggestions || []);
         setSearchMeta({
-          originalQuery: query.trim(),
-          query_koreksi: data.ai_data?.query_koreksi || null,
+          originalQuery: meta.original_query || query.trim(),
+          query_koreksi: meta.corrected_query || data.ai_data?.query_koreksi || null,
+          has_correction: meta.has_correction || false,
           kata_kunci_konteks: data.ai_data?.kata_kunci_konteks || null,
-          search_terms_used: data.search_terms_used || []
+          search_terms_used: data.search_terms_used || [],
+          highlight_terms: meta.highlight_terms || data.highlight_terms || []
         });
       } else {
         setSearchResults([]);
@@ -361,12 +382,30 @@ export default function MakkahPortal() {
                   <h3 className="text-xl font-bold text-slate-800">
                     {isShowingSaved ? "Dalil Tersimpan" : `Hasil untuk "${searchMeta?.query_koreksi || searchQuery}"`}
                   </h3>
-                  {searchMeta?.query_koreksi && searchMeta.query_koreksi.toLowerCase() !== searchMeta.originalQuery.toLowerCase() && (
+                  {searchMeta?.has_correction && searchMeta.query_koreksi && (
+                    <div className="max-w-xl mx-auto mt-3 bg-amber-50 border border-amber-300 rounded-xl px-4 py-2.5 text-amber-900 text-sm flex items-center justify-between shadow-xs text-left">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+                        <span>
+                          Menampilkan hasil untuk: <strong className="font-bold underline decoration-amber-500">{searchMeta.query_koreksi}</strong>{' '}
+                          <span className="text-amber-700/80">(koreksi otomatis typo dari &lsquo;{searchMeta.originalQuery}&rsquo;)</span>
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleSearch(searchMeta.originalQuery)}
+                        className="text-xs text-amber-800 underline hover:text-amber-950 font-semibold shrink-0 ml-3 cursor-pointer"
+                      >
+                        Cari tetap &lsquo;{searchMeta.originalQuery}&rsquo;
+                      </button>
+                    </div>
+                  )}
+                  {searchMeta?.query_koreksi && !searchMeta.has_correction && searchMeta.query_koreksi.toLowerCase() !== searchMeta.originalQuery.toLowerCase() && (
                     <p className="text-sm text-emerald-600 mt-1 font-medium">
                       Menampilkan hasil untuk: <strong>{searchMeta.query_koreksi}</strong>
                     </p>
                   )}
-                  <p className="text-sm text-slate-500 mt-1">
+                  <p className="text-sm text-slate-500 mt-2">
                     {isShowingSaved ? `Ada ${searchResults?.length || 0} dalil dalam koleksi Anda` : `Ditemukan ${searchResults?.length || 0} dalil yang relevan`}
                   </p>
                 </div>
@@ -456,14 +495,14 @@ export default function MakkahPortal() {
                       {item.kutipan_arab && (
                         <div className="mb-4 text-right" dir="rtl">
                           <p className="font-amiri text-[28px] leading-[2.5] text-slate-800" style={{ fontFamily: "'Amiri', serif" }}>
-                            <HighlightText text={item.kutipan_arab} highlight={searchMeta ? [searchMeta.query_koreksi, searchMeta.originalQuery, searchQuery, ...(searchMeta.kata_kunci_konteks ? searchMeta.kata_kunci_konteks.split(' ') : [])] : searchQuery} />
+                            <HighlightText text={item.kutipan_arab} highlight={activeHighlightTerms} />
                           </p>
                         </div>
                       )}
 
                       {item.terjemahan && (
                         <p className="text-[17px] text-slate-600 leading-relaxed font-medium">
-                          "<HighlightText text={item.terjemahan} highlight={searchMeta ? [searchMeta.query_koreksi, searchMeta.originalQuery, searchQuery, ...(searchMeta.kata_kunci_konteks ? searchMeta.kata_kunci_konteks.split(' ') : [])] : searchQuery} />"
+                          "<HighlightText text={item.terjemahan} highlight={activeHighlightTerms} />"
                         </p>
                       )}
 
@@ -593,7 +632,7 @@ export default function MakkahPortal() {
                   <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Matan (Teks Asli)</h4>
                   <div className="bg-white p-6 rounded-2xl border border-emerald-100 shadow-sm text-right" dir="rtl">
                     <p className="font-amiri text-[28px] leading-[2.5] text-slate-900" style={{ fontFamily: "'Amiri', serif" }}>
-                      {selectedItem.kutipan_arab}
+                      <HighlightText text={selectedItem.kutipan_arab} highlight={activeHighlightTerms} />
                     </p>
                   </div>
                 </div>
@@ -604,7 +643,7 @@ export default function MakkahPortal() {
                 <div>
                   <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Terjemahan</h4>
                   <p className="text-slate-700 text-[17px] leading-relaxed font-medium">
-                    "{selectedItem.terjemahan}"
+                    "<HighlightText text={selectedItem.terjemahan} highlight={activeHighlightTerms} />"
                   </p>
                 </div>
               )}

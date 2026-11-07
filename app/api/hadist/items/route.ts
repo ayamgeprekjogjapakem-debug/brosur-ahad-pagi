@@ -1,9 +1,63 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import {
+  expandSearchTerms,
+  stripArabicHarakat,
+  SYNONYMS_MAP,
+  extractWords,
+  findClosestWord,
+  SearchTermsResult
+} from '@/utils/searchHelper';
 
-function stripArabicHarakat(text: string) {
-  if (!text) return text;
-  return text.replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED]/g, '');
+// Cache kosakata in-memory server untuk deteksi typo cepat
+let globalHadistVocabulary: Set<string> | null = null;
+let lastVocabFetch = 0;
+
+async function getOrFetchVocabulary(supabase: any): Promise<Set<string>> {
+  const now = Date.now();
+  if (globalHadistVocabulary && now - lastVocabFetch < 1000 * 60 * 30) {
+    return globalHadistVocabulary;
+  }
+  try {
+    const { data } = await supabase
+      .from('hadist_brosur')
+      .select('terjemahan')
+      .limit(300);
+
+    const vocab = new Set<string>();
+    if (data && Array.isArray(data)) {
+      for (const row of data) {
+        if (row.terjemahan) {
+          const words = extractWords(row.terjemahan);
+          for (const w of words) vocab.add(w);
+        }
+      }
+    }
+    globalHadistVocabulary = vocab;
+    lastVocabFetch = now;
+    return vocab;
+  } catch (e) {
+    console.error('Error fetching hadist vocabulary:', e);
+    return globalHadistVocabulary || new Set();
+  }
+}
+
+function buildTokenOrCondition(tokenOrVariants: string[]): string {
+  const conds: string[] = [];
+  for (const term of tokenOrVariants) {
+    const safeTerm = term.replace(/[(),"]/g, '').trim();
+    if (!safeTerm) continue;
+    const stripped = stripArabicHarakat(safeTerm);
+    conds.push(
+      `kutipan_arab_gundul.ilike.%${stripped}%`,
+      `kutipan_arab.ilike.%${safeTerm}%`,
+      `terjemahan.ilike.%${safeTerm}%`,
+      `perawi_sumber.ilike.%${safeTerm}%`,
+      `rawi_kitab.ilike.%${safeTerm}%`,
+      `rawi_teratas.ilike.%${safeTerm}%`
+    );
+  }
+  return conds.join(',');
 }
 
 export async function GET(request: NextRequest) {
@@ -46,7 +100,14 @@ export async function GET(request: NextRequest) {
     }
 
     if (brosurId && brosurId !== 'all') {
-      query = query.eq('brosur_id', brosurId);
+      // Izinkan filter dengan ID maupun slug brosur
+      const { data: bMatch } = await supabase
+        .from('brosur')
+        .select('id')
+        .or(`id.eq.${brosurId},slug.eq.${brosurId}`)
+        .maybeSingle();
+      const targetBrosurId = bMatch?.id || brosurId;
+      query = query.eq('brosur_id', targetBrosurId);
     }
 
     if (tahun && tahun !== 'all') {
@@ -62,13 +123,25 @@ export async function GET(request: NextRequest) {
     }
 
     let executedSearchTerms: string[] = [];
+    let highlightTerms: string[] = [];
+    let correctedQuery: string | null = null;
+    let hasCorrection = false;
     let finalSearch = search;
     let contextKeywords = '';
 
     if (search) {
       const cleanSearch = search.trim().toLowerCase();
+      const vocab = await getOrFetchVocabulary(supabase);
       
-      // 1. Cek tabel cache
+      // 1. Ekspansi pencarian cerdas (Multi-term, sinonim transliterasi, & typo Levenshtein)
+      const smartExpand = expandSearchTerms(cleanSearch, vocab);
+      if (smartExpand.hasCorrection && smartExpand.correctedQuery) {
+        correctedQuery = smartExpand.correctedQuery;
+        hasCorrection = true;
+      }
+      highlightTerms = smartExpand.highlightTerms;
+
+      // 2. Cek tabel cache AI jika ada
       const { data: cacheData } = await supabase
         .from('search_intent_cache')
         .select('*')
@@ -77,7 +150,7 @@ export async function GET(request: NextRequest) {
         
       if (cacheData) {
         // Gunakan cache
-        finalSearch = cacheData.query_koreksi || cleanSearch;
+        finalSearch = cacheData.query_koreksi || correctedQuery || cleanSearch;
         contextKeywords = cacheData.kata_kunci_konteks || '';
         
         try {
@@ -101,7 +174,7 @@ export async function GET(request: NextRequest) {
           .eq('id', cacheData.id)
           .then();
       } else {
-        // 2. Jika tidak ada cache, panggil LLM
+        // 3. Jika tidak ada cache, panggil LLM jika setting tersedia
         const { data: settings } = await supabase
           .from('app_settings')
           .select('openrouter_token, google_ai_token, chat_model')
@@ -110,7 +183,6 @@ export async function GET(request: NextRequest) {
           
         if (settings && (settings.openrouter_token || settings.google_ai_token)) {
           try {
-            // Ambil sedikit cuplikan dari database asli sebagai referensi (RAG ringan)
             let dbContextStr = '';
             const previewTerms = cleanSearch.split(' ').filter(w => w.length > 3);
             if (previewTerms.length > 0) {
@@ -133,7 +205,6 @@ export async function GET(request: NextRequest) {
             const systemPromptText = 'Anda adalah mesin analisis intent pencarian Islami. HANYA respons JSON murni: { "query_koreksi": "kata baku", "kategori_ditebak": "kategori", "kata_kunci_konteks": ["kata1", "kata2"], "saran_topik": ["Frasa A", "Frasa B"] }. ATURAN: 1. JIKA query istilah Arab, WAJIB masukkan TERJEMAHANNYA ke kata_kunci_konteks. 2. SANGAT PENTING: Untuk "saran_topik", JANGAN mengarang atau merangkum kalimat sendiri! HARUS berisi potongan KUTIPAN LANGSUNG (kata-katanya sama persis) dari referensi teks database yang diberikan. Jika teks database tidak ada, kosongkan saran_topik ([]).';
 
             if (isNativeGoogle && settings.google_ai_token) {
-              // GAYA NATIVE GOOGLE AI STUDIO
               let actualModel = settings.chat_model.replace('-native', '');
               if (actualModel === 'gemini-1.5-flash' || actualModel === 'gemini-2.5-flash') actualModel = 'gemini-3.8-flash';
               
@@ -151,7 +222,6 @@ export async function GET(request: NextRequest) {
                 responseText = aiData.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
               }
             } else if (!isNativeGoogle && settings.openrouter_token) {
-              // GAYA OPENROUTER LAMA
               const token = settings.openrouter_token.trim();
               const aiRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
                 method: 'POST',
@@ -177,22 +247,18 @@ export async function GET(request: NextRequest) {
               }
             }
 
-            // Hapus backticks jika LLM bandel
             const cleanJson = responseText.replace(/```json|```/g, '').trim();
             const parsed = JSON.parse(cleanJson);
             
-            finalSearch = parsed.query_koreksi || cleanSearch;
+            finalSearch = parsed.query_koreksi || correctedQuery || cleanSearch;
             contextKeywords = Array.isArray(parsed.kata_kunci_konteks) ? parsed.kata_kunci_konteks.join(' ') : (parsed.kata_kunci_konteks || '');
             
-            // Simpan suggestions ke memori lokal request ini
             const saranTopik = Array.isArray(parsed.saran_topik) ? parsed.saran_topik : [];
-            // Akali kolom kategori_ditebak agar bisa simpan JSON (tanpa ubah struktur DB)
             const kategoriJsonStr = JSON.stringify({
               kategori: parsed.kategori_ditebak || 'Umum',
               saran: saranTopik
             });
 
-            // 3. Simpan ke cache (Background)
             supabase.from('search_intent_cache').insert({
               query_asli: cleanSearch,
               query_koreksi: finalSearch,
@@ -201,7 +267,6 @@ export async function GET(request: NextRequest) {
               frekuensi_pencarian: 1
             }).then();
             
-            // Attach suggestions to request object temporarily to pass to the response later
             (request as any)._aiSuggestions = saranTopik;
             (request as any)._aiData = {
               query_koreksi: finalSearch,
@@ -213,46 +278,57 @@ export async function GET(request: NextRequest) {
           } catch (e) {
             console.error('AI Request Error:', e);
             (request as any)._aiStatus = 'error';
-            // Fallback ke pencarian asli jika error
+            finalSearch = correctedQuery || cleanSearch;
           }
         } else {
           (request as any)._aiStatus = 'inactive';
+          finalSearch = correctedQuery || cleanSearch;
         }
       }
 
-      // Bangun query pencarian (Gunakan hasil OpenRouter jika ada)
-      const searchTerms = finalSearch ? [finalSearch] : [];
+      // 4. Membangun query multi-term non-consecutive (operator AND per kata)
+      // Pecah query finalSearch menjadi token-token kata
+      const queryToTokenize = finalSearch || cleanSearch;
+      const parsedTokens = queryToTokenize
+        .split(/\s+/)
+        .map(t => t.trim().toLowerCase())
+        .filter(t => t.length > 0);
+
+      // Kumpulkan kelompok varian untuk setiap token (kata dasar + transliterasi sinonim)
+      const tokenGroups: string[][] = [];
+      for (const token of parsedTokens) {
+        const variants = [token];
+        const syns = SYNONYMS_MAP[token];
+        if (syns) {
+          variants.push(...syns);
+        }
+        tokenGroups.push(variants);
+      }
+
+      // Kumpulkan seluruh kata kunci yang dipakai untuk sorting & highlighting
+      const allSearchKeywords = new Set<string>();
+      tokenGroups.forEach(grp => grp.forEach(w => allSearchKeywords.add(w)));
       if (contextKeywords) {
-        contextKeywords.split(' ').forEach((k: string) => {
-          if (k.length > 2) searchTerms.push(k.trim());
+        contextKeywords.split(/\s+/).forEach(k => {
+          if (k.length > 2) allSearchKeywords.add(k.toLowerCase().trim());
         });
       }
-      
-      // Selalu ikutkan query_asli (cleanSearch) sebagai term pencarian
-      // Ini mencegah hilangnya hasil jika user mencari kalimat kutipan yang persis, namun AI mengubahnya menjadi sekadar topik/judul.
-      if (cleanSearch && finalSearch !== cleanSearch) {
-        searchTerms.push(cleanSearch);
-      }
-      
-      executedSearchTerms = searchTerms;
-      
-      if (searchTerms.length > 0) {
-        const orConditions = searchTerms.map(term => {
-          // Hapus karakter yang bisa merusak query Supabase (.or parser)
-          const safeTerm = term.replace(/[(),"]/g, '');
-          if (!safeTerm) return '';
-          const stripped = stripArabicHarakat(safeTerm);
-          return `kutipan_arab_gundul.ilike.%${stripped}%,kutipan_arab.ilike.%${safeTerm}%,terjemahan.ilike.%${safeTerm}%,perawi_sumber.ilike.%${safeTerm}%,rawi_kitab.ilike.%${safeTerm}%,rawi_teratas.ilike.%${safeTerm}%`;
-        }).filter(cond => cond !== '').join(',');
-        
-        if (orConditions) {
-          query = query.or(orConditions);
+      highlightTerms.forEach(h => allSearchKeywords.add(h));
+      executedSearchTerms = Array.from(allSearchKeywords);
+
+      // Terapkan chained .or() untuk setiap token group (menghasilkan operator AND antar kata di Postgres)
+      if (tokenGroups.length > 0) {
+        for (const group of tokenGroups) {
+          const cond = buildTokenOrCondition(group);
+          if (cond) {
+            query = query.or(cond);
+          }
         }
       } else {
-        const safeFinalSearch = finalSearch ? finalSearch.replace(/[(),"]/g, '') : '';
+        const safeFinalSearch = (finalSearch || cleanSearch).replace(/[(),"]/g, '');
         if (safeFinalSearch) {
-          const strippedFinalSearch = stripArabicHarakat(safeFinalSearch);
-          query = query.or(`kutipan_arab_gundul.ilike.%${strippedFinalSearch}%,kutipan_arab.ilike.%${safeFinalSearch}%,terjemahan.ilike.%${safeFinalSearch}%,perawi_sumber.ilike.%${safeFinalSearch}%,rawi_kitab.ilike.%${safeFinalSearch}%,rawi_teratas.ilike.%${safeFinalSearch}%`);
+          const cond = buildTokenOrCondition([safeFinalSearch]);
+          if (cond) query = query.or(cond);
         }
       }
       
@@ -327,7 +403,14 @@ export async function GET(request: NextRequest) {
       suggestions: (request as any)._aiSuggestions || [],
       ai_data: (request as any)._aiData || null,
       ai_status: (request as any)._aiStatus || 'inactive',
-      search_terms_used: executedSearchTerms
+      search_terms_used: executedSearchTerms,
+      highlight_terms: highlightTerms,
+      search_meta: {
+        original_query: search || '',
+        corrected_query: correctedQuery || finalSearch || search || '',
+        has_correction: hasCorrection,
+        highlight_terms: highlightTerms
+      }
     });
   } catch (err: any) {
     console.error('Error GET /api/hadist/items:', err);

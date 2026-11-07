@@ -6,7 +6,7 @@ import {
   Loader2, Plus, Edit2, Trash2, Search, Database, 
   FolderArchive, FileText, CheckSquare, Download,
   Sparkles, RefreshCw, ChevronLeft, ChevronRight, Filter, ArrowUpRight,
-  CheckCircle2, X
+  CheckCircle2, X, BookOpen
 } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -25,9 +25,16 @@ function AdminDataBrosurContent() {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [filterFolder, setFilterFolder] = useState<string>('');
   const [filterTahun, setFilterTahun] = useState<string>('');
+  const [filterParsing, setFilterParsing] = useState<'all' | 'sudah' | 'belum'>('all');
   const [sortBy, setSortBy] = useState<string>('terbaru');
   const [availableYears, setAvailableYears] = useState<number[]>([]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // Parsing Stats State (Koneksi ke tabel hadist_brosur)
+  const [parsingStats, setParsingStats] = useState<{ totalHadist: number; parsedBrosurIds: Set<string> }>({
+    totalHadist: 0,
+    parsedBrosurIds: new Set(),
+  });
 
   // Snackbar Notification State
   const [snackbar, setSnackbar] = useState<{ show: boolean; message: string; sub?: string } | null>(null);
@@ -135,17 +142,36 @@ function AdminDataBrosurContent() {
     }
   };
 
+  const fetchParsingStats = async () => {
+    try {
+      const { data, error } = await supabase.from('hadist_brosur').select('brosur_id');
+      if (!error && data) {
+        const idSet = new Set<string>();
+        data.forEach((item: any) => {
+          if (item.brosur_id) idSet.add(item.brosur_id);
+        });
+        setParsingStats({
+          totalHadist: data.length,
+          parsedBrosurIds: idSet,
+        });
+      }
+    } catch (e) {
+      console.error('Error fetching parsing stats:', e);
+    }
+  };
+
   useEffect(() => {
     fetchFolders();
     fetchYears();
+    fetchParsingStats();
   }, []);
 
-  // Fetch Brosur Data (Urutan Terbaru menjadi default)
+  // Fetch Brosur Data (Urutan Terbaru menjadi default + sertakan hadist_brosur untuk deteksi parsing)
   const fetchBrosurs = async () => {
     setLoading(true);
     let query = supabase
       .from('brosur')
-      .select('id, judul, tahun, slug, created_at, folder_id, folders(name)', { count: 'exact' });
+      .select('id, judul, tahun, slug, created_at, folder_id, folders(name), hadist_brosur(id)', { count: 'exact' });
 
     if (sortBy === 'terbaru') {
       // Prioritaskan yang baru saja diupload/dibuat teratas
@@ -176,6 +202,37 @@ function AdminDataBrosurContent() {
       query = query.eq('tahun', filterTahun);
     }
 
+    // Filter Status Parsing Hadist (Sudah Diparsing vs Belum)
+    if (filterParsing !== 'all') {
+      let currentSet = parsingStats.parsedBrosurIds;
+      if (currentSet.size === 0) {
+        const { data: hData } = await supabase.from('hadist_brosur').select('brosur_id');
+        if (hData) {
+          currentSet = new Set(hData.map((h: any) => h.brosur_id).filter(Boolean));
+          setParsingStats({
+            totalHadist: hData.length,
+            parsedBrosurIds: currentSet,
+          });
+        }
+      }
+
+      const parsedIds = Array.from(currentSet);
+      if (filterParsing === 'sudah') {
+        if (parsedIds.length > 0) {
+          query = query.in('id', parsedIds);
+        } else {
+          setBrosurs([]);
+          setTotalBrosurs(0);
+          setLoading(false);
+          return;
+        }
+      } else if (filterParsing === 'belum') {
+        if (parsedIds.length > 0) {
+          query = query.not('id', 'in', `(${parsedIds.join(',')})`);
+        }
+      }
+    }
+
     const from = (currentPage - 1) * itemsPerPage;
     const to = from + itemsPerPage - 1;
 
@@ -191,7 +248,7 @@ function AdminDataBrosurContent() {
     if (activeTab === 'brosur') {
       fetchBrosurs();
     }
-  }, [activeTab, searchTerm, filterFolder, filterTahun, sortBy, currentPage, itemsPerPage]);
+  }, [activeTab, searchTerm, filterFolder, filterTahun, filterParsing, sortBy, currentPage, itemsPerPage]);
 
   const handleDeleteBrosur = async (id: string, judul: string) => {
     if (!confirm(`Hapus brosur "${judul}"?`)) return;
@@ -298,6 +355,78 @@ function AdminDataBrosurContent() {
 
       {activeTab === 'brosur' ? (
         <div className="space-y-4">
+          {/* Summary Metric Cards: Status Parsing Hadist */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
+            <div className="p-3 sm:p-3.5 bg-[#FAFAFA] rounded-2xl flex items-center justify-between">
+              <div>
+                <p className="text-[11px] text-zinc-500 font-medium">Total Brosur</p>
+                <p className="text-base sm:text-lg font-bold text-zinc-900 mt-0.5">
+                  {totalBrosurs.toLocaleString('id-ID')}
+                </p>
+              </div>
+              <div className="w-8 h-8 rounded-xl bg-zinc-200/60 text-zinc-700 flex items-center justify-center shrink-0">
+                <FileText size={16} />
+              </div>
+            </div>
+
+            <div 
+              onClick={() => { setFilterParsing(filterParsing === 'sudah' ? 'all' : 'sudah'); setCurrentPage(1); }}
+              className={`p-3 sm:p-3.5 rounded-2xl flex items-center justify-between cursor-pointer transition border ${
+                filterParsing === 'sudah' 
+                  ? 'bg-emerald-50/80 border-emerald-300 ring-1 ring-emerald-400' 
+                  : 'bg-[#FAFAFA] border-transparent hover:bg-emerald-50/40'
+              }`}
+              title="Klik untuk memfilter brosur yang sudah diparsing"
+            >
+              <div>
+                <div className="flex items-center gap-1">
+                  <p className="text-[11px] text-emerald-700 font-semibold">Sudah Diparsing</p>
+                  {filterParsing === 'sudah' && (
+                    <span className="text-[9px] font-bold bg-emerald-600 text-white px-1.5 py-0.5 rounded-full">
+                      Aktif
+                    </span>
+                  )}
+                </div>
+                <p className="text-base sm:text-lg font-bold text-emerald-800 mt-0.5">
+                  {parsingStats.parsedBrosurIds.size.toLocaleString('id-ID')}{' '}
+                  <span className="text-[11px] font-normal text-emerald-600">
+                    ({parsingStats.totalHadist} hadits)
+                  </span>
+                </p>
+              </div>
+              <div className="w-8 h-8 rounded-xl bg-emerald-100/70 text-emerald-700 flex items-center justify-center shrink-0">
+                <BookOpen size={16} />
+              </div>
+            </div>
+
+            <div 
+              onClick={() => { setFilterParsing(filterParsing === 'belum' ? 'all' : 'belum'); setCurrentPage(1); }}
+              className={`col-span-2 sm:col-span-1 p-3 sm:p-3.5 rounded-2xl flex items-center justify-between cursor-pointer transition border ${
+                filterParsing === 'belum' 
+                  ? 'bg-amber-50/80 border-amber-300 ring-1 ring-amber-400' 
+                  : 'bg-[#FAFAFA] border-transparent hover:bg-amber-50/40'
+              }`}
+              title="Klik untuk memfilter brosur yang belum diparsing"
+            >
+              <div>
+                <div className="flex items-center gap-1">
+                  <p className="text-[11px] text-amber-700 font-semibold">Belum Diparsing</p>
+                  {filterParsing === 'belum' && (
+                    <span className="text-[9px] font-bold bg-amber-600 text-white px-1.5 py-0.5 rounded-full">
+                      Aktif
+                    </span>
+                  )}
+                </div>
+                <p className="text-base sm:text-lg font-bold text-amber-800 mt-0.5">
+                  {Math.max(0, totalBrosurs - parsingStats.parsedBrosurIds.size).toLocaleString('id-ID')}
+                </p>
+              </div>
+              <div className="w-8 h-8 rounded-xl bg-amber-100/70 text-amber-700 flex items-center justify-center shrink-0">
+                <Sparkles size={16} />
+              </div>
+            </div>
+          </div>
+
           {/* Bar Filter Bersih Ala AI Agent Search (Responsif) */}
           <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-2.5 bg-[#FAFAFA] p-2.5 sm:p-3 rounded-2xl">
             <div className="relative flex-1 w-full">
@@ -312,11 +441,11 @@ function AdminDataBrosurContent() {
             </div>
 
             {/* Dropdown Filters Responsif */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:flex items-center gap-2 w-full lg:w-auto">
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:flex items-center gap-2 w-full lg:w-auto">
               <select
                 value={filterFolder}
                 onChange={(e) => { setFilterFolder(e.target.value); setCurrentPage(1); }}
-                className="col-span-2 sm:col-span-1 bg-white rounded-xl px-3 py-2.5 text-xs font-medium text-zinc-700 outline-none w-full"
+                className="bg-white rounded-xl px-3 py-2.5 text-xs font-medium text-zinc-700 outline-none w-full"
               >
                 <option value="">Semua Koleksi</option>
                 <option value="none">Tanpa Koleksi</option>
@@ -337,6 +466,16 @@ function AdminDataBrosurContent() {
               </select>
 
               <select
+                value={filterParsing}
+                onChange={(e) => { setFilterParsing(e.target.value as any); setCurrentPage(1); }}
+                className="bg-white rounded-xl px-3 py-2.5 text-xs font-medium text-zinc-700 outline-none w-full"
+              >
+                <option value="all">Semua Parsing</option>
+                <option value="sudah">Sudah Diparsing ({parsingStats.parsedBrosurIds.size})</option>
+                <option value="belum">Belum Diparsing</option>
+              </select>
+
+              <select
                 value={sortBy}
                 onChange={(e) => { setSortBy(e.target.value); setCurrentPage(1); }}
                 className="bg-white rounded-xl px-3 py-2.5 text-xs font-medium text-zinc-700 outline-none w-full"
@@ -351,7 +490,7 @@ function AdminDataBrosurContent() {
               <select
                 value={itemsPerPage}
                 onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-                className="bg-white rounded-xl px-3 py-2.5 text-xs font-medium text-zinc-700 outline-none w-full lg:w-28"
+                className="col-span-2 sm:col-span-4 lg:col-span-1 bg-white rounded-xl px-3 py-2.5 text-xs font-medium text-zinc-700 outline-none w-full lg:w-28"
               >
                 <option value={10}>10 data</option>
                 <option value={20}>20 data</option>
@@ -377,6 +516,8 @@ function AdminDataBrosurContent() {
             <div className="space-y-2">
               {brosurs.map((b) => {
                 const isDeleting = deletingId === b.id;
+                const hadistCount = Array.isArray(b.hadist_brosur) ? b.hadist_brosur.length : 0;
+                const isParsed = hadistCount > 0;
 
                 return (
                   <div
@@ -398,6 +539,27 @@ function AdminDataBrosurContent() {
                         <span className="text-[10px] text-zinc-400 font-mono">
                           ID: {b.id.slice(0, 8)}
                         </span>
+
+                        {/* Indikator Status Parsing Hadist */}
+                        {isParsed ? (
+                          <Link
+                            href={`/admin/hadist?brosur_id=${b.id}`}
+                            className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-800 bg-emerald-100/80 hover:bg-emerald-200/90 border border-emerald-300/70 px-2 py-0.5 rounded-md transition group/badge"
+                            title={`Sudah diparsing menjadi ${hadistCount} hadits di /admin/hadist. Klik untuk buka di Admin Hadist.`}
+                          >
+                            <CheckCircle2 size={11} className="text-emerald-700 shrink-0" />
+                            <span>Sudah Diparsing ({hadistCount} Hadits)</span>
+                            <ArrowUpRight size={10} className="text-emerald-600 opacity-60 group-hover/badge:opacity-100 transition" />
+                          </Link>
+                        ) : (
+                          <span
+                            className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-800 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-md"
+                            title="Brosur ini belum memiliki data hadits yang diparsing di /admin/hadist"
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span>
+                            <span>Belum Diparsing (0 Hadits)</span>
+                          </span>
+                        )}
                       </div>
 
                       <h3 className="text-xs sm:text-sm font-semibold text-zinc-900 group-hover:text-emerald-700 transition leading-snug line-clamp-2 sm:line-clamp-1">
@@ -406,6 +568,27 @@ function AdminDataBrosurContent() {
                     </div>
 
                     <div className="flex items-center justify-end gap-1.5 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-zinc-200/50">
+                      {/* Tombol Cepat Menuju Hadist Terkait atau Generator */}
+                      {isParsed ? (
+                        <Link
+                          href={`/admin/hadist?brosur_id=${b.id}`}
+                          className="px-2.5 py-1.5 rounded-xl text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 hover:text-emerald-800 transition flex items-center gap-1.5 border border-emerald-200/60"
+                          title={`Buka & kelola ${hadistCount} hadits brosur ini di /admin/hadist`}
+                        >
+                          <BookOpen size={13} className="text-emerald-600 shrink-0" />
+                          <span className="text-[11px] font-bold">{hadistCount} Hadits</span>
+                        </Link>
+                      ) : (
+                        <Link
+                          href="/dashboard/hadist/generate"
+                          className="px-2.5 py-1.5 rounded-xl text-xs font-medium text-zinc-500 hover:text-amber-700 hover:bg-amber-50 transition flex items-center gap-1.5 border border-zinc-200/50"
+                          title="Buka Generator AI untuk parsing hadits brosur ini"
+                        >
+                          <Sparkles size={13} className="text-amber-500 shrink-0" />
+                          <span className="text-[11px] hidden md:inline text-zinc-600">Parsing</span>
+                        </Link>
+                      )}
+
                       <Link
                         href={`/bap/${b.tahun || '2026'}/${b.slug || b.id}`}
                         target="_blank"
