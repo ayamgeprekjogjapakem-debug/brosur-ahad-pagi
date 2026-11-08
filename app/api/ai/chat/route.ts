@@ -1,6 +1,16 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
+
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders });
+}
+
 export async function POST(request: Request) {
   const startTime = performance.now();
   try {
@@ -256,13 +266,13 @@ ${settings?.system_prompt ? `\n=== INSTRUKSI KHUSUS PENGELOLA (/dashboard/ai-set
       success: true, 
       text: data.choices?.[0]?.message?.content || '',
       debug_log: debug_log
-    });
+    }, { headers: corsHeaders });
 
   } catch (error: any) {
     console.error('API /api/ai/chat Error:', error);
     return NextResponse.json(
       { error: 'Terjadi kesalahan internal pada server' },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }

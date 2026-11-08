@@ -1,6 +1,16 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
+
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders });
+}
+
 export async function GET() {
   try {
     const supabase = await createClient();
@@ -19,7 +29,7 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       disclaimer: disclaimerText,
-    });
+    }, { headers: corsHeaders });
   } catch (e: any) {
     return NextResponse.json({
       success: true,
@@ -28,7 +38,7 @@ export async function GET() {
         '• Sumber rujukan utama dan mutlak tetap pada Al-Qur\'an dan As-Sunnah ash-Shahihah.\n\n' +
         '• Ingatlah untuk mencatat karena "mengikat ilmu dengan tulisan".\n\n' +
         '• Jika menemukan data atau telaah yang perlu dikoreksi, harap hubungi admin pustaka.',
-    });
+    }, { headers: corsHeaders });
   }
 }
 
