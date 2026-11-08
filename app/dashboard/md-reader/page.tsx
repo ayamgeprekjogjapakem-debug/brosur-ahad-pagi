@@ -8,7 +8,8 @@ import {
   FileText, Folder, Search, Copy, Check, Download,
   Code, Eye, ChevronRight, ChevronDown, BookOpen, Clock, HardDrive,
   RefreshCw, PanelLeftClose, PanelLeft, Type,
-  Minus, Plus, AlignLeft, Maximize2, Minimize2, ChevronsUpDown
+  Minus, Plus, AlignLeft, Maximize2, Minimize2, ChevronsUpDown,
+  Smartphone, Globe, Sparkles
 } from 'lucide-react';
 
 interface DocItem {
@@ -16,6 +17,7 @@ interface DocItem {
   name: string;
   title: string;
   category: string;
+  scope: 'web' | 'flutter';
   relativePath: string;
   size: number;
   updatedAt: string;
@@ -24,6 +26,7 @@ interface DocItem {
 interface DocCategory {
   category: string;
   label: string;
+  scope: 'web' | 'flutter';
   items: DocItem[];
 }
 
@@ -59,6 +62,12 @@ function MdReaderContent() {
   const router = useRouter();
 
   const [categories, setCategories] = useState<DocCategory[]>([]);
+  const [docCounts, setDocCounts] = useState<{ total: number; web: number; flutter: number }>({
+    total: 0,
+    web: 0,
+    flutter: 0,
+  });
+  const [activeScope, setActiveScope] = useState<'all' | 'web' | 'flutter'>('all');
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [docContent, setDocContent] = useState<string>('');
   const [docMeta, setDocMeta] = useState<any>(null);
@@ -185,6 +194,11 @@ function MdReaderContent() {
         const data = await res.json();
         if (res.ok && data.categories) {
           setCategories(data.categories);
+          setDocCounts({
+            total: data.total || 0,
+            web: data.totalWeb || 0,
+            flutter: data.totalFlutter || 0,
+          });
           const paramFile = searchParams.get('file');
           const target = paramFile || data.defaultFile;
           if (target) {
@@ -233,12 +247,18 @@ function MdReaderContent() {
     router.replace(`/dashboard/md-reader?file=${encodeURIComponent(relPath)}`, { scroll: false });
   };
 
-  // Filter dokumen berdasarkan query pencarian
+  // Filter dokumen berdasarkan scope dan query pencarian
   const filteredCategories = useMemo(() => {
-    if (!searchQuery.trim()) return categories;
+    // Filter scope terlebih dahulu
+    let baseCats = categories;
+    if (activeScope !== 'all') {
+      baseCats = categories.filter(cat => cat.scope === activeScope);
+    }
+
+    if (!searchQuery.trim()) return baseCats;
     const q = searchQuery.toLowerCase();
 
-    return categories
+    return baseCats
       .map(cat => ({
         ...cat,
         items: cat.items.filter(
@@ -249,7 +269,7 @@ function MdReaderContent() {
         ),
       }))
       .filter(cat => cat.items.length > 0);
-  }, [categories, searchQuery]);
+  }, [categories, activeScope, searchQuery]);
 
   // Handler salin konten
   const handleCopy = () => {
@@ -336,7 +356,7 @@ function MdReaderContent() {
               </div>
               <div>
                 <h2 className="font-extrabold text-sm text-slate-800 leading-tight">MD Reader</h2>
-                <p className="text-[11px] font-semibold text-slate-400">Direktori /md Proyek</p>
+                <p className="text-[11px] font-semibold text-slate-400">Web & Integrasi Flutter</p>
               </div>
             </div>
             
@@ -362,12 +382,68 @@ function MdReaderContent() {
             </div>
           </div>
 
+          {/* Scope Selector Tabs (Semua / Web / Flutter) */}
+          <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl text-[11px] font-semibold">
+            <button
+              type="button"
+              onClick={() => setActiveScope('all')}
+              className={`py-1.5 px-2 rounded-lg text-center transition cursor-pointer flex items-center justify-center gap-1 ${
+                activeScope === 'all'
+                  ? 'bg-white text-slate-900 shadow-xs font-bold'
+                  : 'text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              <span>Semua</span>
+              <span className="text-[10px] px-1 py-0.2 rounded bg-slate-200/70 text-slate-700">
+                {docCounts.total}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveScope('web')}
+              className={`py-1.5 px-2 rounded-lg text-center transition cursor-pointer flex items-center justify-center gap-1 ${
+                activeScope === 'web'
+                  ? 'bg-white text-emerald-800 shadow-xs font-bold'
+                  : 'text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              <Globe className="w-3 h-3 text-emerald-600" />
+              <span>Web</span>
+              <span className="text-[10px] px-1 py-0.2 rounded bg-slate-200/70 text-slate-700">
+                {docCounts.web}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveScope('flutter')}
+              className={`py-1.5 px-2 rounded-lg text-center transition cursor-pointer flex items-center justify-center gap-1 ${
+                activeScope === 'flutter'
+                  ? 'bg-white text-sky-800 shadow-xs font-bold'
+                  : 'text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              <Smartphone className="w-3 h-3 text-sky-600" />
+              <span>Flutter</span>
+              <span className="text-[10px] px-1 py-0.2 rounded bg-sky-100 text-sky-800 font-bold">
+                {docCounts.flutter}
+              </span>
+            </button>
+          </div>
+
           {/* Search Bar Dokumen */}
           <div className="relative">
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Cari berkas markdown..."
+              placeholder={
+                activeScope === 'flutter'
+                  ? "Cari dokumentasi Flutter..."
+                  : activeScope === 'web'
+                  ? "Cari dokumentasi Web & AI..."
+                  : "Cari berkas markdown..."
+              }
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
@@ -422,27 +498,49 @@ function MdReaderContent() {
                       {cat.items.map((item) => {
                         const isSelected = selectedFile === item.relativePath;
                         const isMaster = item.name.includes('MASTER') || item.name.includes('README');
+                        const isFlutter = item.scope === 'flutter';
 
                         return (
                           <button
                             key={item.id}
                             onClick={() => handleSelectFile(item.relativePath)}
-                            className={`w-full text-left px-3 py-2 rounded-xl text-xs transition flex items-start gap-2.5 group cursor-pointer ${
+                            className={`w-full text-left px-3 py-2.5 rounded-xl text-xs transition flex items-start gap-2.5 group cursor-pointer ${
                               isSelected
-                                ? 'bg-emerald-50 text-emerald-900 font-bold border border-emerald-200/80 shadow-xs'
+                                ? isFlutter
+                                  ? 'bg-sky-50 text-sky-950 font-bold border border-sky-200/90 shadow-xs'
+                                  : 'bg-emerald-50 text-emerald-900 font-bold border border-emerald-200/80 shadow-xs'
                                 : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                             }`}
                           >
-                            <FileText
-                              className={`w-4 h-4 shrink-0 mt-0.5 ${
-                                isSelected ? 'text-emerald-600' : 'text-slate-400 group-hover:text-slate-600'
-                              }`}
-                            />
+                            {isFlutter ? (
+                              <Smartphone
+                                className={`w-4 h-4 shrink-0 mt-0.5 ${
+                                  isSelected ? 'text-sky-600' : 'text-sky-400 group-hover:text-sky-600'
+                                }`}
+                              />
+                            ) : (
+                              <FileText
+                                className={`w-4 h-4 shrink-0 mt-0.5 ${
+                                  isSelected ? 'text-emerald-600' : 'text-slate-400 group-hover:text-slate-600'
+                                }`}
+                              />
+                            )}
                             <div className="min-w-0 flex-1">
                               <p className="truncate leading-snug">
                                 {item.title}
                               </p>
-                              <div className="flex items-center gap-2 mt-1 text-[10px] text-slate-400 font-normal">
+                              <div className="flex items-center gap-1.5 mt-1 text-[10px] text-slate-400 font-normal">
+                                {activeScope === 'all' && (
+                                  <span
+                                    className={`px-1 py-0.2 rounded font-semibold text-[9px] ${
+                                      isFlutter
+                                        ? 'bg-sky-100/80 text-sky-700'
+                                        : 'bg-emerald-100/70 text-emerald-700'
+                                    }`}
+                                  >
+                                    {isFlutter ? 'Flutter' : 'Web'}
+                                  </span>
+                                )}
                                 <span className="truncate">{item.name}</span>
                                 <span>•</span>
                                 <span>{formatBytes(item.size)}</span>
@@ -497,19 +595,40 @@ function MdReaderContent() {
 
             <div className="min-w-0">
               {/* Breadcrumb */}
-              <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium mb-0.5">
-                <span className="hover:text-slate-600">md</span>
+              <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium mb-1">
+                {docMeta?.scope === 'flutter' ? (
+                  <span className="flex items-center gap-1 text-sky-700 font-bold bg-sky-50 px-1.5 py-0.2 rounded">
+                    <Smartphone className="w-3 h-3" />
+                    <span>pustaka (Flutter)</span>
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1 text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.2 rounded">
+                    <Globe className="w-3 h-3" />
+                    <span>brosur-ahad-pagi (Web)</span>
+                  </span>
+                )}
                 <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
-                <span className="capitalize">{docMeta?.relativePath?.split('/')[0] || 'dokumen'}</span>
+                <span className="hover:text-slate-600 font-mono text-[11px]">md</span>
                 <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
                 <span className="text-slate-600 font-semibold truncate max-w-xs sm:max-w-sm">
                   {docMeta?.name || 'Dokumen'}
                 </span>
               </div>
 
-              <h1 className="text-base sm:text-lg font-extrabold text-slate-900 truncate max-w-md sm:max-w-xl">
-                {docMeta?.title || 'Memuat Dokumen...'}
-              </h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-base sm:text-lg font-extrabold text-slate-900 truncate max-w-md sm:max-w-xl">
+                  {docMeta?.title || 'Memuat Dokumen...'}
+                </h1>
+                {docMeta?.scope === 'flutter' ? (
+                  <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 text-sky-800 border border-sky-200 shrink-0">
+                    <Smartphone className="w-3 h-3" /> Integrasi Flutter
+                  </span>
+                ) : (
+                  <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 shrink-0">
+                    <Globe className="w-3 h-3" /> Web Proyek
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -752,8 +871,18 @@ function MdReaderContent() {
               Ukuran: {formatBytes(docMeta.size)}
             </span>
             <span>•</span>
-            <span className="font-mono text-slate-400 truncate max-w-xs">
-              md/{docMeta.relativePath}
+            <span className="font-mono text-slate-500 truncate max-w-sm flex items-center gap-1">
+              {docMeta.scope === 'flutter' ? (
+                <>
+                  <Smartphone className="w-3 h-3 text-sky-600 shrink-0" />
+                  <span>FLUTTER/pustaka/md/{docMeta.relativePath.replace(/^flutter\//, '')}</span>
+                </>
+              ) : (
+                <>
+                  <Globe className="w-3 h-3 text-emerald-600 shrink-0" />
+                  <span>brosur-ahad-pagi/md/{docMeta.relativePath.replace(/^web\//, '')}</span>
+                </>
+              )}
             </span>
           </div>
         )}

@@ -16,7 +16,7 @@ export async function POST(request: Request) {
 
     const { data: settings } = await supabase
       .from('app_settings')
-      .select('ai_enabled, openrouter_token, chat_model')
+      .select('ai_enabled, openrouter_token, chat_model, system_prompt')
       .eq('id', 1)
       .single();
 
@@ -29,8 +29,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'API Key AI belum dikonfigurasi.' }, { status: 500 });
     }
     
-    // Gunakan model dari body request (dari Flutter) jika ada, jika tidak gunakan dari settings DB
-    const selectedModel = model || settings.chat_model || 'google/gemini-2.5-flash';
+    // Prioritaskan model dari pengaturan dashboard web (/dashboard/ai-settings) sebagai Single Source of Truth
+    const selectedModel = settings.chat_model || model || 'google/gemini-2.5-flash';
 
     // 1. Fetch AI Rules (Memory)
     const { data: rawRules } = await supabase
@@ -164,6 +164,7 @@ FORMAT & STRUKTUR JAWABAN:
 ${contextText || '(Konteks kosong. Ingat Aturan: Jangan Mengarang)'}
 === AKHIR KONTEKS ===
 ${rulesText}
+${settings?.system_prompt ? `\n=== INSTRUKSI KHUSUS PENGELOLA (/dashboard/ai-settings) ===\n${settings.system_prompt}\n` : ''}
 `;
 
 

@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { 
-  Bot, Plus, Trash2, 
+import {
+  Bot, Plus, Trash2,
   RefreshCw, Send, ArrowLeft, Menu, ShieldCheck, HardDrive,
   Copy, Check, Share2, Pencil, RotateCcw, BookOpen, Sparkles, Loader2
 } from 'lucide-react';
@@ -31,9 +31,9 @@ const BROWSER_CACHE_KEY = 'makkah_ai_pustaka_sessions';
 
 export default function AiPustakaPage() {
   const router = useRouter();
-  const defaultGreeting: ChatMessage = { 
-    role: 'assistant', 
-    content: 'Assalamu’alaikum! Saya Asisten AI **Sahabat MTA**. Silakan ajukan pertanyaan seputar fiqih, dalil hadits, dan materi Brosur Ahad Pagi MTA. Percakapan ini tersimpan secara privat di perangkat Anda.' 
+  const defaultGreeting: ChatMessage = {
+    role: 'assistant',
+    content: 'Assalamu’alaikum! Saya Asisten AI **Sahabat MTA**. Silakan ajukan pertanyaan seputar fiqih, dalil hadits, dan materi Brosur Ahad Pagi MTA. Percakapan ini tersimpan secara privat di perangkat Anda.'
   };
 
   const [sessions, setSessions] = useState<ChatSession[]>([]);
@@ -148,7 +148,7 @@ export default function AiPustakaPage() {
 
   const handleDeleteSession = (id: string) => {
     if (!window.confirm('Hapus sesi percakapan ini dari cache browser?')) return;
-    
+
     const nextSessions = sessions.filter(s => s.id !== id);
     setSessions(nextSessions);
     persistToBrowserCache(nextSessions);
@@ -209,7 +209,7 @@ export default function AiPustakaPage() {
         // Fallback jika ditutup oleh pengguna
       }
     }
-    
+
     // Fallback: Copy to clipboard
     navigator.clipboard.writeText(shareContent);
     setShareSuccessIndex(index);
@@ -303,7 +303,7 @@ export default function AiPustakaPage() {
       <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet" />
 
       {/* SINGLE UNIFIED SIDEBAR (Portal + Riwayat AI) */}
-      <MainSidebar 
+      <MainSidebar
         aiMode={true}
         aiSessions={sessions}
         activeAiSessionId={activeSessionId}
@@ -380,11 +380,10 @@ export default function AiPustakaPage() {
                     </div>
                   )}
 
-                  <div className={`max-w-[85%] ${
-                    msg.role === 'user' 
-                      ? 'w-full sm:max-w-[80%]' 
-                      : 'text-slate-800 py-1 flex-1 min-w-0'
-                  }`}>
+                  <div className={`max-w-[85%] ${msg.role === 'user'
+                    ? 'w-full sm:max-w-[80%]'
+                    : 'text-slate-800 py-1 flex-1 min-w-0'
+                    }`}>
                     {msg.role === 'user' ? (
                       editingIndex === i ? (
                         // Mode Inline Edit Prompt dengan Tombol Batal & Rebuild
@@ -566,7 +565,7 @@ export default function AiPustakaPage() {
 
                   <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 w-full sm:max-w-[75%] space-y-3 shadow-2xs">
                     <div className="flex items-center gap-2.5 text-xs font-bold text-emerald-800">
-                      <Sparkles size={14} className="animate-spin text-emerald-600" />
+                      {/* <Sparkles size={14} className="animate-spin text-emerald-600" /> */}
                       <span className="animate-pulse">Sahabat MTA sedang menelaah dalil & menyusun jawaban...</span>
                     </div>
 
@@ -596,35 +595,35 @@ export default function AiPustakaPage() {
           {/* Input Bar Fixed di Bawah */}
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white/95 to-transparent pt-8 pb-4 px-4 sm:px-6">
             <div className="max-w-3xl mx-auto">
-              <form 
+              <form
                 onSubmit={async (e) => {
                   e.preventDefault();
                   if (!simInput.trim() || isSimulating !== 'idle') return;
-                  
+
                   const userMsg = simInput.trim();
                   setSimInput('');
-                  
+
                   const newMessages = [...activeSession.messages, { role: 'user', content: userMsg }];
-                  
+
                   let updatedTitle = activeSession.title;
                   if (activeSession.messages.length === 1) {
                     updatedTitle = userMsg.substring(0, 32) + (userMsg.length > 32 ? '...' : '');
                   }
 
                   // Simpan ke Cache Browser Seketika
-                  const nextSessions = sessions.map(s => 
-                    s.id === activeSession.id 
-                      ? { ...s, title: updatedTitle, messages: newMessages, updatedAt: new Date() } 
+                  const nextSessions = sessions.map(s =>
+                    s.id === activeSession.id
+                      ? { ...s, title: updatedTitle, messages: newMessages, updatedAt: new Date() }
                       : s
                   );
                   setSessions(nextSessions);
                   persistToBrowserCache(nextSessions);
-                  
+
                   await handleSendQuery(newMessages);
                 }}
                 className="bg-slate-100 border border-slate-200 rounded-2xl p-1.5 flex items-center gap-2 focus-within:ring-2 focus-within:ring-emerald-500/20 focus-within:border-emerald-500 focus-within:bg-white transition shadow-xs"
               >
-                <input 
+                <input
                   type="text"
                   value={simInput}
                   onChange={(e) => setSimInput(e.target.value)}
@@ -632,7 +631,7 @@ export default function AiPustakaPage() {
                   className="flex-1 bg-transparent border-none px-3 py-2 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none"
                   disabled={isSimulating !== 'idle'}
                 />
-                <button 
+                <button
                   type="submit"
                   disabled={!simInput.trim() || isSimulating !== 'idle'}
                   className="w-8 h-8 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white flex items-center justify-center shrink-0 disabled:opacity-40 transition cursor-pointer shadow-2xs"
