@@ -3,25 +3,45 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Bot, MessageSquare, Plus, Trash2, Brain, Database, 
-  RefreshCw, Send, Sparkles, ExternalLink, ShieldAlert, X, Copy, Check 
+  RefreshCw, Send, Sparkles, ExternalLink, ShieldAlert, X, Copy, Check,
+  Globe, Smartphone, ArrowLeftRight, Zap, CheckCircle2, Layers
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { createClient } from '@/utils/supabase/client';
 
+export type ApiTarget = 'web' | 'mobile' | 'dual';
+
+export interface MessageItem {
+  role: 'user' | 'assistant';
+  content: string;
+  source?: 'web' | 'mobile' | 'dual';
+  latencyMs?: number;
+  targetUrl?: string;
+  debug?: any;
+  dualResult?: {
+    web: { content: string; debug?: any; latencyMs: number; ok: boolean; error?: string };
+    mobile: { content: string; debug?: any; latencyMs: number; ok: boolean; error?: string };
+  };
+}
+
 type ChatSession = {
   id: string;
   title: string;
-  messages: { role: string; content: string; debug?: any }[];
+  messages: MessageItem[];
   updatedAt: Date;
 };
 
 const LOCAL_STORAGE_KEY = 'ai_simulator_saved_sessions';
+const MOBILE_API_URL = 'https://www.ulilalbab.fun/api/ai/chat';
+const WEB_API_URL = '/api/ai/chat';
 
 export default function AiSimulatorPage() {
-  const defaultGreeting = { 
+  const defaultGreeting: MessageItem = { 
     role: 'assistant', 
-    content: 'Assalamu’alaikum! Saya Asisten AI **Sahabat MTA**. Silakan ajukan pertanyaan seputar fiqih, dalil hadits, dan materi Brosur Ahad Pagi MTA.' 
+    content: 'Assalamu’alaikum! Saya Asisten AI **Sahabat MTA**. Silakan ajukan pertanyaan seputar fiqih, dalil hadits, dan materi Brosur Ahad Pagi MTA.',
+    source: 'web',
+    targetUrl: '/api/ai/chat'
   };
 
   const [sessions, setSessions] = useState<ChatSession[]>([]);
@@ -29,6 +49,8 @@ export default function AiSimulatorPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [simInput, setSimInput] = useState('');
   const [isSimulating, setIsSimulating] = useState<'idle' | 'searching' | 'generating'>('idle');
+  const [apiTarget, setApiTarget] = useState<ApiTarget>('dual');
+  const [activeDualTab, setActiveDualTab] = useState<Record<number, 'web' | 'mobile'>>({});
   const [hasRlsWarning, setHasRlsWarning] = useState<boolean>(false);
   const [isSqlCopied, setIsSqlCopied] = useState<boolean>(false);
 
@@ -40,6 +62,63 @@ export default function AiSimulatorPage() {
 
   const containsArabic = (text: string) => {
     return /[\u0600-\u06FF]/.test(text);
+  };
+
+  const renderMarkdownContent = (content: string) => (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={{
+        p: ({ children }) => {
+          const textContent = React.Children.toArray(children).join('');
+          if (containsArabic(textContent)) {
+            return (
+              <p
+                className="text-[16px] leading-[2] text-right py-2 px-3 bg-slate-50 border border-slate-100 rounded-xl my-2 text-slate-900 font-arabic"
+                style={{ fontFamily: "'Scheherazade New', serif", direction: 'rtl' }}
+              >
+                {children}
+              </p>
+            );
+          }
+          return <p className="mb-2 text-slate-700 leading-relaxed">{children}</p>;
+        },
+        strong: ({ ...props }) => <strong {...props} className="font-extrabold text-slate-900" />,
+        ul: ({ ...props }) => <ul {...props} className="list-disc pl-4 mb-2 space-y-1 text-slate-700" />,
+        ol: ({ ...props }) => <ol {...props} className="list-decimal pl-4 mb-2 space-y-1 text-slate-700" />,
+        li: ({ ...props }) => <li {...props} className="leading-snug" />,
+        h1: ({ ...props }) => <h1 {...props} className="text-sm font-extrabold mb-1 mt-3 text-slate-900" />,
+        h2: ({ ...props }) => <h2 {...props} className="text-xs font-bold mb-1 mt-2 text-slate-900" />,
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  );
+
+  const renderRagDebug = (debug: any) => {
+    if (!debug) return null;
+    return (
+      <details className="mt-2.5 border border-slate-200/90 rounded-xl p-2.5 text-[11px] bg-white font-mono">
+        <summary className="cursor-pointer text-slate-500 font-bold select-none flex items-center gap-1.5 hover:text-slate-800">
+          <Database size={12} className="text-emerald-600 shrink-0" />
+          <span>Log RAG ({debug.retrieved_docs?.length || 0} Brosur Ditemukan)</span>
+        </summary>
+        <div className="mt-2 space-y-1 text-slate-600 pt-2 border-t border-slate-100">
+          {debug.extracted_keyword && (
+            <p><span className="font-bold text-slate-800">Kata Kunci:</span> {debug.extracted_keyword}</p>
+          )}
+          {debug.retrieved_docs && (
+            <div>
+              <span className="font-bold text-slate-800">Brosur:</span>
+              <ul className="list-disc pl-4 mt-0.5 space-y-0.5">
+                {debug.retrieved_docs.map((d: any, idx: number) => (
+                  <li key={idx}>{d.judul} ({d.tahun})</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </details>
+    );
   };
 
   // Helper untuk membaca dari LocalStorage
@@ -283,17 +362,65 @@ export default function AiSimulatorPage() {
       {/* MAIN CHAT AREA */}
       <div className="flex-1 flex flex-col h-full relative bg-white min-w-0">
         
-        {/* Chat Header */}
-        <div className="h-14 border-b border-slate-100 flex items-center justify-between px-6 shrink-0 bg-white">
-          <div className="font-extrabold text-sm text-slate-800 flex items-center gap-2">
-            <Bot size={18} className="text-emerald-600" />
+        {/* Chat Header dengan Switcher API Target */}
+        <div className="h-14 border-b border-slate-200/80 flex items-center justify-between px-4 sm:px-6 shrink-0 bg-white gap-3">
+          <div className="font-extrabold text-sm text-slate-800 flex items-center gap-2 min-w-0">
+            <Bot size={18} className="text-emerald-600 shrink-0" />
             <span className="truncate">{activeSession.title}</span>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200/80 rounded-md text-[11px] font-bold">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              Live RAG Simulator
+          <div className="flex items-center gap-2 shrink-0">
+            {/* API Mode Switcher (Web / Mobile / Dual) */}
+            <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200/80 text-[11px] font-bold">
+              <button
+                type="button"
+                onClick={() => setApiTarget('web')}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition cursor-pointer ${
+                  apiTarget === 'web'
+                    ? 'bg-white text-emerald-800 shadow-xs'
+                    : 'text-slate-500 hover:text-slate-900'
+                }`}
+                title="Gunakan API Backend Web Lokal (/api/ai/chat)"
+              >
+                <Globe className="w-3.5 h-3.5 text-emerald-600" />
+                <span className="hidden sm:inline">Web API</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setApiTarget('mobile')}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition cursor-pointer ${
+                  apiTarget === 'mobile'
+                    ? 'bg-white text-sky-800 shadow-xs'
+                    : 'text-slate-500 hover:text-slate-900'
+                }`}
+                title="Gunakan API Mobile Production (ulilalbab.fun)"
+              >
+                <Smartphone className="w-3.5 h-3.5 text-sky-600" />
+                <span className="hidden sm:inline">Mobile API</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setApiTarget('dual')}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition cursor-pointer ${
+                  apiTarget === 'dual'
+                    ? 'bg-white text-indigo-900 shadow-xs'
+                    : 'text-slate-500 hover:text-slate-900'
+                }`}
+                title="Uji Bandingkan Keduanya Sekaligus untuk Cek Keselarasan"
+              >
+                <ArrowLeftRight className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Uji Selaras (Dual)</span>
+              </button>
+            </div>
+
+            <span className="hidden lg:inline-flex items-center gap-1 px-2 py-1 bg-slate-50 text-slate-500 border border-slate-200 rounded-md text-[10px] font-mono">
+              {apiTarget === 'web'
+                ? 'Lokal: /api/ai/chat'
+                : apiTarget === 'mobile'
+                ? 'Mobile: ulilalbab.fun'
+                : 'Web vs Mobile (Dual Run)'}
             </span>
           </div>
         </div>
@@ -345,67 +472,107 @@ export default function AiSimulatorPage() {
                   </div>
                 )}
 
-                <div className={`max-w-[85%] ${
+                <div className={`${
                   msg.role === 'user' 
-                    ? 'bg-emerald-600 text-white rounded-2xl py-2.5 px-4 text-xs font-medium shadow-xs' 
-                    : 'text-slate-800 py-1 flex-1 min-w-0'
+                    ? 'max-w-[85%] bg-emerald-600 text-white rounded-2xl py-2.5 px-4 text-xs font-medium shadow-xs' 
+                    : msg.source === 'dual' && msg.dualResult
+                    ? 'w-full text-slate-800 py-1'
+                    : 'max-w-[88%] text-slate-800 py-1 flex-1 min-w-0'
                 }`}>
                   {msg.role === 'user' ? (
                     msg.content
-                  ) : (
-                    <div className="text-xs leading-relaxed space-y-2">
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        components={{
-                          p: ({ children }) => {
-                            const textContent = React.Children.toArray(children).join('');
-                            if (containsArabic(textContent)) {
-                              return (
-                                <p className="text-[17px] leading-[2] text-right py-2 px-3 bg-slate-50 border border-slate-100 rounded-xl my-2 text-slate-900 font-arabic" style={{ fontFamily: "'Scheherazade New', serif", direction: 'rtl' }}>
-                                  {children}
-                                </p>
-                              );
-                            }
-                            return <p className="mb-2.5 text-slate-700 leading-normal">{children}</p>;
-                          },
-                          strong: ({ ...props }) => <strong {...props} className="font-extrabold text-slate-900" />,
-                          ul: ({ ...props }) => <ul {...props} className="list-disc pl-4 mb-2 space-y-1 text-slate-700" />,
-                          ol: ({ ...props }) => <ol {...props} className="list-decimal pl-4 mb-2 space-y-1 text-slate-700" />,
-                          li: ({ ...props }) => <li {...props} className="leading-snug" />,
-                          h1: ({ ...props }) => <h1 {...props} className="text-sm font-extrabold mb-1 mt-3 text-slate-900" />,
-                          h2: ({ ...props }) => <h2 {...props} className="text-xs font-bold mb-1 mt-2 text-slate-900" />,
-                        }}
-                      >
-                        {msg.content}
-                      </ReactMarkdown>
+                  ) : msg.source === 'dual' && msg.dualResult ? (
+                    /* MODE UJI KESELARASAN BERSAMAAN (DUAL COMPARE VIEW) */
+                    <div className="border border-slate-200 rounded-2xl bg-white shadow-xs overflow-hidden">
+                      {/* Header Komparasi */}
+                      <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="p-1 rounded-md bg-indigo-100 text-indigo-700">
+                            <ArrowLeftRight className="w-3.5 h-3.5" />
+                          </span>
+                          <span className="font-extrabold text-xs text-slate-800">
+                            Uji Keselarasan: Web API vs Mobile API
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-[11px] font-semibold">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200/70">
+                            <Globe className="w-3 h-3 text-emerald-600" />
+                            Web: {msg.dualResult.web.latencyMs} ms
+                          </span>
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-sky-50 text-sky-800 border border-sky-200/70">
+                            <Smartphone className="w-3 h-3 text-sky-600" />
+                            Mobile: {msg.dualResult.mobile.latencyMs} ms
+                          </span>
+                        </div>
+                      </div>
 
-                      {/* Debug Log RAG */}
-                      {msg.debug && (
-                        <details className="mt-3 border border-slate-200 rounded-xl p-2.5 text-[11px] bg-slate-50 font-mono">
-                          <summary className="cursor-pointer text-slate-500 font-bold select-none flex items-center gap-1.5 hover:text-slate-800">
-                            <Database size={13} className="text-emerald-600" />
-                            Log Sistem RAG & Dokumen Terkait
-                          </summary>
-                          <div className="mt-2.5 space-y-1 text-slate-600 pt-2 border-t border-slate-200/80">
-                            {msg.debug.extracted_keyword && (
-                              <p><span className="font-bold text-slate-800">Kata Kunci:</span> {msg.debug.extracted_keyword}</p>
-                            )}
-                            {msg.debug.system_prompt_length && (
-                              <p><span className="font-bold text-slate-800">Prompt:</span> {msg.debug.system_prompt_length} karakter</p>
-                            )}
-                            {msg.debug.retrieved_docs && (
-                              <div>
-                                <span className="font-bold text-slate-800">Brosur Ditemukan ({msg.debug.retrieved_docs.length}):</span>
-                                <ul className="list-disc pl-4 mt-1 space-y-0.5">
-                                  {msg.debug.retrieved_docs.map((d: any, idx: number) => (
-                                    <li key={idx}>{d.judul} ({d.tahun})</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
+                      {/* Content Grid (2 Kolom Berdampingan) */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+                        {/* Kolom 1: Web API */}
+                        <div className="p-4 bg-emerald-50/20 space-y-2">
+                          <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
+                            <span className="text-[11px] font-bold text-emerald-800 flex items-center gap-1.5">
+                              <Globe className="w-3.5 h-3.5 text-emerald-600" />
+                              🌐 Web API (Lokal: /api/ai/chat)
+                            </span>
+                            <span className="text-[10px] font-mono text-slate-400">
+                              {msg.dualResult.web.ok ? 'HTTP 200' : 'Error'}
+                            </span>
                           </div>
-                        </details>
+                          <div className="text-xs leading-relaxed">
+                            {renderMarkdownContent(msg.dualResult.web.content)}
+                            {renderRagDebug(msg.dualResult.web.debug)}
+                          </div>
+                        </div>
+
+                        {/* Kolom 2: Mobile API (ulilalbab.fun) */}
+                        <div className="p-4 bg-sky-50/20 space-y-2">
+                          <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
+                            <span className="text-[11px] font-bold text-sky-800 flex items-center gap-1.5">
+                              <Smartphone className="w-3.5 h-3.5 text-sky-600" />
+                              📱 Mobile App API (www.ulilalbab.fun)
+                            </span>
+                            <span className="text-[10px] font-mono text-slate-400">
+                              {msg.dualResult.mobile.ok ? 'HTTP 200' : 'Error'}
+                            </span>
+                          </div>
+                          <div className="text-xs leading-relaxed">
+                            {renderMarkdownContent(msg.dualResult.mobile.content)}
+                            {renderRagDebug(msg.dualResult.mobile.debug)}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Footer Status Keselarasan */}
+                      <div className="px-4 py-2 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                        <span className="flex items-center gap-1 text-emerald-700 font-semibold">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                          Hasil Teruji: Jawaban dan referensi dalil dari kedua endpoint dapat dibandingkan langsung.
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    /* MODE TUNGGAL (WEB API ATAU MOBILE API) */
+                    <div className="text-xs leading-relaxed space-y-2">
+                      {/* Badge Asal Target */}
+                      {msg.source && (
+                        <div className="flex items-center gap-2 mb-1">
+                          {msg.source === 'mobile' ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-sky-50 text-sky-800 border border-sky-200/80 text-[10px] font-bold">
+                              <Smartphone className="w-3 h-3 text-sky-600" />
+                              Mobile API (ulilalbab.fun) {msg.latencyMs ? `• ${msg.latencyMs} ms` : ''}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200/80 text-[10px] font-bold">
+                              <Globe className="w-3 h-3 text-emerald-600" />
+                              Web API (Lokal: /api/ai/chat) {msg.latencyMs ? `• ${msg.latencyMs} ms` : ''}
+                            </span>
+                          )}
+                        </div>
                       )}
+
+                      {renderMarkdownContent(msg.content)}
+                      {renderRagDebug(msg.debug)}
                     </div>
                   )}
                 </div>
@@ -413,11 +580,22 @@ export default function AiSimulatorPage() {
             ))}
 
             {isSimulating !== 'idle' && (
-              <div className="flex gap-3 items-center text-xs text-slate-400">
-                <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                  <RefreshCw className="w-4 h-4 animate-spin" />
+              <div className="flex gap-3 items-center text-xs text-slate-500 bg-slate-50 p-3 rounded-2xl border border-slate-100 max-w-md animate-pulse">
+                <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                  <RefreshCw className="w-4 h-4 animate-spin text-emerald-600" />
                 </div>
-                <span>Sahabat MTA sedang mencari dalil dan menyusun jawaban...</span>
+                <div className="min-w-0">
+                  <p className="font-bold text-slate-800 text-[11px]">
+                    {apiTarget === 'dual'
+                      ? 'Menguji Web & Mobile API Bersamaan...'
+                      : apiTarget === 'mobile'
+                      ? 'Menghubungi Mobile API (ulilalbab.fun)...'
+                      : 'Menghubungi Web API Lokal (/api/ai/chat)...'}
+                  </p>
+                  <p className="text-[10px] text-slate-400 truncate">
+                    Menganalisis pertanyaan & menelusuri korpus Brosur Ahad Pagi MTA...
+                  </p>
+                </div>
               </div>
             )}
           </div>
@@ -434,7 +612,10 @@ export default function AiSimulatorPage() {
                 const userMsg = simInput.trim();
                 setSimInput('');
                 
-                const newMessages = [...activeSession.messages, { role: 'user', content: userMsg }];
+                const newMessages: MessageItem[] = [
+                  ...activeSession.messages, 
+                  { role: 'user' as const, content: userMsg }
+                ];
                 
                 let updatedTitle = activeSession.title;
                 if (activeSession.messages.length === 1) {
@@ -463,15 +644,106 @@ export default function AiSimulatorPage() {
                 
                 try {
                   setIsSimulating('generating');
-                  const res = await fetch('/api/ai/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ messages: newMessages, wordCount: 500 }),
-                  });
-                  const data = await res.json();
-                  if (!res.ok) throw new Error(data.error || 'Terjadi kesalahan sistem');
-                  
-                  const finalMessages = [...newMessages, { role: 'assistant', content: data.text, debug: data.debug_log }];
+
+                  let finalMessages: MessageItem[] = [];
+
+                  if (apiTarget === 'dual') {
+                    // 1. MODE DUAL RUN: Panggil Web API & Mobile API secara paralel
+                    const startWeb = performance.now();
+                    const webPromise = fetch(WEB_API_URL, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ messages: newMessages, wordCount: 500, source: 'web' }),
+                    }).then(async res => {
+                      const latency = Math.round(performance.now() - startWeb);
+                      const data = await res.json();
+                      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+                      return { ok: true, content: data.text || '', debug: data.debug_log, latencyMs: latency };
+                    }).catch(err => ({
+                      ok: false,
+                      content: `Error Web API: ${err.message}`,
+                      debug: null,
+                      latencyMs: Math.round(performance.now() - startWeb),
+                    }));
+
+                    const startMobile = performance.now();
+                    const mobilePromise = fetch(MOBILE_API_URL, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ messages: newMessages, wordCount: 500, source: 'mobile' }),
+                    }).then(async res => {
+                      const latency = Math.round(performance.now() - startMobile);
+                      const data = await res.json();
+                      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+                      return { ok: true, content: data.text || '', debug: data.debug_log, latencyMs: latency };
+                    }).catch(err => ({
+                      ok: false,
+                      content: `Error Mobile API: ${err.message}`,
+                      debug: null,
+                      latencyMs: Math.round(performance.now() - startMobile),
+                    }));
+
+                    const [webResult, mobileResult] = await Promise.all([webPromise, mobilePromise]);
+
+                    finalMessages = [
+                      ...newMessages,
+                      {
+                        role: 'assistant',
+                        content: webResult.ok ? webResult.content : mobileResult.content,
+                        source: 'dual',
+                        dualResult: {
+                          web: webResult,
+                          mobile: mobileResult,
+                        },
+                      }
+                    ];
+                  } else if (apiTarget === 'mobile') {
+                    // 2. MODE MOBILE API ONLY
+                    const startMobile = performance.now();
+                    const res = await fetch(MOBILE_API_URL, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ messages: newMessages, wordCount: 500, source: 'mobile' }),
+                    });
+                    const latency = Math.round(performance.now() - startMobile);
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || 'Terjadi kendala pada Mobile API');
+
+                    finalMessages = [
+                      ...newMessages,
+                      {
+                        role: 'assistant',
+                        content: data.text || '',
+                        source: 'mobile',
+                        latencyMs: latency,
+                        targetUrl: MOBILE_API_URL,
+                        debug: data.debug_log,
+                      }
+                    ];
+                  } else {
+                    // 3. MODE WEB API ONLY
+                    const startWeb = performance.now();
+                    const res = await fetch(WEB_API_URL, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ messages: newMessages, wordCount: 500, source: 'web' }),
+                    });
+                    const latency = Math.round(performance.now() - startWeb);
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || 'Terjadi kesalahan sistem');
+
+                    finalMessages = [
+                      ...newMessages,
+                      {
+                        role: 'assistant',
+                        content: data.text || '',
+                        source: 'web',
+                        latencyMs: latency,
+                        targetUrl: WEB_API_URL,
+                        debug: data.debug_log,
+                      }
+                    ];
+                  }
                   
                   const finalizedSessions = sessions.map(s => 
                     s.id === activeSession.id 
@@ -481,7 +753,7 @@ export default function AiSimulatorPage() {
                   setSessions(finalizedSessions);
                   persistLocalSessions(finalizedSessions);
                   
-                  // Simpan balasan AI ke Supabase
+                  // Simpan balasan AI ke Supabase jika tabel siap
                   if (!activeSession.id.startsWith('session-')) {
                     supabase
                       .from('ai_simulator_sessions')
@@ -492,7 +764,15 @@ export default function AiSimulatorPage() {
                       });
                   }
                 } catch (err: any) {
-                  const finalMessages = [...newMessages, { role: 'assistant', content: `Mohon maaf, terjadi kendala: ${err.message}`, debug: { error: err.message } }];
+                  const finalMessages: MessageItem[] = [
+                    ...newMessages,
+                    { 
+                      role: 'assistant', 
+                      content: `Mohon maaf, terjadi kendala: ${err.message}`, 
+                      source: apiTarget,
+                      debug: { error: err.message } 
+                    }
+                  ];
                   const errorSessions = sessions.map(s => 
                     s.id === activeSession.id 
                       ? { ...s, messages: finalMessages, updatedAt: new Date() } 
@@ -510,7 +790,13 @@ export default function AiSimulatorPage() {
                 type="text"
                 value={simInput}
                 onChange={(e) => setSimInput(e.target.value)}
-                placeholder="Tanyakan fatwa, topik, atau dalil ke Sahabat MTA..."
+                placeholder={
+                  apiTarget === 'dual'
+                    ? "Uji bandingkan jawaban Web API vs Mobile API..."
+                    : apiTarget === 'mobile'
+                    ? "Kirim pertanyaan ke Mobile API (www.ulilalbab.fun)..."
+                    : "Kirim pertanyaan ke Web API Lokal (/api/ai/chat)..."
+                }
                 className="flex-1 bg-transparent border-none px-3 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none"
                 disabled={isSimulating !== 'idle'}
               />
@@ -523,9 +809,21 @@ export default function AiSimulatorPage() {
                 <Send size={14} />
               </button>
             </form>
-            <p className="text-[10px] text-center text-slate-400 mt-1.5">
-              Simulasi menggunakan guardrails dan aturan fatwa resmi Brosur Ahad Pagi MTA.
-            </p>
+            <div className="flex items-center justify-between text-[10px] text-slate-400 mt-1.5 px-1">
+              <span>Simulasi guardrails & aturan fatwa Brosur Ahad Pagi MTA.</span>
+              <span className="font-semibold text-slate-600 flex items-center gap-1">
+                Target: 
+                <span className={`px-1.5 py-0.2 rounded font-bold ${
+                  apiTarget === 'dual' 
+                    ? 'bg-indigo-50 text-indigo-700' 
+                    : apiTarget === 'mobile' 
+                    ? 'bg-sky-50 text-sky-700' 
+                    : 'bg-emerald-50 text-emerald-700'
+                }`}>
+                  {apiTarget === 'dual' ? '⚖️ Dual Compare (Web & Mobile)' : apiTarget === 'mobile' ? '📱 Mobile API (ulilalbab.fun)' : '🌐 Web API (/api/ai/chat)'}
+                </span>
+              </span>
+            </div>
           </div>
         </div>
       </div>

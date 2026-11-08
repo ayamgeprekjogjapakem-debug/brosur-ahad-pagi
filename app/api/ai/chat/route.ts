@@ -101,12 +101,79 @@ export async function POST(request: Request) {
     // 3. Search Database (RAG)
     let contextText = '';
     let retrievedDocs: { judul: string, tahun: string }[] = [];
-    const { data: searchResults, error: searchError } = await supabase.rpc('search_brosur_ranked', {
-      search_query: searchQuery,
+
+    // Ambil kata topik primer (kata pertama sebelum 'OR') untuk menghindari statement timeout di PostgreSQL
+    const primaryKeyword = searchQuery
+      .split(/\s+OR\s+/i)[0]
+      ?.replace(/[^\w\s\u0600-\u06FF]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    // Query bersih tanpa simbol minus '-' yang memicu operator NOT di PostgreSQL websearch_to_tsquery
+    const cleanSearchQuery = searchQuery
+      .replace(/-+/g, ' ')
+      .replace(/[^\w\s\u0600-\u06FF]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    // Jalankan pencarian RAG: prioritaskan kata kunci primer agar kilat (<150ms) dan bebas timeout
+    let searchResults: any[] | null = null;
+    const queryUsed = (primaryKeyword && primaryKeyword.length >= 3) ? primaryKeyword : cleanSearchQuery;
+
+    const { data: primaryData, error: primaryErr } = await supabase.rpc('search_brosur_ranked', {
+      search_query: queryUsed,
       filter_folder_id: filterFolderId
     });
 
-    if (!searchError && searchResults && searchResults.length > 0) {
+    console.log('RAG DEBUG:', { queryUsed, primaryErr, count: primaryData?.length });
+
+    if (!primaryErr && primaryData && primaryData.length > 0) {
+      searchResults = primaryData;
+    } else {
+      // Fallback 1: Jika kata primer belum menghasilkan dokumen, coba dengan query gabungan yang sudah disanitasi
+      if (cleanSearchQuery && cleanSearchQuery !== queryUsed) {
+        const { data: fullData } = await supabase.rpc('search_brosur_ranked', {
+          search_query: cleanSearchQuery,
+          filter_folder_id: filterFolderId
+        });
+        if (fullData && fullData.length > 0) {
+          searchResults = fullData;
+        }
+      }
+    }
+
+    // Fallback 2 (Super-Resilient): Jika RPC timeout (statement timeout 57014) atau 0 dokumen,
+    // langsung query tabel brosur via ILIKE (sangat cepat ~150ms dan anti-timeout)
+    if (!searchResults || searchResults.length === 0) {
+      const keyword = (primaryKeyword && primaryKeyword.length >= 3) ? primaryKeyword : cleanSearchQuery.split(' ')[0];
+      if (keyword && keyword.length >= 3) {
+        // Coba cari di judul brosur terlebih dahulu
+        const { data: directTitleData } = await supabase
+          .from('brosur')
+          .select('id, judul, tahun, konten, teks_bersih')
+          .ilike('judul', `%${keyword}%`)
+          .order('tahun', { ascending: false })
+          .limit(3);
+
+        if (directTitleData && directTitleData.length > 0) {
+          searchResults = directTitleData;
+        } else {
+          // Coba cari di naskah teks_bersih
+          const { data: directTextData } = await supabase
+            .from('brosur')
+            .select('id, judul, tahun, konten, teks_bersih')
+            .ilike('teks_bersih', `%${keyword}%`)
+            .order('tahun', { ascending: false })
+            .limit(3);
+
+          if (directTextData && directTextData.length > 0) {
+            searchResults = directTextData;
+          }
+        }
+      }
+    }
+
+    if (searchResults && searchResults.length > 0) {
       contextText = searchResults.slice(0, 3).map((b: any) => {
         // Prioritaskan konten (HTML stripped) agar teks Arab (jika ada) tidak hilang,
         // karena teks_bersih seringkali difilter/strip arabic text untuk pencarian.
@@ -114,7 +181,8 @@ export async function POST(request: Request) {
         const strippedHtml = rawHtml.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
         const text = strippedHtml || b.teks_bersih || '';
         
-        retrievedDocs.push({ judul: b.judul_brosur, tahun: b.tahun });
+        const docJudul = b.judul || b.judul_brosur || 'Brosur MTA';
+        retrievedDocs.push({ judul: docJudul, tahun: b.tahun });
         
         let snippet = text;
         if (searchQuery) {
@@ -137,7 +205,7 @@ export async function POST(request: Request) {
           snippet = text.substring(0, 4000);
         }
 
-        return `[Brosur: ${b.judul_brosur} (Tahun ${b.tahun})]\n${snippet}`;
+        return `[Brosur: ${docJudul} (Tahun ${b.tahun})]\n${snippet}`;
       }).join('\n\n');
     }
 
