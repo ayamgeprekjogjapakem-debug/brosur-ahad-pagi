@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 
 export async function POST(request: Request) {
+  const startTime = performance.now();
   try {
     const supabase = await createClient();
     const body = await request.json();
@@ -194,6 +195,48 @@ ${rulesText}
         { status: response.status }
       );
     }
+
+    const endTime = performance.now();
+    const latencyMs = Math.round(endTime - startTime);
+
+    // Hitung token dan kategori topik untuk analitik real-time
+    const usage = data.usage || {};
+    const promptTokens = usage.prompt_tokens || Math.round(finalSystemPrompt.length / 4);
+    const completionTokens = usage.completion_tokens || Math.round((data.choices?.[0]?.message?.content || '').length / 4);
+    const totalTokens = usage.total_tokens || (promptTokens + completionTokens);
+
+    const reqSource = body.source || (request.headers.get('user-agent')?.includes('Dart') ? 'mobile' : 'web');
+
+    let topicCategory = 'Umum';
+    const lowerMsg = lastMessage.toLowerCase();
+    if (lowerMsg.includes('shalat') || lowerMsg.includes('salat') || lowerMsg.includes('wudhu') || lowerMsg.includes('sujud')) {
+      topicCategory = 'Shalat & Thaharah';
+    } else if (lowerMsg.includes('puasa') || lowerMsg.includes('ramadhan') || lowerMsg.includes('fidyah') || lowerMsg.includes('sahur')) {
+      topicCategory = 'Puasa & Fidyah';
+    } else if (lowerMsg.includes('zakat') || lowerMsg.includes('sedekah') || lowerMsg.includes('infak') || lowerMsg.includes('riba') || lowerMsg.includes('jual')) {
+      topicCategory = 'Zakat & Muamalah';
+    } else if (lowerMsg.includes('doa') || lowerMsg.includes('zikir') || lowerMsg.includes('wirid') || lowerMsg.includes('istighfar')) {
+      topicCategory = 'Zikir & Doa';
+    } else if (lowerMsg.includes('nikah') || lowerMsg.includes('cerai') || lowerMsg.includes('waris') || lowerMsg.includes('keluarga')) {
+      topicCategory = 'Munakahat & Keluarga';
+    } else if (lowerMsg.includes('jumat') || lowerMsg.includes('khutbah')) {
+      topicCategory = 'Shalat Jumat & Khutbah';
+    }
+
+    // Catat log interaksi secara asinkron ke Supabase (tabel ai_query_logs)
+    Promise.resolve(
+      supabase.from('ai_query_logs').insert([{
+        query_text: lastMessage.substring(0, 500),
+        topic_category: topicCategory,
+        model_used: selectedModel,
+        prompt_tokens: promptTokens,
+        completion_tokens: completionTokens,
+        total_tokens: totalTokens,
+        latency_ms: latencyMs,
+        retrieved_docs_count: retrievedDocs.length,
+        source: reqSource,
+      }])
+    ).catch(() => {});
 
     const debug_log = {
       raw_rules_count: rawRules ? rawRules.length : 0,

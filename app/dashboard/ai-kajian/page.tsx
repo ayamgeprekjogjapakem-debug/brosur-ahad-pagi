@@ -196,7 +196,7 @@ export default function AiKajianPage() {
           .from('brosur')
           .select('judul, tahun, konten, teks_bersih')
           .eq('folder_id', selectedSourceFolder)
-          .limit(100);
+          .limit(8);
         
         if (error) throw error;
         if (!data || data.length === 0) {
@@ -204,7 +204,7 @@ export default function AiKajianPage() {
         }
 
         referencesText = data
-          .map((b) => `Judul: ${b.judul}\nTahun: ${b.tahun}\nTeks:\n${b.teks_bersih || b.konten || ''}`)
+          .map((b) => `Judul: ${b.judul}\nTahun: ${b.tahun}\nTeks:\n${(b.teks_bersih || b.konten || '').substring(0, 2500)}`)
           .join('\n\n---\n\n');
         
         const folderObj = folders.find(f => f.id === selectedSourceFolder);
@@ -213,7 +213,8 @@ export default function AiKajianPage() {
         const { data, error } = await supabase
           .from('brosur')
           .select('judul, tahun, konten, teks_bersih')
-          .limit(150);
+          .order('tahun', { ascending: false })
+          .limit(6);
 
         if (error) throw error;
         if (!data || data.length === 0) {
@@ -221,23 +222,25 @@ export default function AiKajianPage() {
         }
 
         referencesText = data
-          .map((b) => `Judul: ${b.judul}\nTahun: ${b.tahun}\nTeks:\n${b.teks_bersih || b.konten || ''}`)
+          .map((b) => `Judul: ${b.judul}\nTahun: ${b.tahun}\nTeks:\n${(b.teks_bersih || b.konten || '').substring(0, 2500)}`)
           .join('\n\n---\n\n');
-        referenceNameForTitle = 'Arsip Brosur';
+        referenceNameForTitle = 'Arsip Brosur Terbaru';
       } else if (sourceType === 'custom') {
         if (!customReferenceText.trim()) {
           throw new Error('Harap masukkan teks referensi kustom terlebih dahulu.');
         }
-        referencesText = customReferenceText;
+        referencesText = customReferenceText.substring(0, 10000);
         referenceNameForTitle = 'Kajian Kustom';
       }
+
+      const promptToSend = prompt.trim() || 'Susunlah materi kajian tematik yang terstruktur, lengkap dengan dalil hadits berharakat dan kesimpulan hukumnya.';
 
       const res = await fetch('/api/ai/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           texts: referencesText,
-          prompt,
+          prompt: promptToSend,
         }),
       });
 
@@ -753,7 +756,12 @@ export default function AiKajianPage() {
                 <textarea
                   placeholder="Contoh: Fokuskan pembahasan pada aspek sabar dan syukur, tambahkan 3 pertanyaan pemantik diskusi di akhir..."
                   value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
+                  onChange={(e) => {
+                    setPrompt(e.target.value);
+                    try {
+                      localStorage.setItem('openrouter_prompt', e.target.value);
+                    } catch {}
+                  }}
                   rows={4}
                   className="w-full bg-zinc-50  border border-zinc-200  rounded-xl py-3 px-4 focus:outline-none focus:border-accent text-sm resize-none"
                 />

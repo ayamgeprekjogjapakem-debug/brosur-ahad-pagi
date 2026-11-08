@@ -22,10 +22,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ valid: false, error: 'Kode akses tidak valid atau sudah nonaktif' }, { status: 404 });
     }
 
+    const allowed: string[] = Array.isArray(data.allowed_features) ? [...data.allowed_features] : [];
+    if (data.has_ai_access && !allowed.includes('ai-pustaka')) {
+      allowed.push('ai-pustaka');
+    }
+
     return NextResponse.json({ 
       valid: true, 
       code: data.code,
-      allowed_features: data.allowed_features || []
+      allowed_features: allowed
     });
   } catch (err: any) {
     return NextResponse.json({ error: 'Internal Server Error', details: err.message }, { status: 500 });

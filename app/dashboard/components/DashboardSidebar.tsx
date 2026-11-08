@@ -7,7 +7,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import { 
   BookOpen, Upload, LogOut, Loader2, FileStack, Settings, 
   UserCog, Database, MessageSquare, Activity, ShieldBan,
-  ChevronLeft, ChevronRight, BookMarked, Sparkles, Key, Bot, Settings2, Search, Calendar, BellRing, Megaphone
+  ChevronLeft, ChevronRight, BookMarked, Sparkles, Key, Bot, Settings2, Search, Calendar, BellRing, Megaphone,
+  FileText, PanelLeftClose, PanelLeftOpen
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 
@@ -30,12 +31,16 @@ export default function DashboardSidebar() {
     setTimeout(() => setIsMounted(true), 10);
   }, []);
 
+  const toggleSidebar = () => {
+    const nextState = !isMinimized;
+    setIsMinimized(nextState);
+    localStorage.setItem('dashboard_sidebar_minimized', String(nextState));
+    window.dispatchEvent(new CustomEvent('sidebar_minimized_changed', { detail: nextState }));
+  };
+
   useEffect(() => {
     const handleToggleEvent = () => {
-      const nextState = !isMinimized;
-      setIsMinimized(nextState);
-      localStorage.setItem('dashboard_sidebar_minimized', String(nextState));
-      window.dispatchEvent(new CustomEvent('sidebar_minimized_changed', { detail: nextState }));
+      toggleSidebar();
     };
 
     window.addEventListener('toggle_sidebar_minimized', handleToggleEvent);
@@ -70,10 +75,16 @@ export default function DashboardSidebar() {
     {
       label: 'ARTIFICIAL INTELLIGENCE',
       items: [
-        { name: 'Generator Kajian', href: '/dashboard/ai-kajian', icon: Sparkles },
+        { name: 'Pengaturan & Aturan AI', href: '/dashboard/ai-settings', icon: Settings2 },
         { name: 'Simulator AI', href: '/dashboard/ai-simulator', icon: Bot },
-        { name: 'Pengaturan AI', href: '/dashboard/ai-settings', icon: Settings2 },
-        { name: 'Analisa Pencarian AI', href: '/dashboard/ai-analytics', icon: Activity },
+        { name: 'Generator Kajian', href: '/dashboard/ai-kajian', icon: Sparkles },
+        { name: 'Infografis & Analitik AI', href: '/dashboard/ai-analytics', icon: Activity },
+      ],
+    },
+    {
+      label: 'DOKUMENTASI PROYEK',
+      items: [
+        { name: 'MD Reader (/md)', href: '/dashboard/md-reader', icon: FileText },
       ],
     },
     {
@@ -102,8 +113,8 @@ export default function DashboardSidebar() {
       } bg-white border-r border-slate-200/80 hidden md:flex flex-col shrink-0 h-full relative z-30 ${isMounted ? 'transition-all duration-300 ease-out' : ''} overflow-hidden select-none`}
     >
       {/* Logo & Brand Header */}
-      <div className={`h-16 flex items-center px-4 border-b border-slate-100 gap-3 shrink-0 ${isMinimized ? 'justify-center' : 'justify-start'}`}>
-        <Link href="/" className="flex items-center gap-3 group" title="Ke Beranda">
+      <div className={`h-16 flex items-center px-3.5 border-b border-slate-100 shrink-0 ${isMinimized ? 'justify-center flex-col py-2 gap-1' : 'justify-between'}`}>
+        <Link href="/" className="flex items-center gap-2.5 group min-w-0" title="Ke Beranda">
           <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200/80 text-emerald-600 flex items-center justify-center shrink-0 font-bold text-sm">
             <BookMarked size={18} className="text-emerald-600" />
           </div>
@@ -114,6 +125,17 @@ export default function DashboardSidebar() {
             </div>
           )}
         </Link>
+        
+        {/* Tombol Collapse Langsung di Sidebar */}
+        <button
+          type="button"
+          onClick={toggleSidebar}
+          title={isMinimized ? 'Perluas Sidebar' : 'Perkecil Sidebar'}
+          className={`p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition cursor-pointer shrink-0 ${isMinimized ? 'mt-1' : ''}`}
+          aria-label={isMinimized ? 'Perluas Sidebar' : 'Perkecil Sidebar'}
+        >
+          {isMinimized ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+        </button>
       </div>
       
       {/* Navigasi Menu Items */}

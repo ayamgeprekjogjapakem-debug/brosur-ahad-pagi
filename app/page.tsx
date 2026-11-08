@@ -8,16 +8,17 @@ import {
   Menu, MessageSquare, Settings, Sparkles, X,
   ArrowLeft, FileText, ChevronRight, Info,
   CheckCircle2, AlertTriangle, BookMarked, Copy, Check, Share2,
-  TrendingUp, Loader2, Users, ScrollText, CalendarDays
+  TrendingUp, Loader2, Users, ScrollText, CalendarDays, BrainCircuit, Key
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import MainSidebar from '@/app/components/MainSidebar';
 import HeaderUserDropdown from '@/app/components/HeaderUserDropdown';
+import AccessCodeModal from '@/app/components/AccessCodeModal';
 import { buildHighlightSpans } from '@/utils/searchHelper';
 
 const HighlightText = ({ text, highlight }: { text: string; highlight: string | string[] }) => {
   if (!text) return <>{text}</>;
-  
+
   const spans = buildHighlightSpans(text, highlight);
   if (!spans || spans.length === 0) return <>{text}</>;
 
@@ -51,8 +52,35 @@ export default function MakkahPortal() {
   const [savedItems, setSavedItems] = useState<any[]>([]);
   const [isShowingSaved, setIsShowingSaved] = useState(false);
   const [visibleCount, setVisibleCount] = useState(10);
+  const [featuredBrosurItem, setFeaturedBrosurItem] = useState<any | null>(null);
+  const [showBrosurPopup, setShowBrosurPopup] = useState(false);
+  
+  // AI Integration States
+  const [searchMode, setSearchMode] = useState<'dalil' | 'ai'>('dalil');
+  const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
+  const [pendingAiQuery, setPendingAiQuery] = useState('');
+  const [hasPremiumAccess, setHasPremiumAccess] = useState(false);
+
   const pathname = usePathname();
   const router = useRouter();
+
+  const getBrosurUrl = (brosur: any, query?: string, scrollText?: string) => {
+    if (!brosur) return '#';
+    const tahun = brosur.tahun || 2026;
+    const slug =
+      brosur.slug ||
+      brosur.id ||
+      (brosur.judul ? brosur.judul.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') : '');
+    let url = `/bap/${tahun}/${encodeURIComponent(slug)}`;
+    const params = new URLSearchParams();
+    if (query) params.set('q', query);
+    if (scrollText) {
+      const cleanScroll = scrollText.replace(/[\n\r]+/g, ' ').trim().substring(0, 300);
+      params.set('scroll', cleanScroll);
+    }
+    const qs = params.toString();
+    return qs ? `${url}?${qs}` : url;
+  };
 
   const activeHighlightTerms = React.useMemo(() => {
     const list: string[] = [];
@@ -93,7 +121,7 @@ export default function MakkahPortal() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  // Load history dari LocalStorage saat pertama kali render
+  // Load history & access status dari LocalStorage saat pertama kali render
   useEffect(() => {
     const savedHistory = localStorage.getItem('makkah_search_history');
     if (savedHistory) {
@@ -104,6 +132,11 @@ export default function MakkahPortal() {
     if (savedDalil) {
       parsedSaved = JSON.parse(savedDalil);
       setSavedItems(parsedSaved);
+    }
+
+    const premiumCode = localStorage.getItem('mta_premium_access');
+    if (premiumCode) {
+      setHasPremiumAccess(true);
     }
 
     if (pathname === '/tersimpan') {
@@ -125,8 +158,33 @@ export default function MakkahPortal() {
     }
   }, [pathname]);
 
-  const handleSearch = async (query: string, updateUrl = true) => {
+  const handleAccessCodeSuccess = (code: string) => {
+    setHasPremiumAccess(true);
+    setIsAccessModalOpen(false);
+    if (pendingAiQuery) {
+      const q = pendingAiQuery;
+      setPendingAiQuery('');
+      router.push(`/ai-pustaka?q=${encodeURIComponent(q)}`);
+    } else {
+      router.push('/ai-pustaka');
+    }
+  };
+
+  const handleSearch = async (query: string, updateUrl = true, overrideMode?: 'dalil' | 'ai') => {
     if (!query.trim()) return;
+    const currentMode = overrideMode || searchMode;
+
+    if (currentMode === 'ai') {
+      const hasCode = typeof window !== 'undefined' && localStorage.getItem('mta_premium_access');
+      if (!hasCode) {
+        setPendingAiQuery(query);
+        setIsAccessModalOpen(true);
+        return;
+      }
+      router.push(`/ai-pustaka?q=${encodeURIComponent(query.trim())}`);
+      return;
+    }
+
     setIsShowingSaved(false);
     setVisibleCount(10);
 
@@ -149,7 +207,8 @@ export default function MakkahPortal() {
       const data = await res.json();
       if (res.ok) {
         const meta = data.search_meta || {};
-        setSearchResults(data.items || []);
+        const items = data.items || [];
+        setSearchResults(items);
         setSearchSuggestions(data.suggestions || []);
         setSearchMeta({
           originalQuery: meta.original_query || query.trim(),
@@ -159,10 +218,31 @@ export default function MakkahPortal() {
           search_terms_used: data.search_terms_used || [],
           highlight_terms: meta.highlight_terms || data.highlight_terms || []
         });
+
+        // Deteksi brosur yang paling relevan untuk popup rekomendasi
+        if (items.length > 0) {
+          const cleanQ = query.toLowerCase().trim();
+          const matched = items.find((it: any) =>
+            it.brosur?.judul && it.brosur.judul.toLowerCase().includes(cleanQ)
+          );
+          const targetItem = matched || items.find((it: any) => it.brosur?.judul) || items[0];
+          if (targetItem?.brosur) {
+            setFeaturedBrosurItem(targetItem);
+            setShowBrosurPopup(true);
+          } else {
+            setFeaturedBrosurItem(null);
+            setShowBrosurPopup(false);
+          }
+        } else {
+          setFeaturedBrosurItem(null);
+          setShowBrosurPopup(false);
+        }
       } else {
         setSearchResults([]);
         setSearchSuggestions([]);
         setSearchMeta(null);
+        setFeaturedBrosurItem(null);
+        setShowBrosurPopup(false);
       }
     } catch (e) {
       console.error('Error fetching search results:', e);
@@ -237,10 +317,10 @@ export default function MakkahPortal() {
     <div className="flex h-screen bg-[#fafaf9] font-sans selection:bg-emerald-200 overflow-hidden">
 
       {/* Sidebar Global */}
-      <MainSidebar 
-        savedItemsCount={savedItems.length} 
-        onSearchClick={resetSearch} 
-        onHistoryClick={(history) => handleSearch(history)} 
+      <MainSidebar
+        savedItemsCount={savedItems.length}
+        onSearchClick={resetSearch}
+        onHistoryClick={(history) => handleSearch(history)}
       />
 
       {/* Main Canvas */}
@@ -250,7 +330,7 @@ export default function MakkahPortal() {
           <div className="flex items-center gap-4">
             <button
               onClick={() => window.dispatchEvent(new Event('toggle-main-sidebar'))}
-              className="w-10 h-10 border border-slate-200 rounded-xl flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition shadow-sm"
+              className="w-10 h-10 border border-slate-200 rounded-xl flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition shadow-sm cursor-pointer"
               title="Toggle Sidebar"
             >
               <Menu size={18} />
@@ -258,14 +338,33 @@ export default function MakkahPortal() {
             {searchResults !== null && (
               <button
                 onClick={resetSearch}
-                className="p-2 text-slate-500 hover:text-slate-800 flex items-center gap-2 text-sm font-medium transition"
+                className="p-2 text-slate-500 hover:text-slate-800 flex items-center gap-2 text-sm font-medium transition cursor-pointer"
               >
                 <ArrowLeft className="w-4 h-4" /> Kembali
               </button>
             )}
           </div>
 
-          <HeaderUserDropdown />
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                const hasCode = typeof window !== 'undefined' && localStorage.getItem('mta_premium_access');
+                if (!hasCode) {
+                  setIsAccessModalOpen(true);
+                } else {
+                  router.push('/ai-pustaka');
+                }
+              }}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-emerald-200 bg-emerald-50/70 hover:bg-emerald-100/70 text-emerald-800 text-xs font-bold transition shadow-2xs cursor-pointer"
+              title="Buka AI Sahabat Pustaka MTA"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+              <span className="hidden sm:inline">AI Pustaka</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            </button>
+            <HeaderUserDropdown />
+          </div>
         </header>
 
         {/* Content Area */}
@@ -273,18 +372,53 @@ export default function MakkahPortal() {
 
           {/* Default Welcome Screen */}
           {searchResults === null && !isShowingSaved && !isSearching ? (
-            <div className="w-full max-w-2xl text-center space-y-8 mt-20">
+            <div className="w-full max-w-2xl text-center space-y-8 mt-12 sm:mt-16">
               {/* Welcome Greeting */}
               <div className="space-y-3">
-                <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-50 border border-amber-200 text-amber-700 rounded-full text-xs font-bold mb-2">
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-50 border border-amber-200 text-amber-700 rounded-full text-xs font-bold mb-1">
                   Ahlan wa Sahlan
                 </div>
                 <h2 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight">
                   Selamat Datang, Ustadz.
                 </h2>
-                <p className="text-slate-500 text-lg">
-                  Silakan cari dalil, ayat, atau referensi brosur untuk kajian hari ini.
+                <p className="text-slate-500 text-base sm:text-lg max-w-xl mx-auto">
+                  {searchMode === 'ai'
+                    ? 'Tanyakan telaah dalil, fiqih ibadah, atau ringkasan fatwa ke AI Sahabat MTA.'
+                    : 'Silakan cari dalil, ayat, atau referensi brosur untuk kajian hari ini.'}
                 </p>
+              </div>
+
+              {/* Mode Switcher: Cari Dalil vs Tanya AI */}
+              <div className="inline-flex p-1 bg-slate-100/90 border border-slate-200/90 rounded-2xl shadow-2xs mx-auto">
+                <button
+                  type="button"
+                  onClick={() => setSearchMode('dalil')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                    searchMode === 'dalil'
+                      ? 'bg-white text-slate-800 shadow-xs'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  <Search className="w-4 h-4 text-emerald-600" />
+                  <span>Cari Dalil & Brosur</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSearchMode('ai')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                    searchMode === 'ai'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'text-slate-500 hover:text-emerald-700'
+                  }`}
+                >
+                  <Sparkles className="w-4 h-4 text-amber-300" />
+                  <span>Tanya AI Pustaka</span>
+                  <span className={`text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded-md font-extrabold ${
+                    searchMode === 'ai' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800'
+                  }`}>
+                    Baru
+                  </span>
+                </button>
               </div>
 
               {/* Huge Search Bar */}
@@ -295,41 +429,131 @@ export default function MakkahPortal() {
                   className="relative flex items-center bg-white border-2 border-slate-200 rounded-2xl p-2 shadow-sm focus-within:border-emerald-500 focus-within:shadow-md transition-all"
                 >
                   <div className="pl-4 pr-2 text-slate-400">
-                    <Search className="w-6 h-6" />
+                    {searchMode === 'ai' ? (
+                      <Sparkles className="w-6 h-6 text-emerald-600" />
+                    ) : (
+                      <Search className="w-6 h-6" />
+                    )}
                   </div>
                   <input
                     type="text"
-                    className="w-full bg-transparent border-none text-lg text-slate-800 placeholder:text-slate-400 focus:outline-none py-3"
-                    placeholder="Ketik kata kunci atau tema kajian..."
+                    className="w-full bg-transparent border-none text-base sm:text-lg text-slate-800 placeholder:text-slate-400 focus:outline-none py-3"
+                    placeholder={
+                      searchMode === 'ai'
+                        ? 'Tanyakan fiqih, dalil ibadah, atau fatwa kajian...'
+                        : 'Ketik kata kunci atau tema kajian...'
+                    }
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     autoFocus
                   />
                   {searchQuery && (
-                    <button type="button" onClick={() => setSearchQuery('')} className="p-2 text-slate-400 hover:text-slate-600 transition">
+                    <button type="button" onClick={() => setSearchQuery('')} className="p-2 text-slate-400 hover:text-slate-600 transition cursor-pointer">
                       <X className="w-4 h-4" />
                     </button>
                   )}
                   <button
                     type="submit"
                     disabled={isSearching}
-                    className="ml-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition shadow-sm disabled:opacity-70 flex items-center justify-center min-w-[100px]"
+                    className={`ml-2 px-5 sm:px-6 py-3 font-bold rounded-xl transition shadow-xs disabled:opacity-70 flex items-center justify-center min-w-[105px] cursor-pointer ${
+                      searchMode === 'ai'
+                        ? 'bg-slate-900 hover:bg-slate-800 text-white'
+                        : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                    }`}
                   >
-                    {isSearching ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Cari'}
+                    {isSearching ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : searchMode === 'ai' ? (
+                      <span className="flex items-center gap-1.5 text-xs sm:text-sm">
+                        <Sparkles className="w-4 h-4 text-amber-300" /> Tanya AI
+                      </span>
+                    ) : (
+                      'Cari'
+                    )}
                   </button>
                 </form>
               </div>
 
+              {/* Apple-Style AI Pustaka Hero Card */}
+              <div className="bg-gradient-to-b from-white to-slate-50/70 border border-slate-200/90 rounded-3xl p-6 sm:p-7 text-left shadow-2xs hover:shadow-md transition">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-xs shrink-0">
+                      <Sparkles className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-extrabold text-slate-900 text-base sm:text-lg">AI Sahabat Pustaka MTA</h3>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                          Korpus Resmi
+                        </span>
+                      </div>
+                      <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+                        Tanya jawab fiqih interaktif, penjelasan tema kajian, dan penelusuran dalil terpadu.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const hasCode = typeof window !== 'undefined' && localStorage.getItem('mta_premium_access');
+                      if (!hasCode) {
+                        setIsAccessModalOpen(true);
+                      } else {
+                        router.push('/ai-pustaka');
+                      }
+                    }}
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs sm:text-sm font-bold shadow-xs transition shrink-0 cursor-pointer"
+                  >
+                    <span>Buka Chat AI</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="pt-3 border-t border-slate-100">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2.5">
+                    Contoh Pertanyaan Populer ke AI:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      "Tata cara shalat jamak dan qashar saat safar",
+                      "Kapan wajib sujud sahwi dan apa bacaannya?",
+                      "Hukum zakat fitrah dibayarkan dengan uang",
+                      "Rukun, syarat sah, dan adab pernikahan Islami"
+                    ].map((prompt, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          const hasCode = typeof window !== 'undefined' && localStorage.getItem('mta_premium_access');
+                          if (!hasCode) {
+                            setPendingAiQuery(prompt);
+                            setIsAccessModalOpen(true);
+                          } else {
+                            router.push(`/ai-pustaka?q=${encodeURIComponent(prompt)}`);
+                          }
+                        }}
+                        className="text-xs px-3.5 py-1.5 bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 text-slate-700 hover:text-emerald-800 rounded-full transition flex items-center gap-1.5 shadow-2xs group cursor-pointer"
+                      >
+                        <Sparkles className="w-3 h-3 text-emerald-500 group-hover:scale-110 transition-transform" />
+                        <span>{prompt}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
               {/* Quick Suggestions */}
               {popularTopics.length > 0 && (
-                <div className="pt-6">
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Saran Topik Populer</p>
-                  <div className="flex flex-wrap justify-center gap-4 mt-6">
+                <div className="pt-2">
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Saran Topik Pencarian Populer</p>
+                  <div className="flex flex-wrap justify-center gap-4">
                     {popularTopics.map((topic, i) => (
                       <div key={i} className="relative">
                         <button
-                          onClick={() => handleSearch(topic.name)}
-                          className="flex items-center gap-1.5 px-4 py-2 bg-white border border-slate-200 text-slate-600 hover:border-emerald-300 hover:text-emerald-700 rounded-full text-sm font-medium transition shadow-sm"
+                          type="button"
+                          onClick={() => handleSearch(topic.name, true, 'dalil')}
+                          className="flex items-center gap-1.5 px-4 py-2 bg-white border border-slate-200 text-slate-600 hover:border-emerald-300 hover:text-emerald-700 rounded-full text-sm font-medium transition shadow-sm cursor-pointer"
                         >
                           {topic.name}
                         </button>
@@ -383,20 +607,18 @@ export default function MakkahPortal() {
                     {isShowingSaved ? "Dalil Tersimpan" : `Hasil untuk "${searchMeta?.query_koreksi || searchQuery}"`}
                   </h3>
                   {searchMeta?.has_correction && searchMeta.query_koreksi && (
-                    <div className="max-w-xl mx-auto mt-3 bg-amber-50 border border-amber-300 rounded-xl px-4 py-2.5 text-amber-900 text-sm flex items-center justify-between shadow-xs text-left">
-                      <div className="flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
-                        <span>
-                          Menampilkan hasil untuk: <strong className="font-bold underline decoration-amber-500">{searchMeta.query_koreksi}</strong>{' '}
-                          <span className="text-amber-700/80">(koreksi otomatis typo dari &lsquo;{searchMeta.originalQuery}&rsquo;)</span>
-                        </span>
-                      </div>
+                    <div className="inline-flex items-center gap-2 mt-2 bg-amber-50/90 border border-amber-200 rounded-full px-3.5 py-1 text-amber-900 text-xs shadow-xs text-left max-w-full">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                      <span className="truncate">
+                        Hasil untuk: <strong className="font-bold underline decoration-amber-500">{searchMeta.query_koreksi}</strong>{' '}
+                        <span className="text-amber-700/75">(typo dari &lsquo;{searchMeta.originalQuery}&rsquo;)</span>
+                      </span>
                       <button
                         type="button"
                         onClick={() => handleSearch(searchMeta.originalQuery)}
-                        className="text-xs text-amber-800 underline hover:text-amber-950 font-semibold shrink-0 ml-3 cursor-pointer"
+                        className="text-[11px] text-amber-800 underline hover:text-amber-950 font-medium shrink-0 ml-1 cursor-pointer"
                       >
-                        Cari tetap &lsquo;{searchMeta.originalQuery}&rsquo;
+                        Cari &lsquo;{searchMeta.originalQuery}&rsquo;
                       </button>
                     </div>
                   )}
@@ -410,6 +632,42 @@ export default function MakkahPortal() {
                   </p>
                 </div>
               </div>
+
+              {/* AI Assistance Banner */}
+              {!isShowingSaved && searchQuery && (
+                <div className="bg-gradient-to-r from-emerald-50/90 via-white to-slate-50 border border-emerald-200/90 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                      <Sparkles className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs sm:text-sm font-bold text-slate-800">
+                        Butuh penjelasan fiqih mendalam tentang &ldquo;{searchQuery}&rdquo;?
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        AI Sahabat MTA dapat merangkum dalil dan menjawab pertanyaan fiqih Anda berdasarkan ratusan brosur resmi.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const aiPrompt = `Jelaskan dalil dan kesimpulan fiqih tentang ${searchQuery}`;
+                      const hasCode = typeof window !== 'undefined' && localStorage.getItem('mta_premium_access');
+                      if (!hasCode) {
+                        setPendingAiQuery(aiPrompt);
+                        setIsAccessModalOpen(true);
+                      } else {
+                        router.push(`/ai-pustaka?q=${encodeURIComponent(aiPrompt)}`);
+                      }
+                    }}
+                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs shrink-0 cursor-pointer"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-200" />
+                    <span>Tanya AI Pustaka</span>
+                  </button>
+                </div>
+              )}
 
               {/* Results List */}
               {isSearching ? (
@@ -426,7 +684,7 @@ export default function MakkahPortal() {
                   </div>
                   <h4 className="text-lg font-bold text-slate-700">Tidak Ditemukan</h4>
                   <p className="text-slate-500 mt-1 mb-8">Coba gunakan kata kunci lain atau sinonim.</p>
-                  
+
                   {searchSuggestions && searchSuggestions.length > 0 && (
                     <div className="max-w-xl mx-auto bg-amber-50 border border-amber-200 rounded-2xl p-6 text-left shadow-sm">
                       <div className="flex items-center gap-2 mb-4 text-amber-800">
@@ -506,23 +764,39 @@ export default function MakkahPortal() {
                         </p>
                       )}
 
-                      <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-medium">
-                        <div className="flex items-center gap-1.5">
-                          <FileText className="w-4 h-4" />
-                          {item.brosur?.slug ? (
-                            <Link href={`/bap/${item.brosur.tahun}/${item.brosur.judul.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}?q=${encodeURIComponent(searchQuery || '')}&scroll=${encodeURIComponent((item.kutipan_arab || item.terjemahan || '').substring(0, 1000))}`} className="hover:text-emerald-600 hover:underline transition" title="Baca brosur asli">
+                      <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500 font-medium">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <FileText className="w-4 h-4 text-slate-400 shrink-0" />
+                          {item.brosur ? (
+                            <Link
+                              href={getBrosurUrl(item.brosur, searchQuery, item.kutipan_arab || item.terjemahan)}
+                              className="hover:text-emerald-600 hover:underline transition truncate"
+                              title="Baca brosur asli"
+                            >
                               Dari: {item.brosur.judul}
                             </Link>
                           ) : (
-                            <span>Dari: {item.brosur?.judul || 'Brosur Tidak Diketahui'}</span>
+                            <span className="truncate">Dari: {item.brosur_id || 'Brosur Tidak Diketahui'}</span>
                           )}
                         </div>
-                        <button
-                          onClick={() => setSelectedItem(item)}
-                          className="flex items-center gap-1 text-emerald-600 hover:text-emerald-700 font-bold group-hover:translate-x-1 transition-transform cursor-pointer"
-                        >
-                          Lihat Detail <ChevronRight className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                          {item.brosur && (
+                            <Link
+                              href={getBrosurUrl(item.brosur, searchQuery, item.kutipan_arab || item.terjemahan)}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg font-bold text-xs transition border border-emerald-200/60"
+                              title="Buka naskah brosur asli"
+                            >
+                              <BookOpen className="w-3.5 h-3.5" />
+                              <span>Menuju Brosur</span>
+                            </Link>
+                          )}
+                          <button
+                            onClick={() => setSelectedItem(item)}
+                            className="flex items-center gap-1 text-emerald-600 hover:text-emerald-700 font-bold group-hover:translate-x-1 transition-transform cursor-pointer px-2 py-1.5"
+                          >
+                            Lihat Detail <ChevronRight className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -620,7 +894,7 @@ export default function MakkahPortal() {
                   </div>
                   {selectedItem.status_hadist !== 'terverifikasi' && (
                     <p className="text-xs text-amber-600/90 font-medium pl-1 max-w-xl leading-relaxed">
-                      *Catatan Sistem: Status "Belum Diverifikasi" berarti data ini baru diekstraksi secara otomatis dari arsip teks brosur, dan <span className="font-bold underline">jalur sanad/takhrij-nya belum ditinjau ulang secara manual</span> oleh dewan asatidzah.
+                      {/* *Catatan Sistem: Status "Belum Diverifikasi" berarti data ini baru diekstraksi secara otomatis dari arsip teks brosur, dan <span className="font-bold underline">jalur sanad/takhrij-nya belum ditinjau ulang secara manual</span> oleh dewan asatidzah. */}
                     </p>
                   )}
                 </div>
@@ -674,12 +948,30 @@ export default function MakkahPortal() {
               <div className="flex items-center gap-3 w-full sm:w-auto shrink-0">
                 <button
                   onClick={() => setSelectedItem(null)}
-                  className="flex-1 sm:flex-none px-5 py-2.5 text-slate-600 font-bold hover:bg-slate-200 rounded-xl transition"
+                  className="flex-1 sm:flex-none px-5 py-2.5 text-slate-600 font-bold hover:bg-slate-200 rounded-xl transition cursor-pointer"
                 >
                   Tutup
                 </button>
-                <button className="flex-1 sm:flex-none px-5 py-2.5 bg-emerald-600 text-white font-bold hover:bg-emerald-700 rounded-xl shadow-sm transition flex items-center justify-center gap-2">
-                  <Bookmark className="w-4 h-4" /> Simpan Dalil
+                {selectedItem.brosur && (
+                  <Link
+                    href={getBrosurUrl(
+                      selectedItem.brosur,
+                      searchQuery,
+                      selectedItem.kutipan_arab || selectedItem.terjemahan
+                    )}
+                    className="flex-1 sm:flex-none px-5 py-2.5 bg-emerald-600 text-white font-bold hover:bg-emerald-700 active:bg-emerald-800 rounded-xl shadow-sm transition flex items-center justify-center gap-2 text-sm cursor-pointer"
+                  >
+                    <BookOpen className="w-4 h-4" />
+                    <span>Menuju Brosur Asli</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </Link>
+                )}
+                <button
+                  onClick={() => toggleSaveItem(selectedItem)}
+                  className="p-2.5 text-slate-400 hover:text-amber-500 hover:bg-amber-50 rounded-xl transition border border-slate-200"
+                  title={savedItems.some(saved => saved.id === selectedItem.id) ? "Hapus dari koleksi" : "Simpan ke koleksi"}
+                >
+                  <Bookmark className={`w-4 h-4 ${savedItems.some(saved => saved.id === selectedItem.id) ? 'fill-current text-amber-500' : ''}`} />
                 </button>
               </div>
             </div>
@@ -687,6 +979,116 @@ export default function MakkahPortal() {
           </div>
         </div>
       )}
+
+      {/* Popup Cerdas Brosur Terkait (Clean, Lebar di Desktop, No Gradient) */}
+      {showBrosurPopup && featuredBrosurItem?.brosur && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
+          <div
+            className="bg-white rounded-2xl sm:rounded-3xl w-full max-w-3xl overflow-hidden shadow-2xl border border-slate-200/80 flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200"
+            role="dialog"
+            aria-modal="true"
+          >
+            {/* Header Popup Clean & Solid (No Gradient) */}
+            <div className="px-6 sm:px-8 pt-6 pb-4 border-b border-slate-100 bg-white relative flex items-start justify-between gap-4">
+              <div className="space-y-1.5 min-w-0 pr-6">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                    <BookOpen className="w-3.5 h-3.5" /> Brosur Terkait
+                  </span>
+                  {featuredBrosurItem.brosur.tahun && (
+                    <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-600">
+                      Tahun {featuredBrosurItem.brosur.tahun}
+                    </span>
+                  )}
+                  {featuredBrosurItem.brosur.folders?.name && (
+                    <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">
+                      • {featuredBrosurItem.brosur.folders.name}
+                    </span>
+                  )}
+                </div>
+                <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-snug">
+                  {featuredBrosurItem.brosur.judul}
+                </h3>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowBrosurPopup(false)}
+                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition cursor-pointer shrink-0"
+                aria-label="Tutup popup"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body Popup Clean & Lebar di Desktop */}
+            <div className="p-6 sm:px-8 py-5 overflow-y-auto space-y-4">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                    Cuplikan Dalil Terkait &ldquo;{searchQuery}&rdquo;
+                  </span>
+                  {featuredBrosurItem.rawi_kitab && (
+                    <span className="text-xs font-semibold text-slate-500">
+                      {featuredBrosurItem.rawi_kitab} {featuredBrosurItem.no_hadist ? `No. ${featuredBrosurItem.no_hadist}` : ''}
+                    </span>
+                  )}
+                </div>
+
+                <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-5 text-slate-700 leading-relaxed max-h-60 overflow-y-auto">
+                  {featuredBrosurItem.kutipan_arab && (
+                    <p className="font-amiri text-xl sm:text-2xl text-right text-slate-900 mb-3 leading-loose" dir="rtl">
+                      <HighlightText text={featuredBrosurItem.kutipan_arab} highlight={activeHighlightTerms} />
+                    </p>
+                  )}
+                  <p className="text-sm sm:text-base text-slate-700 leading-relaxed font-normal">
+                    &ldquo;<HighlightText text={featuredBrosurItem.terjemahan || ''} highlight={activeHighlightTerms} />&rdquo;
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-3 flex items-center gap-2.5 text-xs text-slate-600">
+                <BookOpen className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>
+                  Naskah lengkap brosur ini memuat konteks penuh, uraian dalil-dalil, dan pembahasan tuntas tentang topik ini.
+                </span>
+              </div>
+            </div>
+
+            {/* Footer Popup Clean & Solid (No Gradient) */}
+            <div className="px-6 sm:px-8 py-4 bg-slate-50/80 border-t border-slate-100 flex flex-col-reverse sm:flex-row items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => setShowBrosurPopup(false)}
+                className="w-full sm:w-auto py-2.5 px-4 text-slate-600 hover:text-slate-800 hover:bg-slate-200/60 font-semibold rounded-xl text-xs transition cursor-pointer text-center"
+              >
+                Lihat Semua Dalil ({searchResults?.length || 0})
+              </button>
+
+              <Link
+                href={getBrosurUrl(
+                  featuredBrosurItem.brosur,
+                  searchQuery,
+                  featuredBrosurItem.kutipan_arab || featuredBrosurItem.terjemahan
+                )}
+                onClick={() => setShowBrosurPopup(false)}
+                className="w-full sm:w-auto py-3 px-6 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold rounded-xl shadow-xs transition flex items-center justify-center gap-2 text-sm text-center group cursor-pointer"
+              >
+                <BookOpen className="w-4 h-4" />
+                <span>Menuju Brosur Lengkap</span>
+                <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Access Code Modal untuk aktivasi fitur AI & Premium */}
+      <AccessCodeModal
+        isOpen={isAccessModalOpen}
+        onClose={() => setIsAccessModalOpen(false)}
+        onSuccess={handleAccessCodeSuccess}
+      />
 
     </div>
   );

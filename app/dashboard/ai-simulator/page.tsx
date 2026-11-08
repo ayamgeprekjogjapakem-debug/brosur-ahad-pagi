@@ -1,522 +1,533 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Bot, MessageSquare, Plus, Trash2, Brain, Save, ToggleLeft, ToggleRight, Database } from 'lucide-react';
+import { 
+  Bot, MessageSquare, Plus, Trash2, Brain, Database, 
+  RefreshCw, Send, Sparkles, ExternalLink, ShieldAlert, X, Copy, Check 
+} from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { createClient } from '@/utils/supabase/client';
 
+type ChatSession = {
+  id: string;
+  title: string;
+  messages: { role: string; content: string; debug?: any }[];
+  updatedAt: Date;
+};
+
+const LOCAL_STORAGE_KEY = 'ai_simulator_saved_sessions';
+
 export default function AiSimulatorPage() {
-  type ChatSession = {
-    id: string;
-    title: string;
-    messages: { role: string; content: string; debug?: any }[];
-    updatedAt: Date;
+  const defaultGreeting = { 
+    role: 'assistant', 
+    content: 'Assalamu’alaikum! Saya Asisten AI **Sahabat MTA**. Silakan ajukan pertanyaan seputar fiqih, dalil hadits, dan materi Brosur Ahad Pagi MTA.' 
   };
 
-  type AiRule = {
-    id: string;
-    keyword: string;
-    instruction: string;
-    is_active: boolean;
-    created_at: string;
-    target_folder_id?: string | null;
-  };
-
-  type Folder = {
-    id: string;
-    name: string;
-  };
-
-  const defaultGreeting = { role: 'assistant', content: 'Halo! Saya Asisten AI Pustaka Brosur Ahad Pagi. Ada yang bisa saya bantu terkait materi brosur?' };
-
-  const [activeTab, setActiveTab] = useState<'chat' | 'memory'>('chat');
-  
-  // States for Chat
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [simInput, setSimInput] = useState('');
-  const [wordCount, setWordCount] = useState('100');
   const [isSimulating, setIsSimulating] = useState<'idle' | 'searching' | 'generating'>('idle');
-  const [initError, setInitError] = useState<string | null>(null);
-
-  // States for Memory
-  const [rules, setRules] = useState<AiRule[]>([]);
-  const [folders, setFolders] = useState<Folder[]>([]);
-  const [isRulesLoading, setIsRulesLoading] = useState(true);
-  const [newKeyword, setNewKeyword] = useState('');
-  const [newInstruction, setNewInstruction] = useState('');
-  const [newTargetFolderId, setNewTargetFolderId] = useState('');
-  const [saveStatus, setSaveStatus] = useState<{type: 'success' | 'error', message: string} | null>(null);
+  const [hasRlsWarning, setHasRlsWarning] = useState<boolean>(false);
+  const [isSqlCopied, setIsSqlCopied] = useState<boolean>(false);
 
   const supabase = createClient();
 
   useEffect(() => {
-    // Check URL for tab
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const tab = params.get('tab');
-      if (tab === 'memory' || tab === 'chat') {
-        setActiveTab(tab);
-      }
-    }
     fetchSessions();
-    fetchRules();
-    fetchFolders();
   }, []);
-
-  const fetchFolders = async () => {
-    const { data } = await supabase.from('folders').select('id, name').order('name', { ascending: false });
-    if (data) setFolders(data);
-  };
-
-  const changeTab = (tab: 'chat' | 'memory') => {
-    setActiveTab(tab);
-    if (typeof window !== 'undefined') {
-      window.history.replaceState(null, '', `?tab=${tab}`);
-    }
-  };
-
-  const fetchRules = async () => {
-    setIsRulesLoading(true);
-    const { data, error } = await supabase
-      .from('ai_knowledge_rules')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (data) {
-      setRules(data);
-    } else {
-      console.error('Failed to fetch rules', error);
-    }
-    setIsRulesLoading(false);
-  };
-
-  const handleAddRule = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newKeyword.trim() || !newInstruction.trim()) return;
-    
-    setSaveStatus(null);
-
-    const { data, error } = await supabase
-      .from('ai_knowledge_rules')
-      .insert([{ 
-        keyword: newKeyword.trim(), 
-        instruction: newInstruction.trim(), 
-        is_active: true,
-        target_folder_id: newTargetFolderId || null
-      }])
-      .select();
-
-    if (error) {
-      setSaveStatus({ type: 'error', message: 'Gagal menyimpan aturan: ' + error.message });
-      return;
-    }
-
-    if (data && data.length > 0) {
-      setRules(prev => [data[0], ...prev]);
-      setNewKeyword('');
-      setNewInstruction('');
-      setNewTargetFolderId('');
-      setSaveStatus({ type: 'success', message: 'Aturan memori berhasil disimpan!' });
-      
-      // Auto-hide success message after 3 seconds
-      setTimeout(() => setSaveStatus(null), 3000);
-    }
-  };
-
-  const handleToggleRule = async (id: string, currentStatus: boolean) => {
-    const { error } = await supabase
-      .from('ai_knowledge_rules')
-      .update({ is_active: !currentStatus })
-      .eq('id', id);
-    
-    if (!error) {
-      setRules(prev => prev.map(r => r.id === id ? { ...r, is_active: !currentStatus } : r));
-    }
-  };
-
-  const handleDeleteRule = async (id: string) => {
-    if (!window.confirm('Hapus aturan ini secara permanen?')) return;
-    const { error } = await supabase
-      .from('ai_knowledge_rules')
-      .delete()
-      .eq('id', id);
-    
-    if (!error) {
-      setRules(prev => prev.filter(r => r.id !== id));
-    }
-  };
-
-  const fetchSessions = async () => {
-    setIsLoading(true);
-    const { data, error } = await supabase
-      .from('ai_simulator_sessions')
-      .select('*')
-      .order('updated_at', { ascending: false });
-    
-    if (data && data.length > 0) {
-      setSessions(data.map(d => ({
-        id: d.id,
-        title: d.title,
-        messages: d.messages,
-        updatedAt: new Date(d.updated_at)
-      })));
-      setActiveSessionId(data[0].id);
-    } else {
-      await handleNewSession();
-    }
-    setIsLoading(false);
-  };
 
   const containsArabic = (text: string) => {
     return /[\u0600-\u06FF]/.test(text);
   };
 
+  // Helper untuk membaca dari LocalStorage
+  const getLocalSessions = (): ChatSession[] => {
+    try {
+      const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((s: any) => ({
+            ...s,
+            updatedAt: new Date(s.updatedAt || Date.now())
+          }));
+        }
+      }
+    } catch {}
+    return [];
+  };
+
+  // Helper untuk menyimpan ke LocalStorage
+  const persistLocalSessions = (updatedSessions: ChatSession[]) => {
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedSessions));
+    } catch {}
+  };
+
+  const fetchSessions = async () => {
+    setIsLoading(true);
+    let loadedSessions: ChatSession[] = [];
+    let rlsBlocked = false;
+
+    try {
+      // Coba ambil dari Supabase
+      const { data, error } = await supabase
+        .from('ai_simulator_sessions')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.warn('Supabase fetch failed (kemungkinan RLS):', error.message);
+        rlsBlocked = true;
+      } else if (data && data.length > 0) {
+        loadedSessions = data.map(d => ({
+          id: d.id,
+          title: d.title || 'Percakapan Tanpa Judul',
+          messages: Array.isArray(d.messages) ? d.messages : [defaultGreeting],
+          updatedAt: new Date(d.updated_at || d.created_at || Date.now())
+        }));
+      }
+    } catch (e) {
+      console.warn('Network / client fetch error:', e);
+      rlsBlocked = true;
+    }
+
+    // Jika Supabase kosong atau terhalang RLS, ambil cadangan lokal
+    if (loadedSessions.length === 0) {
+      const local = getLocalSessions();
+      if (local.length > 0) {
+        loadedSessions = local;
+      }
+    }
+
+    // Jika masih kosong sama sekali, buat sesi default baru
+    if (loadedSessions.length === 0) {
+      const initialSession: ChatSession = {
+        id: 'session-' + Date.now(),
+        title: 'Percakapan Baru',
+        messages: [defaultGreeting],
+        updatedAt: new Date()
+      };
+      loadedSessions = [initialSession];
+
+      // Coba simpan ke Supabase di background
+      supabase
+        .from('ai_simulator_sessions')
+        .insert([{ title: initialSession.title, messages: initialSession.messages }])
+        .select()
+        .single()
+        .then(({ data: created, error: createErr }) => {
+          if (created) {
+            setSessions(prev => prev.map(s => s.id === initialSession.id ? { ...s, id: created.id } : s));
+            setActiveSessionId(created.id);
+          } else if (createErr) {
+            setHasRlsWarning(true);
+          }
+        });
+    }
+
+    if (rlsBlocked) {
+      setHasRlsWarning(true);
+    }
+
+    setSessions(loadedSessions);
+    setActiveSessionId(loadedSessions[0].id);
+    persistLocalSessions(loadedSessions);
+    setIsLoading(false);
+  };
+
   const handleNewSession = async () => {
-    const newSession = {
+    const tempId = 'session-' + Date.now();
+    const newSession: ChatSession = {
+      id: tempId,
       title: 'Percakapan Baru',
       messages: [defaultGreeting],
+      updatedAt: new Date(),
     };
-    
-    const { data, error } = await supabase
-      .from('ai_simulator_sessions')
-      .insert([newSession])
-      .select()
-      .single();
-      
-    if (error) {
-      console.log('Gagal membuat sesi baru:', error);
-      setInitError(`Gagal menyimpan data ke database. Error: ${error.message || JSON.stringify(error)}. Jika error berkaitan dengan RLS, mohon jalankan perintah "ALTER TABLE ai_simulator_sessions DISABLE ROW LEVEL SECURITY;" di Supabase Anda.`);
-      return;
-    }
-      
-    if (data) {
-      const mappedSession = {
-        id: data.id,
-        title: data.title,
-        messages: data.messages,
-        updatedAt: new Date(data.updated_at)
-      };
-      setSessions(prev => [mappedSession, ...prev]);
-      setActiveSessionId(data.id);
-      setInitError(null);
+
+    // Langsung update state lokal agar UI instan dan tidak macet
+    const updated = [newSession, ...sessions];
+    setSessions(updated);
+    setActiveSessionId(tempId);
+    persistLocalSessions(updated);
+
+    // Coba simpan ke Supabase
+    try {
+      const { data, error } = await supabase
+        .from('ai_simulator_sessions')
+        .insert([{ title: newSession.title, messages: newSession.messages }])
+        .select()
+        .single();
+
+      if (data) {
+        // Update ID lokal dengan ID UUID dari Supabase
+        setSessions(prev => {
+          const next = prev.map(s => s.id === tempId ? { ...s, id: data.id } : s);
+          persistLocalSessions(next);
+          return next;
+        });
+        setActiveSessionId(data.id);
+      } else if (error) {
+        console.warn('Gagal menyimpan sesi baru ke Supabase (RLS):', error.message);
+        setHasRlsWarning(true);
+      }
+    } catch (err: any) {
+      console.warn('Supabase insert exception:', err.message);
+      setHasRlsWarning(true);
     }
   };
 
   const handleDeleteSession = async (id: string) => {
-    if (!window.confirm('Apakah Anda yakin ingin menghapus sesi percakapan ini secara permanen?')) return;
+    if (!window.confirm('Hapus sesi percakapan simulasi ini?')) return;
     
-    await supabase.from('ai_simulator_sessions').delete().eq('id', id);
-    const newSessions = sessions.filter(s => s.id !== id);
-    
-    if (newSessions.length === 0) {
+    const nextSessions = sessions.filter(s => s.id !== id);
+    setSessions(nextSessions);
+    persistLocalSessions(nextSessions);
+
+    if (activeSessionId === id && nextSessions.length > 0) {
+      setActiveSessionId(nextSessions[0].id);
+    } else if (nextSessions.length === 0) {
       handleNewSession();
-    } else {
-      setSessions(newSessions);
-      if (activeSessionId === id) {
-        setActiveSessionId(newSessions[0].id);
-      }
+    }
+
+    // Hapus juga di Supabase jika ID bukan sesi lokal sementara
+    if (!id.startsWith('session-')) {
+      await supabase.from('ai_simulator_sessions').delete().eq('id', id);
     }
   };
 
-  const activeSession = sessions.find(s => s.id === activeSessionId) || sessions[0];
+  const activeSession = sessions.find(s => s.id === activeSessionId) || sessions[0] || {
+    id: 'fallback-session',
+    title: 'Percakapan Baru',
+    messages: [defaultGreeting],
+    updatedAt: new Date()
+  };
+
+  const copyRlsSql = () => {
+    navigator.clipboard.writeText('ALTER TABLE ai_simulator_sessions DISABLE ROW LEVEL SECURITY;');
+    setIsSqlCopied(true);
+    setTimeout(() => setIsSqlCopied(false), 2500);
+  };
 
   if (isLoading) {
-    return <div className="p-8 max-w-6xl mx-auto">Memuat riwayat simulasi...</div>;
-  }
-  
-  if (!activeSession) {
     return (
-      <div className="p-8 max-w-6xl mx-auto">
-        <div className="bg-red-50 text-red-600 p-4 rounded-xl border border-red-100 mb-4">
-          <h3 className="font-bold mb-2">Terjadi Kesalahan</h3>
-          <p>{initError || 'Menyiapkan sesi tertunda...'}</p>
+      <div className="flex-1 flex items-center justify-center p-12 text-slate-400 min-h-[400px]">
+        <div className="text-center">
+          <RefreshCw className="w-7 h-7 animate-spin mx-auto mb-2 text-emerald-600" />
+          <p className="text-xs font-semibold">Menyiapkan AI Playground...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex h-screen w-screen bg-white  font-[family-name:var(--font-geist-sans)] text-sm overflow-hidden">
+    <div className="flex h-[calc(100vh-68px)] bg-white overflow-hidden relative font-sans">
       <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet" />
-      
-      {/* LEFT SIDEBAR (History) */}
-      <div className="w-64 bg-zinc-50  border-r border-zinc-200  flex flex-col flex-shrink-0">
-        <div className="p-3">
+
+      {/* LEFT SIDEBAR (Riwayat Simulasi) */}
+      <div className="w-64 bg-slate-50 border-r border-slate-200 flex flex-col shrink-0">
+        <div className="p-3 border-b border-slate-100">
           <button
+            type="button"
             onClick={handleNewSession}
-            className="w-full flex items-center justify-start gap-2 bg-white  hover:bg-zinc-100  border border-zinc-200  py-2.5 px-3 rounded-lg font-medium transition-colors"
+            className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-3 rounded-xl font-bold text-xs transition cursor-pointer shadow-xs active:scale-95"
           >
-            <Plus size={16} /> Percakapan Baru
+            <Plus size={15} /> Percakapan Baru
           </button>
         </div>
         
-        <div className="flex-1 overflow-y-auto px-2 space-y-1">
-          <div className="text-xs font-semibold text-zinc-500 px-2 mb-2 mt-2">Riwayat Simulasi</div>
+        {/* List Sesi */}
+        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-2 py-1">
+            Riwayat Uji Coba ({sessions.length})
+          </div>
           {sessions.map(s => (
             <div 
               key={s.id}
               onClick={() => setActiveSessionId(s.id)}
-              className={`p-2 rounded-lg cursor-pointer flex justify-between items-center group transition-colors ${activeSessionId === s.id ? 'bg-zinc-200  text-zinc-900 ' : 'text-zinc-700  hover:bg-zinc-100 '}`}
+              className={`p-2 rounded-xl cursor-pointer flex justify-between items-center group transition text-xs select-none ${
+                activeSessionId === s.id 
+                  ? 'bg-white text-emerald-950 font-bold border border-emerald-200 shadow-xs' 
+                  : 'text-slate-600 hover:bg-white hover:text-slate-900'
+              }`}
             >
-              <div className="truncate text-[13px] font-medium">{s.title}</div>
+              <div className="truncate flex-1 min-w-0 pr-1">{s.title}</div>
               <button 
+                type="button"
                 onClick={(e) => { e.stopPropagation(); handleDeleteSession(s.id); }}
-                className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-red-500 transition-opacity p-1 flex-shrink-0 ml-2"
+                className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-600 transition p-1"
+                title="Hapus Sesi"
               >
-                <Trash2 size={14} />
+                <Trash2 size={13} />
               </button>
             </div>
           ))}
         </div>
         
-        <div className="p-3 border-t border-zinc-200  space-y-1">
-          <button 
-            onClick={() => changeTab('memory')}
-            className={`w-full flex items-center gap-2 p-2 rounded-lg transition-colors text-[13px] font-medium ${activeTab === 'memory' ? 'bg-zinc-200  text-zinc-900 ' : 'text-zinc-600  hover:bg-zinc-100 '}`}
+        {/* Footer Quick Links */}
+        <div className="p-3 border-t border-slate-200 bg-white space-y-1.5">
+          <a 
+            href="/dashboard/ai-settings?tab=rules"
+            className="w-full flex items-center justify-between p-2 rounded-lg transition text-slate-700 hover:text-emerald-800 hover:bg-emerald-50 text-xs font-semibold"
           >
-            <Brain size={16} /> Kelola Memori AI
-          </button>
-          <button 
-            onClick={() => window.location.href = '/dashboard'}
-            className="w-full flex items-center gap-2 p-2 rounded-lg transition-colors text-zinc-600  hover:bg-zinc-100  text-[13px] font-medium"
-          >
-            <ToggleLeft size={16} /> Keluar Simulator
-          </button>
+            <span className="flex items-center gap-2">
+              <Brain size={14} className="text-emerald-600" /> Aturan Fiqih (Settings)
+            </span>
+            <ExternalLink size={12} className="text-slate-400" />
+          </a>
         </div>
       </div>
 
-      {/* MAIN AREA */}
-      <div className="flex-1 flex flex-col h-full relative bg-white ">
+      {/* MAIN CHAT AREA */}
+      <div className="flex-1 flex flex-col h-full relative bg-white min-w-0">
         
-        {/* Header */}
-        <div className="h-14 flex-shrink-0 border-b border-zinc-200  flex items-center justify-between px-6 z-10 bg-white ">
-          <div className="font-semibold text-zinc-800  flex items-center gap-2">
+        {/* Chat Header */}
+        <div className="h-14 border-b border-slate-100 flex items-center justify-between px-6 shrink-0 bg-white">
+          <div className="font-extrabold text-sm text-slate-800 flex items-center gap-2">
             <Bot size={18} className="text-emerald-600" />
-            {activeTab === 'memory' ? 'Memori Khusus AI' : activeSession.title}
+            <span className="truncate">{activeSession.title}</span>
           </div>
-          {activeTab === 'chat' && (
-            <div className="flex items-center gap-2 text-xs font-medium text-zinc-500">
-              <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Model Aktif
-            </div>
-          )}
+
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200/80 rounded-md text-[11px] font-bold">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              Live RAG Simulator
+            </span>
+          </div>
         </div>
 
-        {/* Content Area */}
-        {activeTab === 'memory' ? (
-          <div className="flex-1 overflow-y-auto p-8">
-            <div className="max-w-4xl mx-auto space-y-8">
-              <div className="bg-zinc-50  p-6 rounded-2xl border border-zinc-200 ">
-                <h2 className="text-xl font-bold mb-2 flex items-center gap-2">
-                  <Plus size={20} className="text-emerald-600" />
-                  Tambah Aturan Baru
-                </h2>
-                <p className="text-sm text-zinc-500 mb-6">Ajari AI aturan khusus saat menganalisis brosur. AI akan membaca memori ini sebelum menjawab.</p>
-                
-                <form onSubmit={handleAddRule} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-semibold mb-1">Kata Kunci (Opsional / Penanda)</label>
-                    <input type="text" value={newKeyword} onChange={e => setNewKeyword(e.target.value)} placeholder="Misal: aqiqah, puasa, umum..." className="w-full p-3 bg-white  border border-zinc-200  rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold mb-1">Instruksi / Aturan Wajib</label>
-                    <textarea value={newInstruction} onChange={e => setNewInstruction(e.target.value)} placeholder="Misal: Jika ada pertanyaan tentang puasa senin kamis, sebutkan bahwa..." className="w-full p-3 h-24 bg-white  border border-zinc-200  rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none resize-none"></textarea>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold mb-1">Sumber Data (Opsional)</label>
-                    <select value={newTargetFolderId} onChange={e => setNewTargetFolderId(e.target.value)} className="w-full p-3 bg-white  border border-zinc-200  rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
-                      <option value="">Semua Data / Referensi Bebas</option>
-                      {folders.map(f => (<option key={f.id} value={f.id}>{f.name}</option>))}
-                    </select>
-                  </div>
-                  <button type="submit" disabled={!newKeyword || !newInstruction} className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 disabled:opacity-50">
-                    <Save size={18} /> Simpan Aturan
-                  </button>
-                  {saveStatus && (
-                    <div className={`mt-4 p-3 rounded-xl border text-sm font-medium ${saveStatus.type === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'}`}>{saveStatus.message}</div>
-                  )}
-                </form>
-              </div>
-
-              <div>
-                <h2 className="text-xl font-bold mb-4">Daftar Memori AI</h2>
-                {isRulesLoading ? (
-                  <p className="text-zinc-500">Memuat memori...</p>
-                ) : rules.length === 0 ? (
-                  <p className="text-zinc-500 italic">Belum ada aturan khusus yang disimpan.</p>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {rules.map(rule => (
-                      <div key={rule.id} className={`p-5 rounded-2xl border ${rule.is_active ? 'bg-white  border-zinc-200 ' : 'bg-zinc-100  border-zinc-200  opacity-60'} shadow-sm relative group`}>
-                        <div className="flex justify-between items-start mb-2">
-                          <div className="flex gap-2">
-                            <span className="inline-block px-3 py-1 bg-emerald-100  text-emerald-700  text-xs font-bold rounded-lg uppercase">{rule.keyword}</span>
-                          </div>
-                          <div className="flex gap-2">
-                            <button onClick={() => handleToggleRule(rule.id, rule.is_active)} className="text-zinc-400 hover:text-emerald-600 transition-colors">
-                              {rule.is_active ? <ToggleRight size={20} className="text-emerald-500" /> : <ToggleLeft size={20} />}
-                            </button>
-                            <button onClick={() => handleDeleteRule(rule.id)} className="text-zinc-400 hover:text-red-500 transition-colors">
-                              <Trash2 size={20} />
-                            </button>
-                          </div>
-                        </div>
-                        <p className="text-sm font-medium text-zinc-800  leading-relaxed mt-3">{rule.instruction}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="flex-1 flex flex-col overflow-hidden relative">
-            <div className="flex-1 overflow-y-auto pb-40 pt-10">
-              <div className="max-w-3xl mx-auto px-6 space-y-8">
-                {activeSession.messages.length <= 1 && (
-                  <div className="h-64 flex flex-col items-center justify-center text-zinc-400 space-y-4">
-                     <Bot size={48} className="opacity-20" />
-                     <p className="font-medium text-lg text-zinc-500">Ada yang bisa saya bantu hari ini?</p>
-                  </div>
-                )}
-                {activeSession.messages.map((msg, i) => (
-                  <div key={i} className={`flex gap-4 ${msg.role === 'user' ? 'justify-end' : ''}`}>
-                    {msg.role !== 'user' && (
-                      <div className="w-8 h-8 rounded-full border border-zinc-200  flex items-center justify-center flex-shrink-0 text-zinc-600 ">
-                        <Bot size={16} />
-                      </div>
-                    )}
-                    <div className={`max-w-[85%] ${msg.role === 'user' ? 'bg-zinc-100  rounded-3xl py-3 px-5 text-[15px]' : 'py-1'}`}>
-                      {msg.role === 'user' ? (
-                         msg.content
-                      ) : (
-                         <div className="text-[15px] leading-relaxed markdown-content" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                           <ReactMarkdown
-                             remarkPlugins={[remarkGfm]}
-                             components={{
-                               p: ({ node, children, ...props }) => {
-                                 const textContent = React.Children.toArray(children).join('');
-                                 if (containsArabic(textContent)) {
-                                   return (
-                                     <p {...props} className="text-[20px] leading-[2.2] text-right py-3 px-4 bg-zinc-50  rounded-xl my-4 text-zinc-900 " style={{ fontFamily: "'Scheherazade New', serif", direction: 'rtl' }}>{children}</p>
-                                   );
-                                 }
-                                 return <p {...props} className="mb-4 break-words text-zinc-800 ">{children}</p>;
-                               },
-                               strong: ({ node, ...props }) => <strong {...props} className="font-semibold text-zinc-950 " />,
-                               ul: ({ node, ...props }) => <ul {...props} className="list-disc pl-5 mb-4 space-y-1 text-zinc-800 " />,
-                               ol: ({ node, ...props }) => <ol {...props} className="list-decimal pl-5 mb-4 space-y-1 text-zinc-800 " />,
-                               li: ({ node, ...props }) => <li {...props} className="leading-relaxed" />,
-                               h1: ({ node, ...props }) => <h1 {...props} className="text-xl font-bold mb-3 mt-6 text-zinc-900 " />,
-                               h2: ({ node, ...props }) => <h2 {...props} className="text-lg font-bold mb-3 mt-6 text-zinc-900 " />,
-                               h3: ({ node, ...props }) => <h3 {...props} className="text-base font-bold mb-2 mt-4 text-zinc-900 " />,
-                             }}
-                           >
-                             {msg.content}
-                           </ReactMarkdown>
-                         </div>
-                      )}
-                      
-                      {msg.debug && (
-                         <details className="mt-4 border border-zinc-200  rounded-xl p-3 text-xs bg-zinc-50 ">
-                           <summary className="cursor-pointer text-zinc-500 font-semibold select-none flex items-center gap-2">
-                             <Database size={14} /> Lihat Log Sistem RAG
-                           </summary>
-                           <div className="mt-3 space-y-2 text-zinc-600  p-2 font-mono">
-                              <p><span className="font-bold">Kata Kunci Diekstrak:</span> {msg.debug.extracted_keyword}</p>
-                              <p><span className="font-bold">Prompt Length:</span> {msg.debug.system_prompt_length} chars</p>
-                              <p><span className="font-bold">Brosur Ditemukan:</span></p>
-                              <ul className="list-disc pl-4 space-y-1">
-                                {msg.debug.retrieved_docs?.map((d: any, i: number) => <li key={i}>{d.judul} ({d.tahun})</li>)}
-                              </ul>
-                           </div>
-                         </details>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                {isSimulating !== 'idle' && (
-                  <div className="flex gap-4">
-                     <div className="w-8 h-8 rounded-full border border-zinc-200  flex items-center justify-center flex-shrink-0">
-                        <div className="w-3 h-3 border-2 border-zinc-600  border-t-transparent rounded-full animate-spin"></div>
-                     </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Sticky Input Area */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white   to-transparent pt-12 pb-6 px-6">
-              <div className="max-w-3xl mx-auto">
-                <form 
-                  onSubmit={async (e) => {
-                    e.preventDefault();
-                    if (!simInput.trim() || isSimulating !== 'idle') return;
-                    
-                    const userMsg = simInput.trim();
-                    setSimInput('');
-                    
-                    const newMessages = [...activeSession.messages, { role: 'user', content: userMsg }];
-                    
-                    let updatedTitle = activeSession.title;
-                    if (activeSession.messages.length === 1) {
-                      updatedTitle = userMsg.substring(0, 30) + (userMsg.length > 30 ? '...' : '');
-                    }
-
-                    setSessions(prev => prev.map(s => s.id === activeSession.id ? { ...s, title: updatedTitle, messages: newMessages, updatedAt: new Date() } : s));
-                    await supabase.from('ai_simulator_sessions').update({ title: updatedTitle, messages: newMessages, updated_at: new Date().toISOString() }).eq('id', activeSession.id);
-                    
-                    try {
-                      setIsSimulating('generating');
-                      const res = await fetch('/api/ai/chat', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ messages: newMessages, wordCount: 500 }),
-                      });
-                      const data = await res.json();
-                      if (!res.ok) throw new Error(data.error || 'Terjadi kesalahan');
-                      
-                      const finalMessages = [...newMessages, { role: 'assistant', content: data.text, debug: data.debug_log }];
-                      setSessions(prev => prev.map(s => s.id === activeSession.id ? { ...s, messages: finalMessages, updatedAt: new Date() } : s));
-                      await supabase.from('ai_simulator_sessions').update({ messages: finalMessages, updated_at: new Date().toISOString() }).eq('id', activeSession.id);
-                    } catch (err: any) {
-                      const finalMessages = [...newMessages, { role: 'assistant', content: `Error: ${err.message}`, debug: { error: err.message } }];
-                      setSessions(prev => prev.map(s => s.id === activeSession.id ? { ...s, messages: finalMessages, updatedAt: new Date() } : s));
-                      await supabase.from('ai_simulator_sessions').update({ messages: finalMessages, updated_at: new Date().toISOString() }).eq('id', activeSession.id);
-                    } finally {
-                      setIsSimulating('idle');
-                    }
-                  }}
-                  className="bg-zinc-100  rounded-3xl p-2 flex items-end gap-2"
-                >
-                  <textarea 
-                    value={simInput}
-                    onChange={(e) => setSimInput(e.target.value)}
-                    placeholder="Tanyakan ke Sahabat MTA..."
-                    className="flex-1 bg-transparent border-transparent px-4 py-3 text-[15px] text-zinc-900  focus:outline-none resize-none max-h-48 min-h-[52px]"
-                    rows={1}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        if(simInput.trim() && isSimulating === 'idle') e.currentTarget.form?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
-                      }
-                    }}
-                  />
-                  <button 
-                    type="submit"
-                    disabled={!simInput.trim() || isSimulating !== 'idle'}
-                    className="w-10 h-10 rounded-full bg-zinc-900  text-white  flex items-center justify-center flex-shrink-0 disabled:opacity-30 mb-1 mr-1 transition-transform active:scale-95"
+        {/* NOTIFIKASI RLS SUPABASE JIKA RLS AKTIF DI CLOUD */}
+        {hasRlsWarning && (
+          <div className="mx-4 sm:mx-6 mt-3 p-3 bg-amber-50/90 border border-amber-200 rounded-2xl flex items-start justify-between gap-3 text-xs text-amber-900 shadow-xs shrink-0">
+            <div className="flex items-start gap-2.5 min-w-0">
+              <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <div className="space-y-1 min-w-0">
+                <p className="font-bold text-amber-950">Info Sinkronisasi Cloud (Supabase RLS):</p>
+                <p className="text-[11px] text-amber-800 leading-relaxed font-normal">
+                  Sesi percakapan Anda saat ini tetap <strong>tersimpan aman di memori browser lokal</strong>. Agar percakapan tersinkronisasi otomatis ke cloud Supabase, jalankan perintah ini di Supabase SQL Editor:
+                </p>
+                <div className="flex items-center gap-2 pt-0.5">
+                  <code className="px-2.5 py-1 bg-white border border-amber-200 rounded-lg font-mono text-[11px] text-amber-950 font-bold select-all truncate">
+                    ALTER TABLE ai_simulator_sessions DISABLE ROW LEVEL SECURITY;
+                  </code>
+                  <button
+                    type="button"
+                    onClick={copyRlsSql}
+                    className="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-md text-[10px] font-bold transition flex items-center gap-1 cursor-pointer shrink-0"
                   >
-                    <MessageSquare size={16} />
+                    {isSqlCopied ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                    <span>{isSqlCopied ? 'Tersalin' : 'Salin SQL'}</span>
                   </button>
-                </form>
-                <div className="text-center mt-3 text-xs text-zinc-400 ">AI bisa berbuat kesalahan. Selalu periksa kembali hukum dan dalil dengan rujukan asli MTA.</div>
+                </div>
               </div>
             </div>
+            <button 
+              type="button" 
+              onClick={() => setHasRlsWarning(false)} 
+              className="text-amber-500 hover:text-amber-800 p-1 rounded-md transition"
+              title="Tutup Notifikasi"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
         )}
+
+        {/* Message Thread */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 pb-36">
+          <div className="max-w-3xl mx-auto space-y-6">
+            {activeSession.messages.map((msg, i) => (
+              <div key={i} className={`flex gap-3.5 ${msg.role === 'user' ? 'justify-end' : ''}`}>
+                {msg.role !== 'user' && (
+                  <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5 font-bold">
+                    <Bot size={15} />
+                  </div>
+                )}
+
+                <div className={`max-w-[85%] ${
+                  msg.role === 'user' 
+                    ? 'bg-emerald-600 text-white rounded-2xl py-2.5 px-4 text-xs font-medium shadow-xs' 
+                    : 'text-slate-800 py-1 flex-1 min-w-0'
+                }`}>
+                  {msg.role === 'user' ? (
+                    msg.content
+                  ) : (
+                    <div className="text-xs leading-relaxed space-y-2">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          p: ({ children }) => {
+                            const textContent = React.Children.toArray(children).join('');
+                            if (containsArabic(textContent)) {
+                              return (
+                                <p className="text-[17px] leading-[2] text-right py-2 px-3 bg-slate-50 border border-slate-100 rounded-xl my-2 text-slate-900 font-arabic" style={{ fontFamily: "'Scheherazade New', serif", direction: 'rtl' }}>
+                                  {children}
+                                </p>
+                              );
+                            }
+                            return <p className="mb-2.5 text-slate-700 leading-normal">{children}</p>;
+                          },
+                          strong: ({ ...props }) => <strong {...props} className="font-extrabold text-slate-900" />,
+                          ul: ({ ...props }) => <ul {...props} className="list-disc pl-4 mb-2 space-y-1 text-slate-700" />,
+                          ol: ({ ...props }) => <ol {...props} className="list-decimal pl-4 mb-2 space-y-1 text-slate-700" />,
+                          li: ({ ...props }) => <li {...props} className="leading-snug" />,
+                          h1: ({ ...props }) => <h1 {...props} className="text-sm font-extrabold mb-1 mt-3 text-slate-900" />,
+                          h2: ({ ...props }) => <h2 {...props} className="text-xs font-bold mb-1 mt-2 text-slate-900" />,
+                        }}
+                      >
+                        {msg.content}
+                      </ReactMarkdown>
+
+                      {/* Debug Log RAG */}
+                      {msg.debug && (
+                        <details className="mt-3 border border-slate-200 rounded-xl p-2.5 text-[11px] bg-slate-50 font-mono">
+                          <summary className="cursor-pointer text-slate-500 font-bold select-none flex items-center gap-1.5 hover:text-slate-800">
+                            <Database size={13} className="text-emerald-600" />
+                            Log Sistem RAG & Dokumen Terkait
+                          </summary>
+                          <div className="mt-2.5 space-y-1 text-slate-600 pt-2 border-t border-slate-200/80">
+                            {msg.debug.extracted_keyword && (
+                              <p><span className="font-bold text-slate-800">Kata Kunci:</span> {msg.debug.extracted_keyword}</p>
+                            )}
+                            {msg.debug.system_prompt_length && (
+                              <p><span className="font-bold text-slate-800">Prompt:</span> {msg.debug.system_prompt_length} karakter</p>
+                            )}
+                            {msg.debug.retrieved_docs && (
+                              <div>
+                                <span className="font-bold text-slate-800">Brosur Ditemukan ({msg.debug.retrieved_docs.length}):</span>
+                                <ul className="list-disc pl-4 mt-1 space-y-0.5">
+                                  {msg.debug.retrieved_docs.map((d: any, idx: number) => (
+                                    <li key={idx}>{d.judul} ({d.tahun})</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                        </details>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {isSimulating !== 'idle' && (
+              <div className="flex gap-3 items-center text-xs text-slate-400">
+                <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                </div>
+                <span>Sahabat MTA sedang mencari dalil dan menyusun jawaban...</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Input Bar Fixed di Bawah */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white/95 to-transparent pt-8 pb-4 px-4 sm:px-6">
+          <div className="max-w-3xl mx-auto">
+            <form 
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!simInput.trim() || isSimulating !== 'idle') return;
+                
+                const userMsg = simInput.trim();
+                setSimInput('');
+                
+                const newMessages = [...activeSession.messages, { role: 'user', content: userMsg }];
+                
+                let updatedTitle = activeSession.title;
+                if (activeSession.messages.length === 1) {
+                  updatedTitle = userMsg.substring(0, 32) + (userMsg.length > 32 ? '...' : '');
+                }
+
+                // 1. Update State Lokal & LocalStorage Seketika (Tanpa Tunggu Jaringan)
+                const nextSessions = sessions.map(s => 
+                  s.id === activeSession.id 
+                    ? { ...s, title: updatedTitle, messages: newMessages, updatedAt: new Date() } 
+                    : s
+                );
+                setSessions(nextSessions);
+                persistLocalSessions(nextSessions);
+                
+                // 2. Simpan pesan user ke Supabase (jika bisa)
+                if (!activeSession.id.startsWith('session-')) {
+                  supabase
+                    .from('ai_simulator_sessions')
+                    .update({ title: updatedTitle, messages: newMessages })
+                    .eq('id', activeSession.id)
+                    .then(({ error: saveErr }) => {
+                      if (saveErr) setHasRlsWarning(true);
+                    });
+                }
+                
+                try {
+                  setIsSimulating('generating');
+                  const res = await fetch('/api/ai/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ messages: newMessages, wordCount: 500 }),
+                  });
+                  const data = await res.json();
+                  if (!res.ok) throw new Error(data.error || 'Terjadi kesalahan sistem');
+                  
+                  const finalMessages = [...newMessages, { role: 'assistant', content: data.text, debug: data.debug_log }];
+                  
+                  const finalizedSessions = sessions.map(s => 
+                    s.id === activeSession.id 
+                      ? { ...s, title: updatedTitle, messages: finalMessages, updatedAt: new Date() } 
+                      : s
+                  );
+                  setSessions(finalizedSessions);
+                  persistLocalSessions(finalizedSessions);
+                  
+                  // Simpan balasan AI ke Supabase
+                  if (!activeSession.id.startsWith('session-')) {
+                    supabase
+                      .from('ai_simulator_sessions')
+                      .update({ messages: finalMessages })
+                      .eq('id', activeSession.id)
+                      .then(({ error: saveAiErr }) => {
+                        if (saveAiErr) setHasRlsWarning(true);
+                      });
+                  }
+                } catch (err: any) {
+                  const finalMessages = [...newMessages, { role: 'assistant', content: `Mohon maaf, terjadi kendala: ${err.message}`, debug: { error: err.message } }];
+                  const errorSessions = sessions.map(s => 
+                    s.id === activeSession.id 
+                      ? { ...s, messages: finalMessages, updatedAt: new Date() } 
+                      : s
+                  );
+                  setSessions(errorSessions);
+                  persistLocalSessions(errorSessions);
+                } finally {
+                  setIsSimulating('idle');
+                }
+              }}
+              className="bg-slate-100 border border-slate-200 rounded-2xl p-1.5 flex items-center gap-2 focus-within:ring-2 focus-within:ring-emerald-500/20 focus-within:border-emerald-500 focus-within:bg-white transition"
+            >
+              <input 
+                type="text"
+                value={simInput}
+                onChange={(e) => setSimInput(e.target.value)}
+                placeholder="Tanyakan fatwa, topik, atau dalil ke Sahabat MTA..."
+                className="flex-1 bg-transparent border-none px-3 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none"
+                disabled={isSimulating !== 'idle'}
+              />
+              <button 
+                type="submit"
+                disabled={!simInput.trim() || isSimulating !== 'idle'}
+                className="w-8 h-8 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shrink-0 disabled:opacity-40 transition cursor-pointer"
+                title="Kirim Pertanyaan"
+              >
+                <Send size={14} />
+              </button>
+            </form>
+            <p className="text-[10px] text-center text-slate-400 mt-1.5">
+              Simulasi menggunakan guardrails dan aturan fatwa resmi Brosur Ahad Pagi MTA.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

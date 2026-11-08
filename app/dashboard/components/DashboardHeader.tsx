@@ -60,6 +60,7 @@ export default function DashboardHeader({ email: initialEmail, role: initialRole
 
   const getPageTitle = (path: string) => {
     if (path === '/dashboard') return 'Upload & Konversi Berkas';
+    if (path.startsWith('/dashboard/md-reader')) return 'MD Reader (Dokumentasi Proyek)';
     if (path.startsWith('/dashboard/arsip')) return 'Arsip Brosur';
     if (path.startsWith('/dashboard/data')) return 'Database Brosur';
     if (path.startsWith('/dashboard/ai-kajian')) return 'Generator Kajian AI';

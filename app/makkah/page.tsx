@@ -512,7 +512,7 @@ export default function MakkahPortal() {
                   </div>
                   {selectedItem.status_hadist !== 'terverifikasi' && (
                     <p className="text-xs text-amber-600/90 font-medium pl-1 max-w-xl leading-relaxed">
-                      *Catatan Sistem: Status "Belum Diverifikasi" berarti data ini baru diekstraksi secara otomatis dari arsip teks brosur, dan <span className="font-bold underline">jalur sanad/takhrij-nya belum ditinjau ulang secara manual</span> oleh dewan asatidzah.
+                      {/* *Catatan Sistem: Status "Belum Diverifikasi" berarti data ini baru diekstraksi secara otomatis dari arsip teks brosur, dan <span className="font-bold underline">jalur sanad/takhrij-nya belum ditinjau ulang secara manual</span> oleh dewan asatidzah. */}
                     </p>
                   )}
                 </div>

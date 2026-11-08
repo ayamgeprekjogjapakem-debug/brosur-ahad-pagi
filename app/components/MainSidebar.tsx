@@ -18,7 +18,8 @@ export default function MainSidebar({
   activeAiSessionId,
   onNewAiSession,
   onAiSessionClick,
-  onAiSessionDelete
+  onAiSessionDelete,
+  onClearAiSessions
 }: {
   savedItemsCount?: number;
   onSearchClick?: () => void;
@@ -29,6 +30,7 @@ export default function MainSidebar({
   onNewAiSession?: () => void;
   onAiSessionClick?: (id: string) => void;
   onAiSessionDelete?: (id: string) => void;
+  onClearAiSessions?: () => void;
 }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
@@ -160,9 +162,19 @@ export default function MainSidebar({
       label: 'AI Pustaka',
       icon: BrainCircuit,
       href: '/ai-pustaka',
-      onClick: () => { if (window.innerWidth < 1024) setIsSidebarOpen(false); },
+      onClick: (e: React.MouseEvent) => {
+        if (typeof window !== 'undefined') {
+          const premiumCode = localStorage.getItem('mta_premium_access');
+          if (!premiumCode) {
+            e.preventDefault();
+            setIsAccessModalOpen(true);
+            return;
+          }
+        }
+        if (window.innerWidth < 1024) setIsSidebarOpen(false);
+      },
       isActive: pathname.startsWith('/ai-pustaka'),
-      badge: 'Beta'
+      badge: 'Baru'
     },
   ];
 
@@ -232,16 +244,17 @@ export default function MainSidebar({
               {menuItems
                 .filter(menu => {
                   if (typeof window === 'undefined') return true;
+                  // Menu pencarian, tersimpan, dan AI Pustaka selalu dapat dilihat di sidebar
+                  if (menu.id === 'search' || menu.id === 'tersimpan' || menu.id === 'ai-pustaka') return true;
+
                   const premiumCode = localStorage.getItem('mta_premium_access');
-                  if (!premiumCode) return false; // Sembunyikan semua jika belum masuk kode
-                  
-                  if (menu.id === 'search' || menu.id === 'tersimpan') return true; // Menu dasar selalu muncul jika sudah punya kode
+                  if (!premiumCode) return true; // Tampilkan agar pengunjung mengetahui seluruh menu yang tersedia
                   
                   const featuresStr = localStorage.getItem('mta_premium_features');
                   if (featuresStr) {
                     try {
                       const allowedFeatures = JSON.parse(featuresStr);
-                      return allowedFeatures.includes(menu.id);
+                      return allowedFeatures.includes(menu.id) || allowedFeatures.includes('all');
                     } catch (e) {
                       return true;
                     }
@@ -285,9 +298,16 @@ export default function MainSidebar({
                   <button onClick={handleClearHistory} className="text-[9px] font-bold text-slate-400 hover:text-rose-500 uppercase transition-colors">Hapus</button>
                 )}
                 {aiMode && (
-                  <button onClick={onNewAiSession} className="text-[9px] font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 uppercase transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg> Baru
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {aiSessions.length > 1 && onClearAiSessions && (
+                      <button onClick={onClearAiSessions} className="text-[9px] font-bold text-slate-400 hover:text-rose-500 uppercase transition-colors">
+                        Bersihkan
+                      </button>
+                    )}
+                    <button onClick={onNewAiSession} className="text-[9px] font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 uppercase transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg> Baru
+                    </button>
+                  </div>
                 )}
               </div>
 
