@@ -12,13 +12,14 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 -- ==============================================================================
 CREATE TABLE IF NOT EXISTS public.ai_simulator_sessions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    slug TEXT UNIQUE,
     title TEXT NOT NULL DEFAULT 'Percakapan Baru',
     messages JSONB NOT NULL DEFAULT '[]'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Pastikan kolom updated_at ada jika tabel sudah terlanjur dibuat sebelumnya
+-- Pastikan kolom updated_at dan slug ada jika tabel sudah terlanjur dibuat sebelumnya
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -30,10 +31,22 @@ BEGIN
     ) THEN
         ALTER TABLE public.ai_simulator_sessions ADD COLUMN updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
     END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 
+        FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+          AND table_name = 'ai_simulator_sessions' 
+          AND column_name = 'slug'
+    ) THEN
+        ALTER TABLE public.ai_simulator_sessions ADD COLUMN slug TEXT UNIQUE;
+    END IF;
 END $$;
 
 CREATE INDEX IF NOT EXISTS idx_ai_simulator_sessions_created_at 
     ON public.ai_simulator_sessions (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_ai_simulator_sessions_slug 
+    ON public.ai_simulator_sessions (slug);
 
 -- Kebijakan Akses Penuh Sesi Simulator
 ALTER TABLE public.ai_simulator_sessions ENABLE ROW LEVEL SECURITY;

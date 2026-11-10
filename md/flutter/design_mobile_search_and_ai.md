@@ -37,7 +37,7 @@ Terletak tepat di atas kotak input pencarian untuk memberi kontrol penuh kepada 
 * **Saat Mode AI Aktif:**
   - Border: `#4F46E5` dengan glow lembut shadow.
   - Icon Kiri: `Icons.auto_awesome` (`#4F46E5`).
-  - Placeholder: `"Tanyakan fiqih, dalil, atau fatwa kajian..."`.
+  - Placeholder: `"Tanyakan fiqih, dalil, atau materi kajian..."`.
   - Tombol Kanan: `[ ✨ Tanya AI ]` (Background `#4F46E5`, Icon Bintang Emas).
   - Aksi Klik: Seketika bertransisi membuka `AiChatScreenV2(initialQuery: query)`.
 

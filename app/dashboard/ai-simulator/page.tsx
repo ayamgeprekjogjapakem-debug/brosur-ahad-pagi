@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Bot, MessageSquare, Plus, Trash2, Brain, Database, 
+import {
+  Bot, MessageSquare, Plus, Trash2, Brain, Database,
   RefreshCw, Send, Sparkles, ExternalLink, ShieldAlert, X, Copy, Check,
   Globe, Smartphone, ArrowLeftRight, Zap, CheckCircle2, Layers
 } from 'lucide-react';
@@ -37,8 +37,8 @@ const MOBILE_API_URL = 'https://www.ulilalbab.fun/api/ai/chat';
 const WEB_API_URL = '/api/ai/chat';
 
 export default function AiSimulatorPage() {
-  const defaultGreeting: MessageItem = { 
-    role: 'assistant', 
+  const defaultGreeting: MessageItem = {
+    role: 'assistant',
     content: 'Assalamu’alaikum! Saya Asisten AI **Sahabat MTA**. Silakan ajukan pertanyaan seputar fiqih, dalil hadits, dan materi Brosur Ahad Pagi MTA.',
     source: 'web',
     targetUrl: '/api/ai/chat'
@@ -134,7 +134,7 @@ export default function AiSimulatorPage() {
           }));
         }
       }
-    } catch {}
+    } catch { }
     return [];
   };
 
@@ -142,7 +142,7 @@ export default function AiSimulatorPage() {
   const persistLocalSessions = (updatedSessions: ChatSession[]) => {
     try {
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedSessions));
-    } catch {}
+    } catch { }
   };
 
   const fetchSessions = async () => {
@@ -156,7 +156,7 @@ export default function AiSimulatorPage() {
         .from('ai_simulator_sessions')
         .select('*')
         .order('created_at', { ascending: false });
-      
+
       if (error) {
         console.warn('Supabase fetch failed (kemungkinan RLS):', error.message);
         rlsBlocked = true;
@@ -260,7 +260,7 @@ export default function AiSimulatorPage() {
 
   const handleDeleteSession = async (id: string) => {
     if (!window.confirm('Hapus sesi percakapan simulasi ini?')) return;
-    
+
     const nextSessions = sessions.filter(s => s.id !== id);
     setSessions(nextSessions);
     persistLocalSessions(nextSessions);
@@ -316,24 +316,23 @@ export default function AiSimulatorPage() {
             <Plus size={15} /> Percakapan Baru
           </button>
         </div>
-        
+
         {/* List Sesi */}
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
           <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-2 py-1">
             Riwayat Uji Coba ({sessions.length})
           </div>
           {sessions.map(s => (
-            <div 
+            <div
               key={s.id}
               onClick={() => setActiveSessionId(s.id)}
-              className={`p-2 rounded-xl cursor-pointer flex justify-between items-center group transition text-xs select-none ${
-                activeSessionId === s.id 
-                  ? 'bg-white text-emerald-950 font-bold border border-emerald-200 shadow-xs' 
+              className={`p-2 rounded-xl cursor-pointer flex justify-between items-center group transition text-xs select-none ${activeSessionId === s.id
+                  ? 'bg-white text-emerald-950 font-bold border border-emerald-200 shadow-xs'
                   : 'text-slate-600 hover:bg-white hover:text-slate-900'
-              }`}
+                }`}
             >
               <div className="truncate flex-1 min-w-0 pr-1">{s.title}</div>
-              <button 
+              <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); handleDeleteSession(s.id); }}
                 className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-600 transition p-1"
@@ -344,15 +343,15 @@ export default function AiSimulatorPage() {
             </div>
           ))}
         </div>
-        
+
         {/* Footer Quick Links */}
         <div className="p-3 border-t border-slate-200 bg-white space-y-1.5">
-          <a 
+          <a
             href="/dashboard/ai-settings?tab=rules"
             className="w-full flex items-center justify-between p-2 rounded-lg transition text-slate-700 hover:text-emerald-800 hover:bg-emerald-50 text-xs font-semibold"
           >
             <span className="flex items-center gap-2">
-              <Brain size={14} className="text-emerald-600" /> Aturan Fiqih (Settings)
+              <Brain size={14} className="text-emerald-600" /> Aturan Materi (Settings)
             </span>
             <ExternalLink size={12} className="text-slate-400" />
           </a>
@@ -361,7 +360,7 @@ export default function AiSimulatorPage() {
 
       {/* MAIN CHAT AREA */}
       <div className="flex-1 flex flex-col h-full relative bg-white min-w-0">
-        
+
         {/* Chat Header dengan Switcher API Target */}
         <div className="h-14 border-b border-slate-200/80 flex items-center justify-between px-4 sm:px-6 shrink-0 bg-white gap-3">
           <div className="font-extrabold text-sm text-slate-800 flex items-center gap-2 min-w-0">
@@ -375,11 +374,10 @@ export default function AiSimulatorPage() {
               <button
                 type="button"
                 onClick={() => setApiTarget('web')}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition cursor-pointer ${
-                  apiTarget === 'web'
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition cursor-pointer ${apiTarget === 'web'
                     ? 'bg-white text-emerald-800 shadow-xs'
                     : 'text-slate-500 hover:text-slate-900'
-                }`}
+                  }`}
                 title="Gunakan API Backend Web Lokal (/api/ai/chat)"
               >
                 <Globe className="w-3.5 h-3.5 text-emerald-600" />
@@ -389,11 +387,10 @@ export default function AiSimulatorPage() {
               <button
                 type="button"
                 onClick={() => setApiTarget('mobile')}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition cursor-pointer ${
-                  apiTarget === 'mobile'
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition cursor-pointer ${apiTarget === 'mobile'
                     ? 'bg-white text-sky-800 shadow-xs'
                     : 'text-slate-500 hover:text-slate-900'
-                }`}
+                  }`}
                 title="Gunakan API Mobile Production (ulilalbab.fun)"
               >
                 <Smartphone className="w-3.5 h-3.5 text-sky-600" />
@@ -403,11 +400,10 @@ export default function AiSimulatorPage() {
               <button
                 type="button"
                 onClick={() => setApiTarget('dual')}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition cursor-pointer ${
-                  apiTarget === 'dual'
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition cursor-pointer ${apiTarget === 'dual'
                     ? 'bg-white text-indigo-900 shadow-xs'
                     : 'text-slate-500 hover:text-slate-900'
-                }`}
+                  }`}
                 title="Uji Bandingkan Keduanya Sekaligus untuk Cek Keselarasan"
               >
                 <ArrowLeftRight className="w-3.5 h-3.5 text-indigo-600" />
@@ -419,8 +415,8 @@ export default function AiSimulatorPage() {
               {apiTarget === 'web'
                 ? 'Lokal: /api/ai/chat'
                 : apiTarget === 'mobile'
-                ? 'Mobile: ulilalbab.fun'
-                : 'Web vs Mobile (Dual Run)'}
+                  ? 'Mobile: ulilalbab.fun'
+                  : 'Web vs Mobile (Dual Run)'}
             </span>
           </div>
         </div>
@@ -450,9 +446,9 @@ export default function AiSimulatorPage() {
                 </div>
               </div>
             </div>
-            <button 
-              type="button" 
-              onClick={() => setHasRlsWarning(false)} 
+            <button
+              type="button"
+              onClick={() => setHasRlsWarning(false)}
               className="text-amber-500 hover:text-amber-800 p-1 rounded-md transition"
               title="Tutup Notifikasi"
             >
@@ -472,13 +468,12 @@ export default function AiSimulatorPage() {
                   </div>
                 )}
 
-                <div className={`${
-                  msg.role === 'user' 
-                    ? 'max-w-[85%] bg-emerald-600 text-white rounded-2xl py-2.5 px-4 text-xs font-medium shadow-xs' 
+                <div className={`${msg.role === 'user'
+                    ? 'max-w-[85%] bg-emerald-600 text-white rounded-2xl py-2.5 px-4 text-xs font-medium shadow-xs'
                     : msg.source === 'dual' && msg.dualResult
-                    ? 'w-full text-slate-800 py-1'
-                    : 'max-w-[88%] text-slate-800 py-1 flex-1 min-w-0'
-                }`}>
+                      ? 'w-full text-slate-800 py-1'
+                      : 'max-w-[88%] text-slate-800 py-1 flex-1 min-w-0'
+                  }`}>
                   {msg.role === 'user' ? (
                     msg.content
                   ) : msg.source === 'dual' && msg.dualResult ? (
@@ -589,8 +584,8 @@ export default function AiSimulatorPage() {
                     {apiTarget === 'dual'
                       ? 'Menguji Web & Mobile API Bersamaan...'
                       : apiTarget === 'mobile'
-                      ? 'Menghubungi Mobile API (ulilalbab.fun)...'
-                      : 'Menghubungi Web API Lokal (/api/ai/chat)...'}
+                        ? 'Menghubungi Mobile API (ulilalbab.fun)...'
+                        : 'Menghubungi Web API Lokal (/api/ai/chat)...'}
                   </p>
                   <p className="text-[10px] text-slate-400 truncate">
                     Menganalisis pertanyaan & menelusuri korpus Brosur Ahad Pagi MTA...
@@ -604,33 +599,33 @@ export default function AiSimulatorPage() {
         {/* Input Bar Fixed di Bawah */}
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white/95 to-transparent pt-8 pb-4 px-4 sm:px-6">
           <div className="max-w-3xl mx-auto">
-            <form 
+            <form
               onSubmit={async (e) => {
                 e.preventDefault();
                 if (!simInput.trim() || isSimulating !== 'idle') return;
-                
+
                 const userMsg = simInput.trim();
                 setSimInput('');
-                
+
                 const newMessages: MessageItem[] = [
-                  ...activeSession.messages, 
+                  ...activeSession.messages,
                   { role: 'user' as const, content: userMsg }
                 ];
-                
+
                 let updatedTitle = activeSession.title;
                 if (activeSession.messages.length === 1) {
                   updatedTitle = userMsg.substring(0, 32) + (userMsg.length > 32 ? '...' : '');
                 }
 
                 // 1. Update State Lokal & LocalStorage Seketika (Tanpa Tunggu Jaringan)
-                const nextSessions = sessions.map(s => 
-                  s.id === activeSession.id 
-                    ? { ...s, title: updatedTitle, messages: newMessages, updatedAt: new Date() } 
+                const nextSessions = sessions.map(s =>
+                  s.id === activeSession.id
+                    ? { ...s, title: updatedTitle, messages: newMessages, updatedAt: new Date() }
                     : s
                 );
                 setSessions(nextSessions);
                 persistLocalSessions(nextSessions);
-                
+
                 // 2. Simpan pesan user ke Supabase (jika bisa)
                 if (!activeSession.id.startsWith('session-')) {
                   supabase
@@ -641,7 +636,7 @@ export default function AiSimulatorPage() {
                       if (saveErr) setHasRlsWarning(true);
                     });
                 }
-                
+
                 try {
                   setIsSimulating('generating');
 
@@ -744,15 +739,15 @@ export default function AiSimulatorPage() {
                       }
                     ];
                   }
-                  
-                  const finalizedSessions = sessions.map(s => 
-                    s.id === activeSession.id 
-                      ? { ...s, title: updatedTitle, messages: finalMessages, updatedAt: new Date() } 
+
+                  const finalizedSessions = sessions.map(s =>
+                    s.id === activeSession.id
+                      ? { ...s, title: updatedTitle, messages: finalMessages, updatedAt: new Date() }
                       : s
                   );
                   setSessions(finalizedSessions);
                   persistLocalSessions(finalizedSessions);
-                  
+
                   // Simpan balasan AI ke Supabase jika tabel siap
                   if (!activeSession.id.startsWith('session-')) {
                     supabase
@@ -766,16 +761,16 @@ export default function AiSimulatorPage() {
                 } catch (err: any) {
                   const finalMessages: MessageItem[] = [
                     ...newMessages,
-                    { 
-                      role: 'assistant', 
-                      content: `Mohon maaf, terjadi kendala: ${err.message}`, 
+                    {
+                      role: 'assistant',
+                      content: `Mohon maaf, terjadi kendala: ${err.message}`,
                       source: apiTarget,
-                      debug: { error: err.message } 
+                      debug: { error: err.message }
                     }
                   ];
-                  const errorSessions = sessions.map(s => 
-                    s.id === activeSession.id 
-                      ? { ...s, messages: finalMessages, updatedAt: new Date() } 
+                  const errorSessions = sessions.map(s =>
+                    s.id === activeSession.id
+                      ? { ...s, messages: finalMessages, updatedAt: new Date() }
                       : s
                   );
                   setSessions(errorSessions);
@@ -786,7 +781,7 @@ export default function AiSimulatorPage() {
               }}
               className="bg-slate-100 border border-slate-200 rounded-2xl p-1.5 flex items-center gap-2 focus-within:ring-2 focus-within:ring-emerald-500/20 focus-within:border-emerald-500 focus-within:bg-white transition"
             >
-              <input 
+              <input
                 type="text"
                 value={simInput}
                 onChange={(e) => setSimInput(e.target.value)}
@@ -794,13 +789,13 @@ export default function AiSimulatorPage() {
                   apiTarget === 'dual'
                     ? "Uji bandingkan jawaban Web API vs Mobile API..."
                     : apiTarget === 'mobile'
-                    ? "Kirim pertanyaan ke Mobile API (www.ulilalbab.fun)..."
-                    : "Kirim pertanyaan ke Web API Lokal (/api/ai/chat)..."
+                      ? "Kirim pertanyaan ke Mobile API (www.ulilalbab.fun)..."
+                      : "Kirim pertanyaan ke Web API Lokal (/api/ai/chat)..."
                 }
                 className="flex-1 bg-transparent border-none px-3 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none"
                 disabled={isSimulating !== 'idle'}
               />
-              <button 
+              <button
                 type="submit"
                 disabled={!simInput.trim() || isSimulating !== 'idle'}
                 className="w-8 h-8 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shrink-0 disabled:opacity-40 transition cursor-pointer"
@@ -812,14 +807,13 @@ export default function AiSimulatorPage() {
             <div className="flex items-center justify-between text-[10px] text-slate-400 mt-1.5 px-1">
               <span>Simulasi guardrails & aturan fatwa Brosur Ahad Pagi MTA.</span>
               <span className="font-semibold text-slate-600 flex items-center gap-1">
-                Target: 
-                <span className={`px-1.5 py-0.2 rounded font-bold ${
-                  apiTarget === 'dual' 
-                    ? 'bg-indigo-50 text-indigo-700' 
-                    : apiTarget === 'mobile' 
-                    ? 'bg-sky-50 text-sky-700' 
-                    : 'bg-emerald-50 text-emerald-700'
-                }`}>
+                Target:
+                <span className={`px-1.5 py-0.2 rounded font-bold ${apiTarget === 'dual'
+                    ? 'bg-indigo-50 text-indigo-700'
+                    : apiTarget === 'mobile'
+                      ? 'bg-sky-50 text-sky-700'
+                      : 'bg-emerald-50 text-emerald-700'
+                  }`}>
                   {apiTarget === 'dual' ? '⚖️ Dual Compare (Web & Mobile)' : apiTarget === 'mobile' ? '📱 Mobile API (ulilalbab.fun)' : '🌐 Web API (/api/ai/chat)'}
                 </span>
               </span>

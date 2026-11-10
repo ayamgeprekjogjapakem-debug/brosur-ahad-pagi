@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Plus, Edit3, Trash2, Phone, MessageSquare, CheckCircle, 
-  XCircle, AlertCircle, RefreshCw, ExternalLink, UserCheck, 
+import {
+  Plus, Edit3, Trash2, Phone, MessageSquare, CheckCircle,
+  XCircle, AlertCircle, RefreshCw, ExternalLink, UserCheck,
   Sparkles, HelpCircle, Shield, ArrowUpDown, Search, User
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
@@ -35,7 +35,7 @@ export default function HelpManager({ role = 'admin' }: { role?: string }) {
   // Form State
   const [formData, setFormData] = useState({
     nama: '',
-    bidang: 'Konsultan Hadits & Fiqih',
+    bidang: 'Konsultan Hadits & Materi',
     nomor_wa: '',
     pesan_pembuka: 'Assalamu\'alaikum Ustadz, mohon izin bertanya mengenai penjelasan hadits di aplikasi Pustaka.',
     foto_url: '',
@@ -92,7 +92,7 @@ export default function HelpManager({ role = 'admin' }: { role?: string }) {
       setEditingItem(item);
       setFormData({
         nama: item.nama,
-        bidang: item.bidang || 'Konsultan Hadits & Fiqih',
+        bidang: item.bidang || 'Konsultan Hadits & Materi',
         nomor_wa: item.nomor_wa,
         pesan_pembuka: item.pesan_pembuka || '',
         foto_url: item.foto_url || '',
@@ -104,7 +104,7 @@ export default function HelpManager({ role = 'admin' }: { role?: string }) {
       setEditingItem(null);
       setFormData({
         nama: '',
-        bidang: 'Konsultan Hadits & Fiqih',
+        bidang: 'Konsultan Hadits & Materi',
         nomor_wa: '',
         pesan_pembuka: 'Assalamu\'alaikum Ustadz, mohon izin bertanya mengenai penjelasan hadits di aplikasi Pustaka.',
         foto_url: '',
@@ -347,11 +347,10 @@ export default function HelpManager({ role = 'admin' }: { role?: string }) {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredItems.map((item) => (
-            <div 
+            <div
               key={item.id}
-              className={`bg-white rounded-2xl border transition shadow-xs hover:shadow-md p-5 flex flex-col justify-between ${
-                item.is_active ? 'border-zinc-200' : 'border-zinc-200/60 opacity-60 bg-zinc-50/50'
-              }`}
+              className={`bg-white rounded-2xl border transition shadow-xs hover:shadow-md p-5 flex flex-col justify-between ${item.is_active ? 'border-zinc-200' : 'border-zinc-200/60 opacity-60 bg-zinc-50/50'
+                }`}
             >
               <div>
                 {/* Header Card */}
@@ -378,11 +377,10 @@ export default function HelpManager({ role = 'admin' }: { role?: string }) {
                     <button
                       onClick={() => handleToggleActive(item)}
                       title={item.is_active ? 'Klik untuk nonaktifkan' : 'Klik untuk aktifkan'}
-                      className={`text-xs px-2.5 py-1 rounded-full font-semibold transition flex items-center gap-1 ${
-                        item.is_active 
-                          ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' 
-                          : 'bg-zinc-200 text-zinc-600 hover:bg-zinc-300'
-                      }`}
+                      className={`text-xs px-2.5 py-1 rounded-full font-semibold transition flex items-center gap-1 ${item.is_active
+                        ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                        : 'bg-zinc-200 text-zinc-600 hover:bg-zinc-300'
+                        }`}
                     >
                       {item.is_active ? (
                         <>
@@ -469,7 +467,7 @@ export default function HelpManager({ role = 'admin' }: { role?: string }) {
               <h3 className="font-bold text-lg text-zinc-900">
                 {editingItem ? 'Edit Kontak Konsultan' : 'Tambah Konsultan Hadits Baru'}
               </h3>
-              <button 
+              <button
                 onClick={() => setIsModalOpen(false)}
                 className="text-zinc-400 hover:text-zinc-600 p-1 rounded-lg"
               >
@@ -498,7 +496,7 @@ export default function HelpManager({ role = 'admin' }: { role?: string }) {
                 </label>
                 <input
                   type="text"
-                  placeholder="Contoh: Konsultan Hadits & Fiqih / Dewan Tafsir"
+                  placeholder="Contoh: Konsultan Hadits & Materi / Dewan Tafsir"
                   value={formData.bidang}
                   onChange={(e) => setFormData({ ...formData, bidang: e.target.value })}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
@@ -570,11 +568,11 @@ export default function HelpManager({ role = 'admin' }: { role?: string }) {
                   </label>
                   <div className="flex items-center gap-3 mt-2">
                     <label className="relative inline-flex items-center cursor-pointer">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         checked={formData.is_active}
                         onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                        className="sr-only peer" 
+                        className="sr-only peer"
                       />
                       <div className="w-11 h-6 bg-zinc-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
                     </label>

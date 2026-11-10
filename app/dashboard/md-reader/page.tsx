@@ -338,14 +338,13 @@ function MdReaderContent() {
 
   return (
     <div className="flex h-[calc(100vh-68px)] bg-slate-50 overflow-hidden relative">
-      
+
       {/* SIDEBAR DAFTAR FILE MARKDOWN DENGAN COLLAPSE TRANSITION */}
       <aside
-        className={`bg-white border-r border-slate-200 flex flex-col shrink-0 h-full z-10 transition-all duration-300 ease-in-out ${
-          isSidebarCollapsed
+        className={`bg-white border-r border-slate-200 flex flex-col shrink-0 h-full z-10 transition-all duration-300 ease-in-out ${isSidebarCollapsed
             ? 'w-0 -translate-x-full border-r-0 opacity-0 pointer-events-none'
             : 'w-80 sm:w-88 translate-x-0 opacity-100'
-        }`}
+          }`}
       >
         {/* Header Sidebar */}
         <div className="p-4 border-b border-slate-100 space-y-3 bg-white">
@@ -359,7 +358,7 @@ function MdReaderContent() {
                 <p className="text-[11px] font-semibold text-slate-400">Web & Integrasi Flutter</p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-1">
               <button
                 type="button"
@@ -387,11 +386,10 @@ function MdReaderContent() {
             <button
               type="button"
               onClick={() => setActiveScope('all')}
-              className={`py-1.5 px-2 rounded-lg text-center transition cursor-pointer flex items-center justify-center gap-1 ${
-                activeScope === 'all'
+              className={`py-1.5 px-2 rounded-lg text-center transition cursor-pointer flex items-center justify-center gap-1 ${activeScope === 'all'
                   ? 'bg-white text-slate-900 shadow-xs font-bold'
                   : 'text-slate-500 hover:text-slate-900'
-              }`}
+                }`}
             >
               <span>Semua</span>
               <span className="text-[10px] px-1 py-0.2 rounded bg-slate-200/70 text-slate-700">
@@ -402,11 +400,10 @@ function MdReaderContent() {
             <button
               type="button"
               onClick={() => setActiveScope('web')}
-              className={`py-1.5 px-2 rounded-lg text-center transition cursor-pointer flex items-center justify-center gap-1 ${
-                activeScope === 'web'
+              className={`py-1.5 px-2 rounded-lg text-center transition cursor-pointer flex items-center justify-center gap-1 ${activeScope === 'web'
                   ? 'bg-white text-emerald-800 shadow-xs font-bold'
                   : 'text-slate-500 hover:text-slate-900'
-              }`}
+                }`}
             >
               <Globe className="w-3 h-3 text-emerald-600" />
               <span>Web</span>
@@ -418,11 +415,10 @@ function MdReaderContent() {
             <button
               type="button"
               onClick={() => setActiveScope('flutter')}
-              className={`py-1.5 px-2 rounded-lg text-center transition cursor-pointer flex items-center justify-center gap-1 ${
-                activeScope === 'flutter'
+              className={`py-1.5 px-2 rounded-lg text-center transition cursor-pointer flex items-center justify-center gap-1 ${activeScope === 'flutter'
                   ? 'bg-white text-sky-800 shadow-xs font-bold'
                   : 'text-slate-500 hover:text-slate-900'
-              }`}
+                }`}
             >
               <Smartphone className="w-3 h-3 text-sky-600" />
               <span>Flutter</span>
@@ -441,8 +437,8 @@ function MdReaderContent() {
                 activeScope === 'flutter'
                   ? "Cari dokumentasi Flutter..."
                   : activeScope === 'web'
-                  ? "Cari dokumentasi Web & AI..."
-                  : "Cari berkas markdown..."
+                    ? "Cari dokumentasi Web & AI..."
+                    : "Cari berkas markdown..."
               }
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -476,9 +472,8 @@ function MdReaderContent() {
                   >
                     <span className="flex items-center gap-1.5 min-w-0">
                       <ChevronDown
-                        className={`w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 transition-transform duration-200 shrink-0 ${
-                          isCategoryCollapsed ? '-rotate-90' : 'rotate-0'
-                        }`}
+                        className={`w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 transition-transform duration-200 shrink-0 ${isCategoryCollapsed ? '-rotate-90' : 'rotate-0'
+                          }`}
                       />
                       <Folder className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 shrink-0" />
                       <span className="truncate">{cat.label}</span>
@@ -490,9 +485,8 @@ function MdReaderContent() {
 
                   {/* List Item Dokumen yang bisa collapse keatas */}
                   <div
-                    className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                      isCategoryCollapsed ? 'max-h-0 opacity-0 pointer-events-none' : 'max-h-[3000px] opacity-100'
-                    }`}
+                    className={`overflow-hidden transition-all duration-300 ease-in-out ${isCategoryCollapsed ? 'max-h-0 opacity-0 pointer-events-none' : 'max-h-[3000px] opacity-100'
+                      }`}
                   >
                     <div className="space-y-0.5 pt-0.5">
                       {cat.items.map((item) => {
@@ -504,25 +498,22 @@ function MdReaderContent() {
                           <button
                             key={item.id}
                             onClick={() => handleSelectFile(item.relativePath)}
-                            className={`w-full text-left px-3 py-2.5 rounded-xl text-xs transition flex items-start gap-2.5 group cursor-pointer ${
-                              isSelected
+                            className={`w-full text-left px-3 py-2.5 rounded-xl text-xs transition flex items-start gap-2.5 group cursor-pointer ${isSelected
                                 ? isFlutter
                                   ? 'bg-sky-50 text-sky-950 font-bold border border-sky-200/90 shadow-xs'
                                   : 'bg-emerald-50 text-emerald-900 font-bold border border-emerald-200/80 shadow-xs'
                                 : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                            }`}
+                              }`}
                           >
                             {isFlutter ? (
                               <Smartphone
-                                className={`w-4 h-4 shrink-0 mt-0.5 ${
-                                  isSelected ? 'text-sky-600' : 'text-sky-400 group-hover:text-sky-600'
-                                }`}
+                                className={`w-4 h-4 shrink-0 mt-0.5 ${isSelected ? 'text-sky-600' : 'text-sky-400 group-hover:text-sky-600'
+                                  }`}
                               />
                             ) : (
                               <FileText
-                                className={`w-4 h-4 shrink-0 mt-0.5 ${
-                                  isSelected ? 'text-emerald-600' : 'text-slate-400 group-hover:text-slate-600'
-                                }`}
+                                className={`w-4 h-4 shrink-0 mt-0.5 ${isSelected ? 'text-emerald-600' : 'text-slate-400 group-hover:text-slate-600'
+                                  }`}
                               />
                             )}
                             <div className="min-w-0 flex-1">
@@ -532,11 +523,10 @@ function MdReaderContent() {
                               <div className="flex items-center gap-1.5 mt-1 text-[10px] text-slate-400 font-normal">
                                 {activeScope === 'all' && (
                                   <span
-                                    className={`px-1 py-0.2 rounded font-semibold text-[9px] ${
-                                      isFlutter
+                                    className={`px-1 py-0.2 rounded font-semibold text-[9px] ${isFlutter
                                         ? 'bg-sky-100/80 text-sky-700'
                                         : 'bg-emerald-100/70 text-emerald-700'
-                                    }`}
+                                      }`}
                                   >
                                     {isFlutter ? 'Flutter' : 'Web'}
                                   </span>
@@ -572,11 +562,10 @@ function MdReaderContent() {
             <button
               type="button"
               onClick={toggleSidebarCollapse}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition border shadow-xs cursor-pointer shrink-0 text-xs font-semibold ${
-                isSidebarCollapsed
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition border shadow-xs cursor-pointer shrink-0 text-xs font-semibold ${isSidebarCollapsed
                   ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
                   : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-slate-900'
-              }`}
+                }`}
               title={isSidebarCollapsed ? 'Tampilkan Daftar Berkas' : 'Sembunyikan Sidebar'}
               aria-label="Toggle Sidebar"
             >
@@ -634,17 +623,16 @@ function MdReaderContent() {
 
           {/* Action Toolbar */}
           <div className="flex items-center gap-2 shrink-0">
-            
+
             {/* CONTROLLER TYPOGRAPHY (FONT & SIZE) */}
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setShowTypographyMenu(!showTypographyMenu)}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition cursor-pointer ${
-                  showTypographyMenu
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition cursor-pointer ${showTypographyMenu
                     ? 'bg-emerald-50 text-emerald-800 border-emerald-300 shadow-xs'
                     : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-xs'
-                }`}
+                  }`}
                 title="Pengaturan Font & Ukuran Teks"
               >
                 <Type className="w-3.5 h-3.5 text-emerald-600" />
@@ -668,11 +656,10 @@ function MdReaderContent() {
                         <button
                           type="button"
                           onClick={() => handleFontChange('inter')}
-                          className={`px-3 py-2 text-xs font-sans rounded-xl border text-left transition cursor-pointer ${
-                            fontFamily === 'inter'
+                          className={`px-3 py-2 text-xs font-sans rounded-xl border text-left transition cursor-pointer ${fontFamily === 'inter'
                               ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-bold'
                               : 'bg-slate-50 border-slate-200/80 text-slate-700 hover:bg-slate-100'
-                          }`}
+                            }`}
                         >
                           <span className="block font-semibold">Inter</span>
                           <span className="text-[10px] text-slate-400 font-normal">Modern (Default)</span>
@@ -681,11 +668,10 @@ function MdReaderContent() {
                         <button
                           type="button"
                           onClick={() => handleFontChange('serif')}
-                          className={`px-3 py-2 text-xs font-serif rounded-xl border text-left transition cursor-pointer ${
-                            fontFamily === 'serif'
+                          className={`px-3 py-2 text-xs font-serif rounded-xl border text-left transition cursor-pointer ${fontFamily === 'serif'
                               ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-bold'
                               : 'bg-slate-50 border-slate-200/80 text-slate-700 hover:bg-slate-100'
-                          }`}
+                            }`}
                         >
                           <span className="block font-semibold">Serif</span>
                           <span className="text-[10px] text-slate-400 font-normal">Nyaman Dibaca</span>
@@ -694,11 +680,10 @@ function MdReaderContent() {
                         <button
                           type="button"
                           onClick={() => handleFontChange('mono')}
-                          className={`px-3 py-2 text-xs font-mono rounded-xl border text-left transition cursor-pointer ${
-                            fontFamily === 'mono'
+                          className={`px-3 py-2 text-xs font-mono rounded-xl border text-left transition cursor-pointer ${fontFamily === 'mono'
                               ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-bold'
                               : 'bg-slate-50 border-slate-200/80 text-slate-700 hover:bg-slate-100'
-                          }`}
+                            }`}
                         >
                           <span className="block font-semibold">Monospace</span>
                           <span className="text-[10px] text-slate-400 font-normal">Gaya Kode</span>
@@ -707,14 +692,13 @@ function MdReaderContent() {
                         <button
                           type="button"
                           onClick={() => handleFontChange('amiri')}
-                          className={`px-3 py-2 text-xs font-amiri rounded-xl border text-left transition cursor-pointer ${
-                            fontFamily === 'amiri'
+                          className={`px-3 py-2 text-xs font-amiri rounded-xl border text-left transition cursor-pointer ${fontFamily === 'amiri'
                               ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-bold'
                               : 'bg-slate-50 border-slate-200/80 text-slate-700 hover:bg-slate-100'
-                          }`}
+                            }`}
                         >
                           <span className="block font-semibold">Amiri</span>
-                          <span className="text-[10px] text-slate-400 font-normal">Sastra & Fiqih</span>
+                          <span className="text-[10px] text-slate-400 font-normal">Sastra & Materi</span>
                         </button>
                       </div>
                     </div>
@@ -767,27 +751,24 @@ function MdReaderContent() {
                         <button
                           type="button"
                           onClick={() => handleWidthChange('normal')}
-                          className={`py-1 rounded-lg text-center transition cursor-pointer ${
-                            contentWidth === 'normal' ? 'bg-white text-slate-900 font-bold shadow-xs' : 'text-slate-500'
-                          }`}
+                          className={`py-1 rounded-lg text-center transition cursor-pointer ${contentWidth === 'normal' ? 'bg-white text-slate-900 font-bold shadow-xs' : 'text-slate-500'
+                            }`}
                         >
                           Standar
                         </button>
                         <button
                           type="button"
                           onClick={() => handleWidthChange('wide')}
-                          className={`py-1 rounded-lg text-center transition cursor-pointer ${
-                            contentWidth === 'wide' ? 'bg-white text-slate-900 font-bold shadow-xs' : 'text-slate-500'
-                          }`}
+                          className={`py-1 rounded-lg text-center transition cursor-pointer ${contentWidth === 'wide' ? 'bg-white text-slate-900 font-bold shadow-xs' : 'text-slate-500'
+                            }`}
                         >
                           Lebar
                         </button>
                         <button
                           type="button"
                           onClick={() => handleWidthChange('full')}
-                          className={`py-1 rounded-lg text-center transition cursor-pointer ${
-                            contentWidth === 'full' ? 'bg-white text-slate-900 font-bold shadow-xs' : 'text-slate-500'
-                          }`}
+                          className={`py-1 rounded-lg text-center transition cursor-pointer ${contentWidth === 'full' ? 'bg-white text-slate-900 font-bold shadow-xs' : 'text-slate-500'
+                            }`}
                         >
                           Penuh
                         </button>
@@ -803,11 +784,10 @@ function MdReaderContent() {
               <button
                 type="button"
                 onClick={() => setViewMode('rendered')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition cursor-pointer ${
-                  viewMode === 'rendered'
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition cursor-pointer ${viewMode === 'rendered'
                     ? 'bg-white text-slate-900 shadow-xs'
                     : 'text-slate-500 hover:text-slate-900'
-                }`}
+                  }`}
               >
                 <Eye className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Dokumen</span>
@@ -815,11 +795,10 @@ function MdReaderContent() {
               <button
                 type="button"
                 onClick={() => setViewMode('raw')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition cursor-pointer ${
-                  viewMode === 'raw'
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition cursor-pointer ${viewMode === 'raw'
                     ? 'bg-white text-slate-900 shadow-xs'
                     : 'text-slate-500 hover:text-slate-900'
-                }`}
+                  }`}
               >
                 <Code className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Raw</span>

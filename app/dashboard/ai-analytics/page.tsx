@@ -2,9 +2,9 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { 
-  Bot, Sparkles, Database, Layers, ShieldCheck, 
-  CheckCircle2, RefreshCw, BookOpen, Cpu, Zap, 
+import {
+  Bot, Sparkles, Database, Layers, ShieldCheck,
+  CheckCircle2, RefreshCw, BookOpen, Cpu, Zap,
   Activity, ArrowUpRight, Search, FileText, Smartphone,
   Globe, ShieldAlert, Copy, Check, Clock, X,
   Trash2, Filter, Calendar, CalendarDays, Download,
@@ -50,7 +50,7 @@ export default function AiAnalyticsPage() {
   const [totalAccessLogs, setTotalAccessLogs] = useState<number>(7339);
   const [activeModel, setActiveModel] = useState<string>('deepseek/deepseek-chat');
   const [aiEnabled, setAiEnabled] = useState<boolean>(true);
-  
+
   // Tab Switcher: 'questions' (Apa yang Ditanyakan) vs 'searching' (Apa yang Dicari)
   const [mainView, setMainView] = useState<'questions' | 'searching'>('questions');
 
@@ -154,7 +154,7 @@ export default function AiAnalyticsPage() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedSource, setSelectedSource] = useState<'all' | 'mobile' | 'web'>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  
+
   // Clear Data Modal States
   const [showClearModal, setShowClearModal] = useState<boolean>(false);
   const [clearTarget, setClearTarget] = useState<'filtered' | 'all'>('filtered');
@@ -186,7 +186,7 @@ export default function AiAnalyticsPage() {
         .from('access_logs')
         .select('device_info', { count: 'exact' })
         .limit(200);
-      
+
       if (typeof aCount === 'number') setTotalAccessLogs(aCount);
 
       if (accessSamples && accessSamples.length > 0) {
@@ -251,9 +251,9 @@ export default function AiAnalyticsPage() {
 
       if (logErr) {
         if (
-          logErr.code === '42P01' || 
-          logErr.code === 'PGRST205' || 
-          logErr.message?.includes('not exist') || 
+          logErr.code === '42P01' ||
+          logErr.code === 'PGRST205' ||
+          logErr.message?.includes('not exist') ||
           logErr.message?.includes('schema cache')
         ) {
           setHasLogsTable(false);
@@ -261,7 +261,7 @@ export default function AiAnalyticsPage() {
       } else if (logsData) {
         setHasLogsTable(true);
         setRealLogs(logsData as QueryLogItem[]);
-        
+
         if (logsData.length > 0) {
           const sumLatency = logsData.reduce((acc, l) => acc + (l.latency_ms || 680), 0);
           setAvgLatency(Math.round(sumLatency / logsData.length));
@@ -288,7 +288,7 @@ export default function AiAnalyticsPage() {
 
       // 1. Time Filtering
       if (timeFilter === 'today') {
-        const isToday = 
+        const isToday =
           logDate.getFullYear() === now.getFullYear() &&
           logDate.getMonth() === now.getMonth() &&
           logDate.getDate() === now.getDate();
@@ -296,7 +296,7 @@ export default function AiAnalyticsPage() {
       } else if (timeFilter === 'yesterday') {
         const yesterday = new Date(now);
         yesterday.setDate(now.getDate() - 1);
-        const isYesterday = 
+        const isYesterday =
           logDate.getFullYear() === yesterday.getFullYear() &&
           logDate.getMonth() === yesterday.getMonth() &&
           logDate.getDate() === yesterday.getDate();
@@ -347,7 +347,7 @@ export default function AiAnalyticsPage() {
   const filteredSearchTrends = useMemo(() => {
     if (!searchQuery.trim()) return searchTrends;
     const q = searchQuery.toLowerCase();
-    return searchTrends.filter(t => 
+    return searchTrends.filter(t =>
       t.keyword.toLowerCase().includes(q) ||
       t.category.toLowerCase().includes(q) ||
       t.sampleQuestion.toLowerCase().includes(q)
@@ -497,7 +497,7 @@ CREATE POLICY "Public full access to ai_query_logs"
   return (
     <div className="min-h-screen bg-[#fafafa] text-slate-900 py-8 px-4 sm:px-6 lg:px-8 font-sans selection:bg-emerald-100 selection:text-emerald-900">
       <div className="max-w-6xl mx-auto space-y-7">
-        
+
         {/* ========================================================================= */}
         {/* APPLE-STYLE CLEAN HEADER BERFOKUS PADA AI */}
         {/* ========================================================================= */}
@@ -546,9 +546,9 @@ CREATE POLICY "Public full access to ai_query_logs"
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
               <span>{actionNotice}</span>
             </div>
-            <button 
-              type="button" 
-              onClick={() => setActionNotice(null)} 
+            <button
+              type="button"
+              onClick={() => setActionNotice(null)}
               className="text-emerald-700 hover:text-emerald-950 p-1 cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
@@ -560,7 +560,7 @@ CREATE POLICY "Public full access to ai_query_logs"
         {/* 4 KARTU UTAMA KPI (FOKUS KESIAPAN PENALAR & SEARCHING DALIL) */}
         {/* ========================================================================= */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-          
+
           {/* Card 1: Total Korpus Hadits */}
           <div className="bg-white border border-slate-200/80 rounded-3xl p-5 sm:p-6 shadow-xs hover:border-slate-300 transition-all space-y-3">
             <div className="flex items-center justify-between">
@@ -679,7 +679,7 @@ CREATE POLICY "Public full access to ai_query_logs"
         {/* DUA PERSPEKTIF ANALISIS: KATA KUNCI DICARI vs PERTANYAAN DIAJUKAN */}
         {/* ========================================================================= */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          
+
           {/* KOLOM KIRI: KATA KUNCI PENCARIAN TERBANYAK DI KORPUS DALIL */}
           <div className="lg:col-span-7 bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
@@ -716,9 +716,9 @@ CREATE POLICY "Public full access to ai_query_logs"
                   </div>
 
                   <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden flex">
-                    <div 
-                      className={`h-full rounded-full transition-all duration-500 ${topic.color}`} 
-                      style={{ width: `${Math.max(topic.share, 4)}%` }} 
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${topic.color}`}
+                      style={{ width: `${Math.max(topic.share, 4)}%` }}
                     />
                   </div>
                 </div>
@@ -820,7 +820,7 @@ CREATE POLICY "Public full access to ai_query_logs"
         {/* BAGIAN TABULAR UTAMA DENGAN DUA TAB TOGGLE: PERTANYAAN vs SEARCHING */}
         {/* ========================================================================= */}
         <section className="bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
-          
+
           {/* Header & Tab Switcher (Apple-Style Segmented Bar) */}
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-5">
             <div>
@@ -840,11 +840,10 @@ CREATE POLICY "Public full access to ai_query_logs"
               <button
                 type="button"
                 onClick={() => setMainView('questions')}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold transition cursor-pointer ${
-                  mainView === 'questions'
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold transition cursor-pointer ${mainView === 'questions'
                     ? 'bg-white text-emerald-800 shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
-                }`}
+                  }`}
               >
                 <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
                 <span>💬 Apa yang Ditanyakan ({realLogs.length})</span>
@@ -853,11 +852,10 @@ CREATE POLICY "Public full access to ai_query_logs"
               <button
                 type="button"
                 onClick={() => setMainView('searching')}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold transition cursor-pointer ${
-                  mainView === 'searching'
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold transition cursor-pointer ${mainView === 'searching'
                     ? 'bg-white text-indigo-900 shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
-                }`}
+                  }`}
               >
                 <Search className="w-3.5 h-3.5 text-indigo-600" />
                 <span>🔍 Apa yang Dicari ({searchTrends.length} Topik)</span>
@@ -870,18 +868,17 @@ CREATE POLICY "Public full access to ai_query_logs"
           {/* ========================================================================= */}
           {mainView === 'questions' && (
             <div className="space-y-5 animate-in fade-in duration-150">
-              
+
               {/* Filter Bar Waktu & Aksi Cepat */}
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100/90 rounded-2xl border border-slate-200/60">
                   <button
                     type="button"
                     onClick={() => setTimeFilter('all')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer ${
-                      timeFilter === 'all'
+                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer ${timeFilter === 'all'
                         ? 'bg-white text-slate-900 shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
-                    }`}
+                      }`}
                   >
                     Semua Waktu
                   </button>
@@ -889,11 +886,10 @@ CREATE POLICY "Public full access to ai_query_logs"
                   <button
                     type="button"
                     onClick={() => setTimeFilter('today')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer ${
-                      timeFilter === 'today'
+                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer ${timeFilter === 'today'
                         ? 'bg-emerald-600 text-white shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
-                    }`}
+                      }`}
                   >
                     Hari Ini
                   </button>
@@ -901,11 +897,10 @@ CREATE POLICY "Public full access to ai_query_logs"
                   <button
                     type="button"
                     onClick={() => setTimeFilter('yesterday')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer ${
-                      timeFilter === 'yesterday'
+                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer ${timeFilter === 'yesterday'
                         ? 'bg-white text-slate-900 shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
-                    }`}
+                      }`}
                   >
                     Kemarin (Yesterday)
                   </button>
@@ -913,11 +908,10 @@ CREATE POLICY "Public full access to ai_query_logs"
                   <button
                     type="button"
                     onClick={() => setTimeFilter('week')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer ${
-                      timeFilter === 'week'
+                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer ${timeFilter === 'week'
                         ? 'bg-white text-slate-900 shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
-                    }`}
+                      }`}
                   >
                     Pekan Ini (7 Hari)
                   </button>
@@ -925,11 +919,10 @@ CREATE POLICY "Public full access to ai_query_logs"
                   <button
                     type="button"
                     onClick={() => setTimeFilter('month')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer ${
-                      timeFilter === 'month'
+                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer ${timeFilter === 'month'
                         ? 'bg-white text-slate-900 shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
-                    }`}
+                      }`}
                   >
                     Bulan Ini (30 Hari)
                   </button>
@@ -937,11 +930,10 @@ CREATE POLICY "Public full access to ai_query_logs"
                   <button
                     type="button"
                     onClick={() => setTimeFilter('range')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer ${
-                      timeFilter === 'range'
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer ${timeFilter === 'range'
                         ? 'bg-indigo-600 text-white shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
-                    }`}
+                      }`}
                   >
                     <Calendar className="w-3.5 h-3.5" />
                     <span>Rentang Tanggal</span>
@@ -1070,7 +1062,7 @@ CREATE POLICY "Public full access to ai_query_logs"
                     <tr>
                       <th className="px-4 py-3.5">Waktu</th>
                       <th className="px-4 py-3.5">Pertanyaan Nyata Jemaah</th>
-                      <th className="px-4 py-3.5">Kategori Fiqih</th>
+                      <th className="px-4 py-3.5">Kategori Materi</th>
                       <th className="px-4 py-3.5">Sumber</th>
                       <th className="px-4 py-3.5">Model AI</th>
                       <th className="px-4 py-3.5">Token (P / C / Tot)</th>
@@ -1094,8 +1086,8 @@ CREATE POLICY "Public full access to ai_query_logs"
                         });
 
                         return (
-                          <tr 
-                            key={log.id} 
+                          <tr
+                            key={log.id}
                             onClick={() => setExpandedLogId(isExpanded ? null : log.id)}
                             className="hover:bg-slate-50/80 transition cursor-pointer group"
                           >
@@ -1122,11 +1114,10 @@ CREATE POLICY "Public full access to ai_query_logs"
                             </td>
 
                             <td className="px-4 py-3 whitespace-nowrap">
-                              <span className={`inline-flex items-center gap-1 font-bold text-[10px] px-2 py-0.5 rounded-md ${
-                                log.source === 'mobile' 
-                                  ? 'bg-indigo-50 text-indigo-700 border border-indigo-200/50' 
+                              <span className={`inline-flex items-center gap-1 font-bold text-[10px] px-2 py-0.5 rounded-md ${log.source === 'mobile'
+                                  ? 'bg-indigo-50 text-indigo-700 border border-indigo-200/50'
                                   : 'bg-slate-100 text-slate-600'
-                              }`}>
+                                }`}>
                                 {log.source === 'mobile' ? <Smartphone size={10} /> : <Globe size={10} />}
                                 {log.source === 'mobile' ? 'Flutter' : 'Web'}
                               </span>
@@ -1202,7 +1193,7 @@ CREATE POLICY "Public full access to ai_query_logs"
           {/* ========================================================================= */}
           {mainView === 'searching' && (
             <div className="space-y-5 animate-in fade-in duration-150">
-              
+
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="space-y-0.5">
                   <h3 className="font-extrabold text-slate-900 text-sm">
@@ -1263,21 +1254,20 @@ CREATE POLICY "Public full access to ai_query_logs"
                           <div className="flex items-center gap-2">
                             <span className="font-mono font-bold text-emerald-700">{trend.readinessScore}%</span>
                             <div className="w-16 bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                              <div 
-                                className="bg-emerald-600 h-full rounded-full" 
-                                style={{ width: `${trend.readinessScore}%` }} 
+                              <div
+                                className="bg-emerald-600 h-full rounded-full"
+                                style={{ width: `${trend.readinessScore}%` }}
                               />
                             </div>
                           </div>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
-                          <span className={`px-2 py-0.5 rounded-md font-bold text-[10px] ${
-                            trend.status === 'Sangat Siap' 
+                          <span className={`px-2 py-0.5 rounded-md font-bold text-[10px] ${trend.status === 'Sangat Siap'
                               ? 'bg-emerald-50 text-emerald-800 border border-emerald-200/60'
                               : trend.status === 'Siap'
-                              ? 'bg-blue-50 text-blue-800 border border-blue-200/60'
-                              : 'bg-amber-50 text-amber-800 border border-amber-200/60'
-                          }`}>
+                                ? 'bg-blue-50 text-blue-800 border border-blue-200/60'
+                                : 'bg-amber-50 text-amber-800 border border-amber-200/60'
+                            }`}>
                             {trend.status}
                           </span>
                         </td>
@@ -1313,7 +1303,7 @@ CREATE POLICY "Public full access to ai_query_logs"
           </div>
 
           <div className="flex flex-wrap items-center gap-4">
-            <a 
+            <a
               href="/dashboard/md-reader?file=ai-arsitektur%2F07_LAPORAN_ANALISIS_CLEAR_DATA_DAN_AUDIT_LOG_AI.md"
               className="text-slate-700 font-bold hover:text-emerald-700 hover:underline flex items-center gap-1"
             >
@@ -1321,7 +1311,7 @@ CREATE POLICY "Public full access to ai_query_logs"
               <span>Laporan Analisis Clear Data & Audit AI &rarr;</span>
             </a>
 
-            <a 
+            <a
               href="/dashboard/md-reader?file=ai-arsitektur%2F06_DIAGNOSIS_DAN_KONSOLIDASI_DASHBOARD_AI.md"
               className="text-emerald-700 font-bold hover:underline flex items-center gap-1"
             >
@@ -1336,7 +1326,7 @@ CREATE POLICY "Public full access to ai_query_logs"
         {showClearModal && (
           <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
             <div className="bg-white rounded-3xl max-w-md w-full border border-slate-200 shadow-2xl overflow-hidden p-6 space-y-5 animate-in fade-in zoom-in-95 duration-150">
-              
+
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
@@ -1363,13 +1353,12 @@ CREATE POLICY "Public full access to ai_query_logs"
 
               {/* Opsi Radio Pembersihan */}
               <div className="space-y-2.5">
-                <label 
+                <label
                   onClick={() => setClearTarget('filtered')}
-                  className={`flex items-start gap-3 p-3.5 rounded-2xl border transition cursor-pointer ${
-                    clearTarget === 'filtered' 
-                      ? 'border-rose-400 bg-rose-50/40' 
+                  className={`flex items-start gap-3 p-3.5 rounded-2xl border transition cursor-pointer ${clearTarget === 'filtered'
+                      ? 'border-rose-400 bg-rose-50/40'
                       : 'border-slate-200 bg-slate-50 hover:bg-slate-100/60'
-                  }`}
+                    }`}
                 >
                   <input
                     type="radio"
@@ -1388,13 +1377,12 @@ CREATE POLICY "Public full access to ai_query_logs"
                   </div>
                 </label>
 
-                <label 
+                <label
                   onClick={() => setClearTarget('all')}
-                  className={`flex items-start gap-3 p-3.5 rounded-2xl border transition cursor-pointer ${
-                    clearTarget === 'all' 
-                      ? 'border-rose-400 bg-rose-50/40' 
+                  className={`flex items-start gap-3 p-3.5 rounded-2xl border transition cursor-pointer ${clearTarget === 'all'
+                      ? 'border-rose-400 bg-rose-50/40'
                       : 'border-slate-200 bg-slate-50 hover:bg-slate-100/60'
-                  }`}
+                    }`}
                 >
                   <input
                     type="radio"

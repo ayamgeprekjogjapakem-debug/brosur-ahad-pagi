@@ -13,7 +13,7 @@ Ini adalah contoh konten yang dikirim dalam format **Markdown**. Flutter dapat d
 
 ## Daftar Kajian
 - Point 1: Penjelasan Aqidah
-- Point 2: Fiqih Ibadah
+- Point 2:  Materi Ibadah
 - Point 3: Akhlaq Mulia
 
 ## Detail Tambahan

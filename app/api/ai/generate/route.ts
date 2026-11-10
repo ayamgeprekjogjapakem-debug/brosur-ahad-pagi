@@ -38,7 +38,7 @@ export async function POST(request: Request) {
 Tugas Anda adalah merangkum, mensintesis, dan menyusun draft materi kajian tematik yang komprehensif berdasarkan naskah referensi Brosur Ahad Pagi MTA yang dilampirkan.
 
 PEDOMAN PENYUSUNAN:
-1. Grounding Penuh: Gunakan dalil dan hukum fiqih yang tercantum dalam teks referensi brosur. Jangan membuat kesimpulan di luar materi brosur.
+1. Grounding Penuh: Gunakan dalil dan yang tercantum dalam teks referensi brosur. Jangan membuat kesimpulan di luar materi brosur.
 2. Format Matan Hadits: Tuliskan kutipan ayat Al-Qur'an dan Hadits dalam teks Arab berharakat, terjemahan Indonesia, serta nama perawi/sumbernya.
 3. Susunan Materi:
    - Judul & Tema Kajian

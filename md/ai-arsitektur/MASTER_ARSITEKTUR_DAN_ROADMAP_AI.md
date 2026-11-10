@@ -38,7 +38,7 @@
 Sistem **AI Pustaka MTA** (bernama asisten *"Sahabat MTA"*) dirancang untuk menjadi rujukan digital cerdas bagi jemaah, asatidzah, dan masyarakat umum dalam menelusuri fatwa, kajian tematik, serta dalil hukum Islam yang bersumber murni dari kurikulum **Brosur Ahad Pagi Majlis Tafsir Al-Qur'an (MTA)** sejak tahun 1995 hingga edisi terbaru.
 
 ### Prinsip Utama Sistem:
-1. **Prinsip Anti-Halusinasi & Anti-Inferensi (Strict Grounding):** AI dilarang keras mengarang hukum fiqih, beranalogi tanpa dalil, atau mengutip sumber di luar korpus resmi Brosur MTA dan hadits shahih yang telah diverifikasi.
+1. **Prinsip Anti-Halusinasi & Anti-Inferensi (Strict Grounding):** AI dilarang keras mengarang materi brosur, beranalogi tanpa dalil, atau mengutip sumber di luar korpus resmi Brosur MTA dan hadits shahih yang telah diverifikasi.
 2. **Strategi Pengembangan: Web-First, Kemudian Mobile:**
    - **Langkah 1 (Web Next.js):** Sempurnakan dahulu otak AI, pipeline RAG, kecepatan respons (streaming), dan akurasi dalil di backend Next.js.
    - **Langkah 2 (Mobile Flutter):** Hubungkan klien mobile ke API yang sudah stabil, cepat, dan teruji tanpa perlu bolak-balik mengubah arsitektur server.

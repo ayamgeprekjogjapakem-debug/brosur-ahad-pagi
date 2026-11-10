@@ -66,7 +66,7 @@ KONDISI SAAT INI (TERFRAGMENTASI & CACAT LOGIKA):
   1. **Layout Hijacking (`fixed inset-0 z-50`):**
      * Halaman memaksa layar fullscreen dan menutupi navigasi sidebar dashboard. User merasa "terjebak" dan harus mencari tombol *"Keluar Simulator"* untuk kembali.
   2. **Salah Penempatan (Misplaced Feature):**
-     * Tab *"Kelola Memori AI"* menyimpan aturan fatwa hukum fiqih ke tabel `ai_knowledge_rules`. Ini adalah **konfigurasi otak AI (Settings/Rules)**, bukan alat simulasi! Pengguna yang ingin mengatur aturan hukum tidak akan menduga fiturnya disembunyikan di dalam simulator chat.
+     * Tab *"Kelola Memori AI"* menyimpan aturan fatwa ke tabel `ai_knowledge_rules`. Ini adalah **konfigurasi otak AI (Settings/Rules)**, bukan alat simulasi! Pengguna yang ingin mengatur aturan hukum tidak akan menduga fiturnya disembunyikan di dalam simulator chat.
   3. **Belum Streaming:**
      * Masih menggunakan request-response blocking standar JSON ke `/api/ai/chat`, sehingga respons terasa lambat (3-6 detik spinner berputar).
 * **Rekomendasi Tindakan:**

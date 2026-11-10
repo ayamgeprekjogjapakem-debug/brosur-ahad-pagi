@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Search, Bookmark, BookOpen, ScrollText, Users, X, Menu, CalendarDays, BrainCircuit, Settings, BookMarked } from 'lucide-react';
+import { Search, Bookmark, BookOpen, ScrollText, Users, X, Menu, CalendarDays, BrainCircuit, Settings, BookMarked, Sparkles, Plus, MessageSquare, ArrowLeft, Trash2, Clock, Flame } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import AccessCodeModal from './AccessCodeModal';
@@ -15,22 +15,28 @@ export default function MainSidebar({
   onHistoryClick,
   aiMode = false,
   aiSessions = [],
+  recentAiChats = [],
+  popularAiChats = [],
   activeAiSessionId,
   onNewAiSession,
   onAiSessionClick,
   onAiSessionDelete,
-  onClearAiSessions
+  onClearAiSessions,
+  onSelectCommunityChat
 }: {
   savedItemsCount?: number;
   onSearchClick?: () => void;
   onHistoryClick?: (query: string) => void;
   aiMode?: boolean;
-  aiSessions?: { id: string; title: string }[];
+  aiSessions?: { id: string; slug?: string; title: string }[];
+  recentAiChats?: { id: string; slug?: string; title: string; query: string; category?: string; sessionMessages?: any[] }[];
+  popularAiChats?: { id: string; slug?: string; title: string; query: string; count?: number; category?: string; sessionMessages?: any[] }[];
   activeAiSessionId?: string;
   onNewAiSession?: () => void;
   onAiSessionClick?: (id: string) => void;
   onAiSessionDelete?: (id: string) => void;
   onClearAiSessions?: () => void;
+  onSelectCommunityChat?: (item: { id?: string; slug?: string; title: string; query: string; sessionMessages?: any[] }) => void;
 }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
@@ -58,15 +64,13 @@ export default function MainSidebar({
   React.useEffect(() => {
     const history = JSON.parse(localStorage.getItem('makkah_search_history') || '[]');
     setSearchHistory(history);
-    
-    // Cek status premium
-    const premiumCode = localStorage.getItem('mta_premium_access');
-    if (premiumCode) {
-      setIsPremium(true);
-    } else {
-      // Jika belum ada kode, otomatis buka modal
-      setIsAccessModalOpen(true);
+
+    // Semua fitur diizinkan (allow all)
+    if (typeof window !== 'undefined' && !localStorage.getItem('mta_premium_access')) {
+      localStorage.setItem('mta_premium_access', 'allowed');
+      localStorage.setItem('mta_premium_features', JSON.stringify(['all']));
     }
+    setIsPremium(true);
   }, []);
 
   const handleClearHistory = () => {
@@ -162,15 +166,7 @@ export default function MainSidebar({
       label: 'AI Pustaka',
       icon: BrainCircuit,
       href: '/ai-pustaka',
-      onClick: (e: React.MouseEvent) => {
-        if (typeof window !== 'undefined') {
-          const premiumCode = localStorage.getItem('mta_premium_access');
-          if (!premiumCode) {
-            e.preventDefault();
-            setIsAccessModalOpen(true);
-            return;
-          }
-        }
+      onClick: () => {
         if (window.innerWidth < 1024) setIsSidebarOpen(false);
       },
       isActive: pathname.startsWith('/ai-pustaka'),
@@ -190,205 +186,376 @@ export default function MainSidebar({
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-[70] lg:relative transition-all duration-300 ease-in-out overflow-hidden flex flex-col shrink-0
-          ${isSidebarOpen ? 'w-[280px] sm:w-[300px] translate-x-0 bg-[#f0f4f9]' : 'w-0 -translate-x-full lg:translate-x-0 lg:w-[80px] bg-white'}
+        className={`fixed inset-y-0 left-0 z-[70] lg:relative transition-all duration-300 ease-in-out overflow-hidden flex flex-col shrink-0 border-r border-slate-200/70
+          ${isSidebarOpen ? 'w-[295px] sm:w-[315px] translate-x-0 bg-[#f0f4f9]' : 'w-0 -translate-x-full lg:translate-x-0 lg:w-[82px] bg-white'}
         `}
       >
-        <div className={`h-16 p-4 flex items-center ${!isSidebarOpen ? 'justify-center' : 'justify-between'} sticky top-0 ${isSidebarOpen ? 'bg-[#f0f4f9]' : 'bg-white'} z-10 shrink-0`}>
+        <div className={`h-20 px-5 flex items-center ${!isSidebarOpen ? 'justify-center' : 'justify-between'} sticky top-0 ${isSidebarOpen ? 'bg-[#f0f4f9]' : 'bg-white'} z-10 shrink-0 border-b border-slate-200/50`}>
           <Link
-            href="/"
+            href={aiMode ? '/ai-pustaka' : '/'}
             onClick={(e: React.MouseEvent) => {
-              if (onSearchClick) {
+              if (!aiMode && onSearchClick) {
                 e.preventDefault();
                 onSearchClick();
               }
               if (window.innerWidth < 1024) setIsSidebarOpen(false);
             }}
-            className={`flex items-center ${!isSidebarOpen ? 'justify-center' : 'gap-3'} group text-left cursor-pointer outline-none w-full`}
-            title={!isSidebarOpen ? 'Pustaka MTA' : undefined}
+            className={`flex items-center ${!isSidebarOpen ? 'justify-center' : 'gap-3.5'} group text-left cursor-pointer outline-none w-full`}
+            title={!isSidebarOpen ? (aiMode ? 'AI Sahabat MTA' : 'Pustaka MTA') : undefined}
           >
-            <div className="relative w-8 h-8 rounded-lg overflow-hidden shrink-0 shadow-xs group-hover:scale-105 transition-transform">
-              <Image
-                src="/images/logo_rb.png"
-                alt="Logo Pustaka"
-                fill
-                sizes="32px"
-                className="object-contain"
-              />
-            </div>
+            {aiMode ? (
+              <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 via-teal-600 to-emerald-800 flex items-center justify-center text-white shrink-0 shadow-md shadow-emerald-600/20 group-hover:scale-105 transition-transform">
+                <Sparkles className="w-5 h-5" />
+              </div>
+            ) : (
+              <div className="relative w-10 h-10 rounded-xl overflow-hidden shrink-0 shadow-xs group-hover:scale-105 transition-transform bg-white">
+                <Image
+                  src="/images/logo_pustaka.png"
+                  alt="Logo Pustaka MTA"
+                  fill
+                  sizes="40px"
+                  priority
+                  className="object-contain"
+                />
+              </div>
+            )}
             {isSidebarOpen && (
               <div className="flex flex-col overflow-hidden">
-                <h1 className="text-[13px] font-extrabold text-slate-900 leading-tight truncate">Pustaka MTA</h1>
-                <p className="text-[9px] font-bold text-emerald-600 tracking-widest uppercase truncate">Brosur Ahad Pagi</p>
+                <h1 className="text-[17px] font-normal text-slate-800 leading-tight truncate tracking-tight">
+                  {aiMode ? 'AI Sahabat MTA' : 'Pustaka MTA'}
+                </h1>
+                <p className="text-[11px] font-normal text-emerald-700 tracking-wider uppercase truncate mt-0.5">
+                  {aiMode ? 'Telaah Dalil 1995–2026' : 'Brosur Ahad Pagi'}
+                </p>
               </div>
             )}
           </Link>
           {isSidebarOpen && (
             <button
-              className="lg:hidden p-1.5 rounded-lg border border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition shrink-0"
+              className="lg:hidden p-2 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition shrink-0"
               onClick={() => setIsSidebarOpen(false)}
             >
-              <X size={16} />
+              <X size={18} />
             </button>
           )}
         </div>
 
-        <div className="flex-1 overflow-y-auto p-3 space-y-6 custom-scrollbar">
-          <div>
-            {isSidebarOpen ? (
-              <p className="px-4 text-[11px] font-semibold text-slate-500 mb-2">Menu Utama</p>
-            ) : (
-              <div className="h-4" />
-            )}
-            <div className="relative flex flex-col space-y-1">
-              {menuItems
-                .filter(menu => {
-                  if (typeof window === 'undefined') return true;
-                  // Menu pencarian, tersimpan, dan AI Pustaka selalu dapat dilihat di sidebar
-                  if (menu.id === 'search' || menu.id === 'tersimpan' || menu.id === 'ai-pustaka') return true;
+        <div className="flex-1 overflow-y-auto p-3.5 space-y-5 custom-scrollbar">
+          {aiMode ? (
+            /* MODE FOKUS AI PUSTAKA (Clean Typography, Tanpa Bold/Semibold, Dikelompokkan 3 Kategori) */
+            <>
+              <div>
+                {isSidebarOpen ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onNewAiSession?.();
+                      if (window.innerWidth < 1024) setIsSidebarOpen(false);
+                    }}
+                    className="w-full py-2.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-normal text-[14.5px] shadow-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer active:scale-[0.98]"
+                  >
+                    <Plus className="w-4 h-4 stroke-[1.8]" />
+                    <span>Percakapan Baru</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => onNewAiSession?.()}
+                    className="w-full p-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shadow-sm transition cursor-pointer"
+                    title="Percakapan Baru"
+                  >
+                    <Plus className="w-5 h-5 stroke-[1.8]" />
+                  </button>
+                )}
+              </div>
 
-                  const premiumCode = localStorage.getItem('mta_premium_access');
-                  if (!premiumCode) return true; // Tampilkan agar pengunjung mengetahui seluruh menu yang tersedia
-                  
-                  const featuresStr = localStorage.getItem('mta_premium_features');
-                  if (featuresStr) {
-                    try {
-                      const allowedFeatures = JSON.parse(featuresStr);
-                      return allowedFeatures.includes(menu.id) || allowedFeatures.includes('all');
-                    } catch (e) {
-                      return true;
-                    }
-                  }
-                  return true;
-                })
-                .map((menu) => (
-                <Link
-                  key={menu.id}
-                  href={menu.href}
-                  onClick={menu.onClick}
-                  className={`relative w-full flex items-center ${!isSidebarOpen ? 'justify-center p-3' : 'justify-between px-4 py-2.5'} rounded-full text-[14px] transition-colors z-10 ${menu.isActive ? 'text-emerald-700 font-semibold' : 'text-slate-500 hover:text-slate-800 font-medium hover:bg-slate-100/80'}`}
-                  title={!isSidebarOpen ? menu.label : undefined}
-                >
-                  <div className={`flex items-center ${!isSidebarOpen ? 'justify-center' : 'gap-4'}`}>
-                    <menu.icon strokeWidth={1.5} className={`${!isSidebarOpen ? 'w-5 h-5' : 'w-[18px] h-[18px]'} shrink-0 transition-all`} />
-                    {isSidebarOpen && <span className="truncate">{menu.label}</span>}
+              <div>
+                {isSidebarOpen && (
+                  <p className="px-3.5 text-[11.5px] font-normal text-slate-400 uppercase tracking-wider mb-1.5">
+                    Navigasi
+                  </p>
+                )}
+                <div className="space-y-1">
+                  <Link
+                    href="/ai-pustaka"
+                    className={`relative w-full flex items-center ${!isSidebarOpen ? 'justify-center p-3' : 'justify-between px-3.5 py-2.5'} rounded-xl text-[14px] bg-emerald-100/60 text-emerald-900 font-normal transition-colors`}
+                    title={!isSidebarOpen ? 'Ruang Tanya AI' : undefined}
+                  >
+                    <div className={`flex items-center ${!isSidebarOpen ? 'justify-center' : 'gap-3'}`}>
+                      <BrainCircuit strokeWidth={1.6} className="w-[18px] h-[18px] text-emerald-700 shrink-0" />
+                      {isSidebarOpen && <span className="truncate">Ruang Tanya AI</span>}
+                    </div>
+                    {isSidebarOpen && (
+                      <span className="text-[10px] font-normal px-2 py-0.5 rounded-full bg-emerald-600/90 text-white tracking-wide">
+                        Aktif
+                      </span>
+                    )}
+                  </Link>
+
+                  <Link
+                    href="/bap"
+                    className={`relative w-full flex items-center ${!isSidebarOpen ? 'justify-center p-3' : 'gap-3 px-3.5 py-2'} rounded-xl text-[14px] text-slate-600 hover:text-slate-900 font-normal hover:bg-slate-200/50 transition-colors`}
+                    title={!isSidebarOpen ? 'Arsip Brosur' : undefined}
+                  >
+                    <ScrollText strokeWidth={1.6} className="w-[18px] h-[18px] shrink-0 text-slate-500" />
+                    {isSidebarOpen && <span className="truncate">Arsip Brosur Ahad</span>}
+                  </Link>
+
+                  <Link
+                    href="/"
+                    className={`relative w-full flex items-center ${!isSidebarOpen ? 'justify-center p-3' : 'gap-3 px-3.5 py-2'} rounded-xl text-[14px] text-slate-600 hover:text-slate-900 font-normal hover:bg-slate-200/50 transition-colors`}
+                    title={!isSidebarOpen ? 'Kembali ke Pustaka Utama' : undefined}
+                  >
+                    <ArrowLeft strokeWidth={1.6} className="w-[18px] h-[18px] shrink-0 text-slate-500" />
+                    {isSidebarOpen && <span className="truncate">Ke Pustaka Utama</span>}
+                  </Link>
+                </div>
+              </div>
+
+              {isSidebarOpen && (
+                <div className="space-y-5 pt-1">
+                  {/* KELOMPOK 1: CHAT SAYA (Sesi Lokal Browser - Bisa Di-clear Hanya Cache Lokal) */}
+                  <div>
+                    <div className="flex items-center justify-between px-3.5 mb-1.5">
+                      <span className="text-[11.5px] font-normal text-slate-400 uppercase tracking-wider">
+                        Chat Saya
+                      </span>
+                      {aiSessions.length > 0 && onClearAiSessions && (
+                        <button
+                          onClick={onClearAiSessions}
+                          className="text-[11px] font-normal text-slate-400 hover:text-rose-600 flex items-center gap-1 transition-colors cursor-pointer"
+                          title="Bersihkan hanya cache Chat Saya di perangkat ini (Data di database tetap aman)"
+                        >
+                          <Trash2 size={11} strokeWidth={1.6} />
+                          <span>Bersihkan Cache</span>
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="space-y-0.5">
+                      {aiSessions.length === 0 ? (
+                        <p className="text-[13px] font-normal text-slate-400 px-3.5 py-1.5">
+                          Belum ada chat di perangkat ini.
+                        </p>
+                      ) : (
+                        aiSessions.map((session) => (
+                          <div
+                            key={session.id}
+                            className={`group relative w-full flex items-center justify-between px-3.5 py-2 rounded-xl transition cursor-pointer font-normal ${activeAiSessionId === session.id
+                              ? 'bg-emerald-100/70 text-emerald-950'
+                              : 'hover:bg-slate-200/50 text-slate-600 hover:text-slate-900'
+                              }`}
+                          >
+                            <button
+                              onClick={() => {
+                                onAiSessionClick?.(session.id);
+                                if (window.innerWidth < 1024) setIsSidebarOpen(false);
+                              }}
+                              className="flex-1 flex items-center gap-2.5 text-left text-[13.5px] font-normal truncate cursor-pointer"
+                            >
+                              <MessageSquare
+                                size={14}
+                                strokeWidth={1.6}
+                                className={`shrink-0 ${activeAiSessionId === session.id
+                                  ? 'text-emerald-700'
+                                  : 'text-slate-400 group-hover:text-slate-600'
+                                  }`}
+                              />
+                              <span className="truncate font-normal">{session.title}</span>
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onAiSessionDelete?.(session.id);
+                              }}
+                              className="p-1 opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition shrink-0 ml-1.5 cursor-pointer"
+                              title="Hapus dari Chat Saya (Tetap tersimpan di Database)"
+                            >
+                              <X size={13} strokeWidth={1.6} />
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
                   </div>
-                  {isSidebarOpen && menu.badge && (
-                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider shrink-0 ${menu.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'}`}>
-                      {menu.badge}
-                    </span>
-                  )}
-                  {menu.isActive && (
-                    <motion.div
-                      layoutId="active-sidebar-menu-global"
-                      className="absolute inset-0 bg-emerald-50 rounded-full -z-10"
-                      initial={false}
-                      transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                    />
-                  )}
-                </Link>
-              ))}
+
+                  {/* KELOMPOK 2: CHAT TERBARU (Tersimpan Permanen di Database Supabase) */}
+                  <div>
+                    <div className="flex items-center justify-between px-3.5 mb-1.5">
+                      <span className="text-[11.5px] font-normal text-slate-400 uppercase tracking-wider">
+                        Chat Terbaru
+                      </span>
+                      <span className="text-[10px] font-normal text-emerald-700/80">
+                        Database
+                      </span>
+                    </div>
+
+                    <div className="space-y-0.5">
+                      {recentAiChats.length === 0 ? (
+                        <p className="text-[13px] font-normal text-slate-400 px-3.5 py-1.5">
+                          Memuat arsip terbaru...
+                        </p>
+                      ) : (
+                        recentAiChats.map((item) => (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => {
+                              onSelectCommunityChat?.(item);
+                              if (window.innerWidth < 1024) setIsSidebarOpen(false);
+                            }}
+                            className="w-full flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-left text-[13.5px] font-normal text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 transition cursor-pointer"
+                            title={item.query}
+                          >
+                            <Clock size={14} strokeWidth={1.6} className="text-slate-400 shrink-0" />
+                            <span className="truncate font-normal">{item.title}</span>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  {/* KELOMPOK 3: CHAT TERPOPULER (Topik Paling Sering Ditanyakan di Database) */}
+                  <div>
+                    <div className="flex items-center justify-between px-3.5 mb-1.5">
+                      <span className="text-[11.5px] font-normal text-slate-400 uppercase tracking-wider">
+                        Chat Terpopuler
+                      </span>
+                      <span className="text-[10px] font-normal text-amber-700/80">
+                        Sering Dicari
+                      </span>
+                    </div>
+
+                    <div className="space-y-0.5">
+                      {popularAiChats.map((item) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => {
+                            onSelectCommunityChat?.(item);
+                            if (window.innerWidth < 1024) setIsSidebarOpen(false);
+                          }}
+                          className="w-full flex items-center justify-between gap-2 px-3.5 py-2 rounded-xl text-left text-[13.5px] font-normal text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 transition cursor-pointer"
+                          title={item.query}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                            <Flame size={14} strokeWidth={1.6} className="text-amber-500/90 shrink-0" />
+                            <span className="truncate font-normal">{item.title}</span>
+                          </div>
+                          {item.count && item.count > 1 && (
+                            <span className="text-[11px] font-normal text-slate-400 shrink-0">
+                              {item.count}x
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            /* MODE MENU UTAMA REGULER (Clean Typography, Tanpa Bold/Semibold) */
+            <div>
+              {isSidebarOpen ? (
+                <p className="px-4 text-[11.5px] font-normal text-slate-400 uppercase tracking-wider mb-2">Menu Utama</p>
+              ) : (
+                <div className="h-4" />
+              )}
+              <div className="relative flex flex-col space-y-1">
+                {menuItems.map((menu) => (
+                  <Link
+                    key={menu.id}
+                    href={menu.href}
+                    onClick={menu.onClick}
+                    className={`relative w-full flex items-center ${!isSidebarOpen ? 'justify-center p-3' : 'justify-between px-4 py-2.5'} rounded-xl text-[14.5px] transition-colors z-10 font-normal ${menu.isActive ? 'text-emerald-900' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'}`}
+                    title={!isSidebarOpen ? menu.label : undefined}
+                  >
+                    <div className={`flex items-center ${!isSidebarOpen ? 'justify-center' : 'gap-3.5'}`}>
+                      <menu.icon strokeWidth={1.6} className={`w-[18px] h-[18px] shrink-0 transition-all ${menu.isActive ? 'text-emerald-700' : 'text-slate-500'}`} />
+                      {isSidebarOpen && <span className="truncate font-normal">{menu.label}</span>}
+                    </div>
+                    {isSidebarOpen && menu.badge && (
+                      <span className={`text-[10px] font-normal px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0 ${menu.isActive ? 'bg-emerald-200/80 text-emerald-800' : 'bg-slate-200/80 text-slate-600'}`}>
+                        {menu.badge}
+                      </span>
+                    )}
+                    {menu.isActive && (
+                      <motion.div
+                        layoutId="active-sidebar-menu-global"
+                        className="absolute inset-0 bg-emerald-100/75 rounded-xl -z-10"
+                        initial={false}
+                        transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                      />
+                    )}
+                  </Link>
+                ))}
+              </div>
             </div>
-          </div>
-          {isSidebarOpen && (
+          )}
+
+          {isSidebarOpen && !aiMode && (
             <div>
               <div className="flex items-center justify-between px-4 mb-2">
-                <p className="text-[11px] font-semibold text-slate-500">{aiMode ? 'Riwayat Percakapan' : 'Riwayat Pencarian'}</p>
-                {!aiMode && searchHistory.length > 0 && (
-                  <button onClick={handleClearHistory} className="text-[9px] font-bold text-slate-400 hover:text-rose-500 uppercase transition-colors">Hapus</button>
-                )}
-                {aiMode && (
-                  <div className="flex items-center gap-2">
-                    {aiSessions.length > 1 && onClearAiSessions && (
-                      <button onClick={onClearAiSessions} className="text-[9px] font-bold text-slate-400 hover:text-rose-500 uppercase transition-colors">
-                        Bersihkan
-                      </button>
-                    )}
-                    <button onClick={onNewAiSession} className="text-[9px] font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 uppercase transition-colors">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg> Baru
-                    </button>
-                  </div>
+                <p className="text-[11.5px] font-normal text-slate-400 uppercase tracking-wider">
+                  Riwayat Pencarian
+                </p>
+                {searchHistory.length > 0 && (
+                  <button onClick={handleClearHistory} className="text-[11px] font-normal text-slate-400 hover:text-rose-600 transition-colors cursor-pointer">
+                    Hapus
+                  </button>
                 )}
               </div>
 
               <div className="space-y-1">
-                {aiMode ? (
-                  aiSessions.length === 0 ? (
-                    <p className="text-[13px] text-slate-400 italic px-4">Belum ada percakapan.</p>
-                  ) : (
-                    aiSessions.map((session) => (
-                      <div key={session.id} className={`group relative w-full flex items-center justify-between px-4 py-2.5 rounded-full transition cursor-pointer ${activeAiSessionId === session.id ? 'bg-emerald-200/40 text-emerald-800' : 'hover:bg-black/5 text-slate-600 hover:text-slate-800'}`}>
-                        <button
-                          onClick={() => {
-                            onAiSessionClick?.(session.id);
-                            if (window.innerWidth < 1024) setIsSidebarOpen(false);
-                          }}
-                          className="flex-1 flex items-center gap-3 text-left text-sm truncate"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-50 group-hover:opacity-100 shrink-0"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
-                          <span className="truncate">{session.title}</span>
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); onAiSessionDelete?.(session.id); }}
-                          className="p-1.5 opacity-0 group-hover:opacity-100 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-md transition shrink-0 ml-2"
-                          title="Hapus percakapan"
-                        >
-                          <X size={14} />
-                        </button>
-                      </div>
-                    ))
-                  )
+                {searchHistory.length === 0 ? (
+                  <p className="text-[13.5px] font-normal text-slate-400 px-4 py-2">Belum ada riwayat.</p>
                 ) : (
-                  searchHistory.length === 0 ? (
-                    <p className="text-[13px] text-slate-400 italic px-4">Belum ada riwayat.</p>
-                  ) : (
-                    searchHistory.map((history, i) => (
-                      <div key={i} className="group relative w-full flex items-center justify-between px-4 py-2.5 hover:bg-black/5 rounded-full transition">
-                        <button
-                          onClick={() => {
-                            if (onHistoryClick) {
-                              onHistoryClick(history);
-                            } else {
-                              router.push('/?q=' + encodeURIComponent(history));
-                            }
-                            if (window.innerWidth < 1024) setIsSidebarOpen(false);
-                          }}
-                          className="flex-1 flex items-center gap-3 text-left text-slate-500 hover:text-slate-800 text-sm truncate"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-50 group-hover:opacity-100 shrink-0"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" /></svg>
-                          <span className="truncate">{history}</span>
-                        </button>
-                        <button
-                          onClick={() => handleRemoveHistoryItem(i)}
-                          className="p-1.5 opacity-0 group-hover:opacity-100 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-md transition shrink-0 ml-2"
-                          title="Hapus riwayat"
-                        >
-                          <X size={14} />
-                        </button>
-                      </div>
-                    ))
-                  )
+                  searchHistory.map((history, i) => (
+                    <div key={i} className="group relative w-full flex items-center justify-between px-4 py-2 hover:bg-slate-200/60 rounded-xl transition">
+                      <button
+                        onClick={() => {
+                          if (onHistoryClick) {
+                            onHistoryClick(history);
+                          } else {
+                            router.push('/?q=' + encodeURIComponent(history));
+                          }
+                          if (window.innerWidth < 1024) setIsSidebarOpen(false);
+                        }}
+                        className="flex-1 flex items-center gap-3 text-left text-slate-600 hover:text-slate-900 text-[14px] font-normal truncate cursor-pointer"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="opacity-50 group-hover:opacity-100 shrink-0"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" /></svg>
+                        <span className="truncate font-normal">{history}</span>
+                      </button>
+                      <button
+                        onClick={() => handleRemoveHistoryItem(i)}
+                        className="p-1.5 opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition shrink-0 ml-2 cursor-pointer"
+                        title="Hapus riwayat"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))
                 )}
               </div>
             </div>
           )}
         </div>
 
-        <div className={`p-4 flex flex-col items-center ${isSidebarOpen ? 'justify-between' : 'justify-center'} text-[10px] text-slate-400 font-medium bg-[#f0f4f9] gap-3`}>
+        <div className={`p-4 flex flex-col items-center ${isSidebarOpen ? 'justify-between' : 'justify-center'} text-[11px] text-slate-400 font-normal bg-[#f0f4f9] gap-3`}>
           {isSidebarOpen && (
             <button
               onClick={() => !isPremium && setIsAccessModalOpen(true)}
-              className={`w-full py-2 px-3 rounded-xl flex items-center justify-center gap-2 transition-colors font-bold ${
-                isPremium 
-                  ? 'bg-amber-100/50 text-amber-700 cursor-default' 
-                  : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm'
-              }`}
+              className={`w-full py-2 px-3 rounded-xl flex items-center justify-center gap-2 transition-colors font-normal ${isPremium
+                ? 'bg-amber-100/50 text-amber-700 cursor-default'
+                : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm'
+                }`}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m2 2 20 20"/><path d="M10 10 2.5 2.5"/><path d="m14 14 7.5 7.5"/><path d="M10 14v4a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h2"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m2 2 20 20" /><path d="M10 10 2.5 2.5" /><path d="m14 14 7.5 7.5" /><path d="M10 14v4a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h2" /></svg>
               {isPremium ? 'Premium Aktif' : 'Buka Akses Premium'}
             </button>
           )}
-          
+
           <div className={`w-full flex items-center ${isSidebarOpen ? 'justify-between' : 'justify-center'}`}>
             {isSidebarOpen && <div>Hak Cipta © {new Date().getFullYear()} MTA</div>}
             <Link href="/settings" className={`flex items-center gap-1.5 hover:text-slate-700 transition ${!isSidebarOpen && 'p-2'}`} title={!isSidebarOpen ? 'Pengaturan' : undefined}>
@@ -399,14 +566,14 @@ export default function MainSidebar({
         </div>
       </aside>
 
-      <AccessCodeModal 
-        isOpen={isAccessModalOpen} 
-        onClose={() => setIsAccessModalOpen(false)} 
+      <AccessCodeModal
+        isOpen={isAccessModalOpen}
+        onClose={() => setIsAccessModalOpen(false)}
         unclosable={!isPremium}
         onSuccess={() => {
           setIsPremium(true);
           window.location.reload(); // Reload untuk menerapkan fitur premium di seluruh app
-        }} 
+        }}
       />
     </>
   );

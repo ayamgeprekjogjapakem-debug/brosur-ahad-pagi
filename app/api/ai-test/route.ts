@@ -29,6 +29,32 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, message: 'Koneksi ke Google AI Studio Sukses!' });
     } 
     
+    else if (provider === 'deepseek') {
+      // DeepSeek Official API (https://platform.deepseek.com/api_keys)
+      const actualModel = model || 'deepseek-chat';
+      const aiRes = await fetch('https://api.deepseek.com/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: actualModel,
+          messages: [{ role: 'user', content: 'Say OK' }],
+          max_tokens: 10
+        })
+      });
+
+      if (!aiRes.ok) {
+        const errorData = await aiRes.json().catch(() => ({}));
+        return NextResponse.json({ 
+          success: false, 
+          message: `Gagal terhubung ke DeepSeek API: ${errorData.error?.message || aiRes.statusText}` 
+        });
+      }
+      return NextResponse.json({ success: true, message: `Koneksi ke DeepSeek Official API (${actualModel}) Sukses!` });
+    }
+
     else {
       // OpenRouter
       const aiRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
