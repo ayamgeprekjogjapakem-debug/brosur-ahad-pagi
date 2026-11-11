@@ -27,7 +27,7 @@ function getCategoryLabel(folderName: string, scope: 'web' | 'flutter'): string 
   if (scope === 'flutter') {
     switch (folderName) {
       case 'flutter-ai':
-        return '📱 Flutter: Fitur AI & Chat Sahabat MTA';
+        return "📱 Flutter: Fitur AI & Chat Asma' (Asisten Majlis Tafsir Al Qur'an)";
       case 'flutter-search':
         return '📱 Flutter: Pencarian & Hadist Highlight';
       case 'flutter-db':

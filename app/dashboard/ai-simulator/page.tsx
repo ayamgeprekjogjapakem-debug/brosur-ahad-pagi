@@ -39,7 +39,7 @@ const WEB_API_URL = '/api/ai/chat';
 export default function AiSimulatorPage() {
   const defaultGreeting: MessageItem = {
     role: 'assistant',
-    content: 'Assalamu’alaikum! Saya Asisten AI **Sahabat MTA**. Silakan ajukan pertanyaan seputar fiqih, dalil hadits, dan materi Brosur Ahad Pagi MTA.',
+    content: "Assalamu’alaikum! Saya **Asma' (Asisten Majlis Tafsir Al Qur'an)**. Silakan ajukan pertanyaan seputar fiqih, dalil hadits, dan materi Brosur Ahad Pagi MTA.",
     source: 'web',
     targetUrl: '/api/ai/chat'
   };

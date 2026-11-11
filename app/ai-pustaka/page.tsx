@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
   Bot, Plus, Trash2,
@@ -37,7 +38,7 @@ export default function AiPustakaPage() {
   const router = useRouter();
   const defaultGreeting: ChatMessage = {
     role: 'assistant',
-    content: 'Assalamu’alaikum! Saya Asisten AI **Sahabat MTA**. Silakan ajukan pertanyaan seputar materi, dalil hadits, dan materi Brosur Ahad Pagi MTA. Percakapan ini tersimpan secara privat di perangkat Anda.'
+    content: "Assalamu’alaikum! Saya **Asma' (Asisten Majlis Tafsir Al Qur'an)**. Silakan ajukan pertanyaan seputar materi, dalil hadits, dan materi Brosur Ahad Pagi MTA. Percakapan ini tersimpan secara privat di perangkat Anda."
   };
 
   const [sessions, setSessions] = useState<ChatSession[]>([]);
@@ -179,11 +180,17 @@ export default function AiPustakaPage() {
   };
 
   useEffect(() => {
-    // 1. Izinkan semua akses tanpa blokir modal (allow all)
-    if (typeof window !== 'undefined' && !localStorage.getItem('mta_premium_access')) {
-      localStorage.setItem('mta_premium_access', 'allowed');
+    // 1. Cek kode akses: jika belum punya kode atau masih kode dummy 'allowed', wajibkan modal kode
+    if (typeof window !== 'undefined') {
+      const code = localStorage.getItem('mta_premium_access');
+      if (!code || code === 'allowed') {
+        localStorage.removeItem('mta_premium_access');
+        localStorage.removeItem('mta_premium_features');
+        setIsAccessModalOpen(true);
+      } else {
+        setIsAccessModalOpen(false);
+      }
     }
-    setIsAccessModalOpen(false);
 
     // 2. Muat sesi dari Cache Browser (LocalStorage) & Muat Feed Database
     loadSessionsFromCache();
@@ -219,10 +226,26 @@ export default function AiPustakaPage() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map((s: any) => ({
+          const migrated = parsed.map((s: any) => ({
             ...s,
+            title: (s.title || '')
+              .replace(/AI Sahabat MTA/g, "Asma' (Asisten Majlis Tafsir Al Qur'an)")
+              .replace(/Sahabat MTA/g, "Asma' (Asisten Majlis Tafsir Al Qur'an)"),
+            messages: Array.isArray(s.messages)
+              ? s.messages.map((m: any) => ({
+                ...m,
+                content: (m.content || '')
+                  .replace(/Assalamu’alaikum! Saya Asisten AI \*\*Asma' \(Asisten Majlis Tafsir Al Qur'an\)\*\*/g, "Assalamu’alaikum! Saya **Asma' (Asisten Majlis Tafsir Al Qur'an)**")
+                  .replace(/Assalamu’alaikum! Saya Asisten AI Sahabat MTA/g, "Assalamu’alaikum! Saya **Asma' (Asisten Majlis Tafsir Al Qur'an)**")
+                  .replace(/Saya Asisten AI/g, "Saya")
+                  .replace(/AI Sahabat MTA/g, "Asma' (Asisten Majlis Tafsir Al Qur'an)")
+                  .replace(/Sahabat MTA/g, "Asma' (Asisten Majlis Tafsir Al Qur'an)")
+              }))
+              : [],
             updatedAt: new Date(s.updatedAt || Date.now())
           }));
+          persistToBrowserCache(migrated);
+          return migrated;
         }
       }
     } catch (e) {
@@ -439,11 +462,11 @@ export default function AiPustakaPage() {
     const shareUrl = typeof window !== 'undefined'
       ? (activeSession.slug ? `${window.location.origin}/ai-pustaka?slug=${encodeURIComponent(activeSession.slug)}` : window.location.href)
       : '';
-    const shareContent = `${text}\n\n🔗 Buka hasil telaah & rujukan lengkap: ${shareUrl}\n— Sumber: AI Sahabat Pustaka MTA`;
+    const shareContent = `${text}\n\n🔗 Buka hasil telaah & rujukan lengkap: ${shareUrl}\n— Sumber: Asma' (Asisten Majlis Tafsir Al Qur'an)`;
     if (typeof navigator !== 'undefined' && navigator.share) {
       try {
         await navigator.share({
-          title: `Tanya Jawab AI Sahabat MTA: ${title}`,
+          title: `Tanya Jawab Asma' (Asisten Majlis Tafsir Al Qur'an): ${title}`,
           text: shareContent,
           url: shareUrl,
         });
@@ -461,6 +484,12 @@ export default function AiPustakaPage() {
 
   // Helper Inti Pengiriman & Rebuild AI Chat
   const handleSendQuery = async (messagesToSend: ChatMessage[]) => {
+    const code = typeof window !== 'undefined' ? localStorage.getItem('mta_premium_access') : null;
+    if (!code || code === 'allowed') {
+      setIsAccessModalOpen(true);
+      return;
+    }
+
     if (isSimulating !== 'idle') return;
 
     const latestUserMsg = messagesToSend[messagesToSend.length - 1]?.content || '';
@@ -530,6 +559,12 @@ export default function AiPustakaPage() {
 
   // Fungsi Edit Prompt & Rebuild Ulang Jawaban AI
   const handleSaveAndRebuildPrompt = async (index: number) => {
+    const code = typeof window !== 'undefined' ? localStorage.getItem('mta_premium_access') : null;
+    if (!code || code === 'allowed') {
+      setIsAccessModalOpen(true);
+      return;
+    }
+
     if (!editInputText.trim() || isSimulating !== 'idle') return;
 
     const newText = editInputText.trim();
@@ -560,6 +595,12 @@ export default function AiPustakaPage() {
 
   // Fungsi kirim cepat dari Kartu Saran / Starter Prompt ala Gemini
   const handleSelectStarterPrompt = async (promptText: string) => {
+    const code = typeof window !== 'undefined' ? localStorage.getItem('mta_premium_access') : null;
+    if (!code || code === 'allowed') {
+      setIsAccessModalOpen(true);
+      return;
+    }
+
     if (isSimulating !== 'idle') return;
     setSimInput('');
     setTypingMessageIndex(null);
@@ -630,7 +671,7 @@ export default function AiPustakaPage() {
               className="relative z-10 flex flex-col items-center text-center px-6 space-y-4"
             >
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 via-teal-500 to-emerald-700 flex items-center justify-center shadow-2xl shadow-emerald-500/40 ring-1 ring-white/30">
-                <Sparkles className="w-8 h-8 text-white animate-pulse" />
+                <img src="/images/logo_asma_white.png" alt="" />
               </div>
 
               <div className="space-y-1.5">
@@ -638,7 +679,7 @@ export default function AiPustakaPage() {
                   Memasuki Gerbang Telaah Digital
                 </p>
                 <h1 className="text-2xl sm:text-3xl font-normal tracking-tight text-white">
-                  AI Sahabat Pustaka MTA
+                  Asma' (Asisten Majlis Tafsir Al Qur'an)
                 </h1>
                 <p className="text-xs sm:text-sm text-emerald-100/75 font-normal max-w-md">
                   Menghubungkan khazanah Brosur Ahad Pagi (1995–2026) & 16.800+ indeks matan hadits...
@@ -699,9 +740,7 @@ export default function AiPustakaPage() {
             <div className="h-5 w-px bg-slate-200 hidden sm:block mx-1" />
 
             <div className="flex items-center gap-2.5 truncate">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white flex items-center justify-center shrink-0 shadow-xs">
-                <Sparkles size={16} />
-              </div>
+
               <span className="font-normal text-[15px] text-slate-900 truncate">
                 {activeSession.title}
               </span>
@@ -768,21 +807,35 @@ export default function AiPustakaPage() {
                   transition={{ duration: 0.45, ease: 'easeOut' }}
                   className="pt-4 pb-4 space-y-7"
                 >
-                  {/* Clean Canvas Greeting dengan Animasi Typing */}
-                  <div className="text-left space-y-3 py-2">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-normal border border-emerald-200/60">
-                      <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>AI Sahabat MTA</span>
+                  {/* Clean Canvas Greeting dengan Animasi Typing (Centered + Logo Asma') */}
+                  <div className="text-center flex flex-col items-center justify-center space-y-3.5 py-4">
+                    {/* Logo Asma' */}
+                    <div className="relative group">
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl  flex items-center justify-center transition-transform hover:scale-120">
+                        <Image
+                          src="/images/logo_asma.png"
+                          alt="Logo Asma'"
+                          width={72}
+                          height={72}
+                          className="w-full h-full object-contain"
+                          priority
+                        />
+                      </div>
                     </div>
 
-                    <h2 className="text-2xl sm:text-3xl md:text-4xl font-normal tracking-tight text-slate-800 flex items-center gap-1">
+                    <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-normal border border-emerald-200/60 shadow-2xs">
+
+                      <span>Asma' (Asisten Majlis Tafsir Al Qur'an)</span>
+                    </div>
+
+                    <h2 className="text-2xl sm:text-3xl md:text-4xl font-normal tracking-tight text-slate-800 flex items-center justify-center gap-1">
                       <span>{fullGreetingText.slice(0, heroTypingCharCount)}</span>
                       {heroTypingCharCount < fullGreetingText.length && (
                         <span className="w-2.5 h-7 bg-emerald-600 animate-pulse inline-block ml-0.5 rounded-sm" />
                       )}
                     </h2>
 
-                    <p className="text-slate-500 text-sm sm:text-base font-normal max-w-xl leading-relaxed">
+                    <p className="text-slate-500 text-sm sm:text-base font-normal max-w-xl leading-relaxed text-center mx-auto">
                       Silakan ajukan pertanyaan seputar Materi Brosur, dalil ibadah, atau materi kajian Brosur Ahad Pagi.
                     </p>
                   </div>
@@ -1142,6 +1195,12 @@ export default function AiPustakaPage() {
               <form
                 onSubmit={async (e) => {
                   e.preventDefault();
+                  const code = typeof window !== 'undefined' ? localStorage.getItem('mta_premium_access') : null;
+                  if (!code || code === 'allowed') {
+                    setIsAccessModalOpen(true);
+                    return;
+                  }
+
                   if (!simInput.trim() || isSimulating !== 'idle') return;
 
                   const userMsg = simInput.trim();
@@ -1202,8 +1261,16 @@ export default function AiPustakaPage() {
       {/* Access Code Modal jika pengguna belum login kode premium */}
       <AccessCodeModal
         isOpen={isAccessModalOpen}
-        onClose={() => setIsAccessModalOpen(false)}
-        onSuccess={(code) => {
+        unclosable={true}
+        onClose={() => {
+          const code = typeof window !== 'undefined' ? localStorage.getItem('mta_premium_access') : null;
+          if (!code || code === 'allowed') {
+            router.push('/');
+          } else {
+            setIsAccessModalOpen(false);
+          }
+        }}
+        onSuccess={() => {
           setIsAccessModalOpen(false);
         }}
       />

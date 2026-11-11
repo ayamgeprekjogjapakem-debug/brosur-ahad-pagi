@@ -65,12 +65,19 @@ export default function MainSidebar({
     const history = JSON.parse(localStorage.getItem('makkah_search_history') || '[]');
     setSearchHistory(history);
 
-    // Semua fitur diizinkan (allow all)
-    if (typeof window !== 'undefined' && !localStorage.getItem('mta_premium_access')) {
-      localStorage.setItem('mta_premium_access', 'allowed');
-      localStorage.setItem('mta_premium_features', JSON.stringify(['all']));
+    // Cek status kode akses yang valid
+    if (typeof window !== 'undefined') {
+      const code = localStorage.getItem('mta_premium_access');
+      if (code === 'allowed') {
+        localStorage.removeItem('mta_premium_access');
+        localStorage.removeItem('mta_premium_features');
+        setIsPremium(false);
+      } else if (code) {
+        setIsPremium(true);
+      } else {
+        setIsPremium(false);
+      }
     }
-    setIsPremium(true);
   }, []);
 
   const handleClearHistory = () => {
@@ -166,7 +173,13 @@ export default function MainSidebar({
       label: 'AI Pustaka',
       icon: BrainCircuit,
       href: '/ai-pustaka',
-      onClick: () => {
+      onClick: (e: React.MouseEvent) => {
+        const code = localStorage.getItem('mta_premium_access');
+        if (!code || code === 'allowed') {
+          e.preventDefault();
+          setIsAccessModalOpen(true);
+          return;
+        }
         if (window.innerWidth < 1024) setIsSidebarOpen(false);
       },
       isActive: pathname.startsWith('/ai-pustaka'),
@@ -201,11 +214,18 @@ export default function MainSidebar({
               if (window.innerWidth < 1024) setIsSidebarOpen(false);
             }}
             className={`flex items-center ${!isSidebarOpen ? 'justify-center' : 'gap-3.5'} group text-left cursor-pointer outline-none w-full`}
-            title={!isSidebarOpen ? (aiMode ? 'AI Sahabat MTA' : 'Pustaka MTA') : undefined}
+            title={!isSidebarOpen ? (aiMode ? "Asma' (Asisten Majlis Tafsir Al Qur'an)" : 'Pustaka MTA') : undefined}
           >
             {aiMode ? (
-              <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 via-teal-600 to-emerald-800 flex items-center justify-center text-white shrink-0 shadow-md shadow-emerald-600/20 group-hover:scale-105 transition-transform">
-                <Sparkles className="w-5 h-5" />
+              <div className="relative w-10 h-10 rounded-xl  flex items-center justify-center text-white shrink-0 shadow-md shadow-emerald-600/20 group-hover:scale-105 transition-transform">
+                <Image
+                  src="/images/logo_asma.png"
+                  alt="Logo Pustaka MTA"
+                  fill
+                  sizes="40px"
+                  priority
+                  className="object-contain"
+                />
               </div>
             ) : (
               <div className="relative w-10 h-10 rounded-xl overflow-hidden shrink-0 shadow-xs group-hover:scale-105 transition-transform bg-white">
@@ -222,10 +242,10 @@ export default function MainSidebar({
             {isSidebarOpen && (
               <div className="flex flex-col overflow-hidden">
                 <h1 className="text-[17px] font-normal text-slate-800 leading-tight truncate tracking-tight">
-                  {aiMode ? 'AI Sahabat MTA' : 'Pustaka MTA'}
+                  {aiMode ? "Asma' (Asisten Majlis Tafsir Al Qur'an)" : 'Pustaka MTA'}
                 </h1>
                 <p className="text-[11px] font-normal text-emerald-700 tracking-wider uppercase truncate mt-0.5">
-                  {aiMode ? 'Telaah Dalil 1995–2026' : 'Brosur Ahad Pagi'}
+                  {aiMode ? 'BROSUR MTA 1995–2026' : 'Brosur Ahad Pagi'}
                 </p>
               </div>
             )}

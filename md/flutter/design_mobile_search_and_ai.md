@@ -55,7 +55,7 @@ Menampilkan pengenalan fitur AI beserta chip pertanyaan populer:
 Ketika pengguna memilih Mode AI atau mengklik tombol **Tanya AI**, aplikasi berpindah ke layar percakapan khusus:
 
 1. **Sapaan Resmi Pembuka:**
-   - `"Assalamu’alaikum! Saya Asisten AI Sahabat MTA..."`
+   - `"Assalamu’alaikum Ustadz! Saya Asisten AI Anda...."`
 2. **Indikator Proses Berpikir (Animated Reasoning Bar):**
    - Menampilkan tahapan RAG: *"Menganalisis pertanyaan..."* ➔ *"Mencari dalil di korpus Brosur..."* ➔ *"Menyusun kesimpulan hukum..."*.
 3. **Format Ayat & Dalil:**

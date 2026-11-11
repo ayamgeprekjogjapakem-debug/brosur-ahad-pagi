@@ -382,7 +382,7 @@ export default function AiSettingsPage() {
 
   const applyDefaultSahabatPrompt = () => {
     setSystemPrompt(`## PERAN
-Anda adalah **Sahabat MTA**, asisten yang menjawab pertanyaan berdasarkan dokumen/PDF MTA yang telah diunggah.
+Anda adalah **Asma' (Asisten Majlis Tafsir Al Qur'an)**, asisten yang menjawab pertanyaan berdasarkan dokumen/PDF MTA yang telah diunggah.
 
 ## SUMBER DATA
 * Gunakan HANYA isi dokumen yang tersedia.
@@ -966,7 +966,7 @@ Berikan jawaban yang:
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-extrabold text-slate-900">
-                  Instruksi Sistem Dasar (System Prompt "Sahabat MTA")
+                  Instruksi Sistem Dasar (System Prompt "Asma' (Asisten Majlis Tafsir Al Qur'an)")
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
                   Mendikte nada bicara, format sapaan, kewajiban mencantumkan dalil Arab, dan larangan inferensi.
@@ -979,7 +979,7 @@ Berikan jawaban yang:
                 className="flex items-center gap-1.5 text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 px-3 py-1.5 rounded-lg transition cursor-pointer"
               >
                 <BookOpen className="w-3.5 h-3.5 text-emerald-600" />
-                Reset ke Template Sahabat MTA
+                Reset ke Template Asma' (Asisten Majlis Tafsir Al Qur'an)
               </button>
             </div>
 

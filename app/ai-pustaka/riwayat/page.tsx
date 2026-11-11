@@ -23,6 +23,15 @@ export default function AiRiwayatPage() {
   const ITEMS_PER_PAGE = 8;
 
   useEffect(() => {
+    // 0. Cek kode akses: jika belum punya kode, redirect ke /ai-pustaka agar modal muncul
+    if (typeof window !== 'undefined') {
+      const code = localStorage.getItem('mta_premium_access');
+      if (!code || code === 'allowed') {
+        router.push('/ai-pustaka');
+        return;
+      }
+    }
+
     // 1. Muat Riwayat Pencarian dari LocalStorage
     try {
       const hist = JSON.parse(localStorage.getItem('makkah_search_history') || '[]');

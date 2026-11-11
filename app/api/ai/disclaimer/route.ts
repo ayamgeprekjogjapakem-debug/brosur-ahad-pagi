@@ -21,7 +21,7 @@ export async function GET() {
       .single();
 
     const disclaimerText = settings?.ai_disclaimer || 
-      '• AI Sahabat MTA adalah asisten telaah dalil dan penelusuran materi Brosur Ahad Pagi MTA.\n\n' +
+      '• Asma\' (Asisten Majlis Tafsir Al Qur\'an) adalah asisten telaah dalil dan penelusuran materi Brosur Ahad Pagi MTA.\n\n' +
       '• Sumber rujukan utama dan mutlak tetap pada Al-Qur\'an dan As-Sunnah ash-Shahihah.\n\n' +
       '• Ingatlah untuk mencatat karena "mengikat ilmu dengan tulisan".\n\n' +
       '• Jika menemukan data atau telaah yang perlu dikoreksi, harap hubungi admin pustaka.';
@@ -34,7 +34,7 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       disclaimer: 
-        '• AI Sahabat MTA adalah asisten telaah dalil dan penelusuran materi Brosur Ahad Pagi MTA.\n\n' +
+        '• Asma\' (Asisten Majlis Tafsir Al Qur\'an) adalah asisten telaah dalil dan penelusuran materi Brosur Ahad Pagi MTA.\n\n' +
         '• Sumber rujukan utama dan mutlak tetap pada Al-Qur\'an dan As-Sunnah ash-Shahihah.\n\n' +
         '• Ingatlah untuk mencatat karena "mengikat ilmu dengan tulisan".\n\n' +
         '• Jika menemukan data atau telaah yang perlu dikoreksi, harap hubungi admin pustaka.',

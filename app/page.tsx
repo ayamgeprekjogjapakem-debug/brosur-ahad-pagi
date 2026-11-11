@@ -135,8 +135,10 @@ export default function MakkahPortal() {
     }
 
     const premiumCode = localStorage.getItem('mta_premium_access');
-    if (premiumCode) {
+    if (premiumCode && premiumCode !== 'allowed') {
       setHasPremiumAccess(true);
+    } else {
+      setHasPremiumAccess(false);
     }
 
     if (pathname === '/tersimpan') {
@@ -400,7 +402,7 @@ export default function MakkahPortal() {
                 </form>
               </div>
 
-              {/* Single Clean "Tanya AI Sahabat MTA" Action Button */}
+              {/* Single Clean "Tanya Asma' (Asisten Majlis Tafsir Al Qur'an)" Action Button */}
               <div className="flex justify-center pt-1">
                 <button
                   type="button"
@@ -413,7 +415,7 @@ export default function MakkahPortal() {
                   <span className="w-6 h-6 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
                     <Sparkles className="w-3.5 h-3.5" />
                   </span>
-                  <span>Tanya AI Sahabat MTA</span>
+                  <span>Tanya Asma' (Asisten Majlis Tafsir Al Qur'an)</span>
                   <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 group-hover:translate-x-0.5 transition-all" />
                 </button>
               </div>
@@ -520,7 +522,7 @@ export default function MakkahPortal() {
                         Butuh penjelasan mendalam tentang &ldquo;{searchQuery}&rdquo;?
                       </p>
                       <p className="text-xs text-slate-500">
-                        AI Sahabat MTA dapat merangkum dalil dan menjawab pertanyaan materi kajian Anda berdasarkan ratusan brosur resmi.
+                        Asma' (Asisten Majlis Tafsir Al Qur'an) dapat merangkum dalil dan menjawab pertanyaan materi kajian Anda berdasarkan ratusan brosur resmi.
                       </p>
                     </div>
                   </div>
@@ -529,7 +531,7 @@ export default function MakkahPortal() {
                     onClick={() => {
                       const aiPrompt = `Jelaskan dalil dan kesimpulan materi tentang ${searchQuery}`;
                       const hasCode = typeof window !== 'undefined' && localStorage.getItem('mta_premium_access');
-                      if (!hasCode) {
+                      if (!hasCode || hasCode === 'allowed') {
                         setPendingAiQuery(aiPrompt);
                         setIsAccessModalOpen(true);
                       } else {

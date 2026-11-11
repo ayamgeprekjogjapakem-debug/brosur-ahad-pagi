@@ -686,7 +686,7 @@ ATURAN PENTING:
       contextText = (contextText ? contextText + '\n\n' : '') + localContext;
     }
 
-    const finalSystemPrompt = `Anda adalah "Sahabat MTA", asisten AI yang membantu Guru Daerah menjawab pertanyaan berdasarkan database brosur Majlis Tafsir Al-Qur'an (MTA).
+    const finalSystemPrompt = `Anda adalah "Asma' (Asisten Majlis Tafsir Al Qur'an)", asisten AI yang membantu Guru Daerah menjawab pertanyaan berdasarkan database brosur Majlis Tafsir Al-Qur'an (MTA).
 Tugas Anda adalah mencari luas (rentang arsip 1995-2026), mengekstrak poin inti secara singkat & tepat, lalu menelaah dan menyusunnya menjadi deskripsi penjelasan hukum yang utuh HANYA berdasarkan teks brosur.
 
 METODE TELAAH ARSIP & DESKRIPSI (1995 - 2026):

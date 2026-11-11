@@ -513,7 +513,7 @@ CREATE POLICY "Public full access to ai_query_logs"
               Kesiapan AI: Penelusuran (Searching) & Pertanyaan Jemaah
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 font-normal">
-              Analisis komprehensif apa yang dicari jemaah pada korpus dalil dan apa yang ditanyakan langsung ke asisten AI Sahabat MTA.
+              Analisis komprehensif apa yang dicari jemaah pada korpus dalil dan apa yang ditanyakan langsung ke asisten Asma' (Asisten Majlis Tafsir Al Qur'an).
             </p>
           </div>
 
