@@ -3,10 +3,11 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Search, Bookmark, BookOpen, ScrollText, Users, X, Menu, CalendarDays, BrainCircuit, Settings, BookMarked, Sparkles, Plus, MessageSquare, ArrowLeft, Trash2, Clock, Flame } from 'lucide-react';
+import { Search, Bookmark, BookOpen, ScrollText, Users, X, Menu, CalendarDays, BrainCircuit, Settings, BookMarked, Sparkles, Plus, MessageSquare, ArrowLeft, Trash2, Clock, Flame, Key, RefreshCw } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import AccessCodeModal from './AccessCodeModal';
+import { checkIsAccessExpired, clearLocalAccessCache, getAccessRemainingSeconds, formatRemainingTime, verifyAccessCodeOnline } from '@/utils/accessCodeHelper';
 
 
 export default function MainSidebar({
@@ -40,8 +41,12 @@ export default function MainSidebar({
 }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
-  const [isPremium, setIsPremium] = useState(false);
+  const [hasAccess, setHasAccess] = useState(true);
+  const [savedCode, setSavedCode] = useState<string>('');
+  const [remainingTimeStr, setRemainingTimeStr] = useState<string>('');
   const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
+  const [accessModalReason, setAccessModalReason] = useState<'required' | 'expired' | 'deleted'>('required');
+  const [isAccessModalUnclosable, setIsAccessModalUnclosable] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -65,20 +70,63 @@ export default function MainSidebar({
     const history = JSON.parse(localStorage.getItem('makkah_search_history') || '[]');
     setSearchHistory(history);
 
-    // Cek status kode akses yang valid
+    // Cek status kode akses yang valid & verifikasi ke database server di setiap kunjungan/route
     if (typeof window !== 'undefined') {
-      const code = localStorage.getItem('mta_premium_access');
-      if (code === 'allowed') {
-        localStorage.removeItem('mta_premium_access');
-        localStorage.removeItem('mta_premium_features');
-        setIsPremium(false);
-      } else if (code) {
-        setIsPremium(true);
-      } else {
-        setIsPremium(false);
+      // Abaikan route dashboard/admin
+      if (pathname?.startsWith('/dashboard') || pathname?.startsWith('/admin')) {
+        return;
       }
+
+      const isLocalExpired = checkIsAccessExpired();
+      const localCode = localStorage.getItem('mta_premium_access');
+      if (isLocalExpired || !localCode || localCode === 'allowed') {
+        clearLocalAccessCache();
+        setHasAccess(false);
+        setSavedCode('');
+        setRemainingTimeStr('');
+        setAccessModalReason(isLocalExpired ? 'expired' : 'required');
+        setIsAccessModalUnclosable(true);
+        setIsAccessModalOpen(true);
+        return;
+      }
+
+      // Verifikasi online ke server Supabase (apakah kode masih terdaftar & aktif atau sudah dihapus/didelete)
+      verifyAccessCodeOnline().then((result) => {
+        if (!result.valid) {
+          clearLocalAccessCache();
+          setHasAccess(false);
+          setSavedCode('');
+          setRemainingTimeStr('');
+          setAccessModalReason(result.reason === 'expired' ? 'expired' : (result.reason === 'deleted' ? 'deleted' : 'required'));
+          setIsAccessModalUnclosable(true);
+          setIsAccessModalOpen(true);
+        } else {
+          setHasAccess(true);
+          setSavedCode(result.code || localCode);
+          const remSecs = getAccessRemainingSeconds();
+          setRemainingTimeStr(formatRemainingTime(remSecs));
+        }
+      });
     }
-  }, []);
+  }, [pathname]);
+
+  const handleChangeCode = () => {
+    setAccessModalReason('required');
+    setIsAccessModalUnclosable(false);
+    setIsAccessModalOpen(true);
+  };
+
+  const handleRemoveCode = () => {
+    if (window.confirm('Apakah Anda yakin ingin menghapus kode akses pada perangkat ini?\n\nAplikasi akan terkunci dan Anda harus memasukkan kode akses kembali untuk melanjutkan.')) {
+      clearLocalAccessCache();
+      setHasAccess(false);
+      setSavedCode('');
+      setRemainingTimeStr('');
+      setAccessModalReason('required');
+      setIsAccessModalUnclosable(true);
+      setIsAccessModalOpen(true);
+    }
+  };
 
   const handleClearHistory = () => {
     if (window.confirm('Hapus semua riwayat pencarian?')) {
@@ -170,20 +218,24 @@ export default function MainSidebar({
     },
     {
       id: 'ai-pustaka',
-      label: 'AI Pustaka',
+      label: 'Asma',
       icon: BrainCircuit,
       href: '/ai-pustaka',
       onClick: (e: React.MouseEvent) => {
+        const isExpired = checkIsAccessExpired();
         const code = localStorage.getItem('mta_premium_access');
-        if (!code || code === 'allowed') {
+        if (isExpired || !code || code === 'allowed') {
           e.preventDefault();
+          clearLocalAccessCache();
+          setAccessModalReason(isExpired ? 'expired' : 'required');
+          setIsAccessModalUnclosable(true);
           setIsAccessModalOpen(true);
           return;
         }
         if (window.innerWidth < 1024) setIsSidebarOpen(false);
       },
       isActive: pathname.startsWith('/ai-pustaka'),
-      badge: 'Baru'
+      badge: 'AI'
     },
   ];
 
@@ -302,7 +354,7 @@ export default function MainSidebar({
                     title={!isSidebarOpen ? 'Ruang Tanya AI' : undefined}
                   >
                     <div className={`flex items-center ${!isSidebarOpen ? 'justify-center' : 'gap-3'}`}>
-                      <BrainCircuit strokeWidth={1.6} className="w-[18px] h-[18px] text-emerald-700 shrink-0" />
+                      <Image src="/images/logo_asma.png" alt="Logo Asma'" width={18} height={18} className="object-contain shrink-0" />
                       {isSidebarOpen && <span className="truncate">Ruang Tanya AI</span>}
                     </div>
                     {isSidebarOpen && (
@@ -492,7 +544,19 @@ export default function MainSidebar({
                     title={!isSidebarOpen ? menu.label : undefined}
                   >
                     <div className={`flex items-center ${!isSidebarOpen ? 'justify-center' : 'gap-3.5'}`}>
-                      <menu.icon strokeWidth={1.6} className={`w-[18px] h-[18px] shrink-0 transition-all ${menu.isActive ? 'text-emerald-700' : 'text-slate-500'}`} />
+                      {menu.id === 'ai-pustaka' ? (
+                        <div className="relative w-[18px] h-[18px] shrink-0">
+                          <Image
+                            src="/images/logo_asma.png"
+                            alt="Asma"
+                            fill
+                            sizes="18px"
+                            className="object-contain"
+                          />
+                        </div>
+                      ) : (
+                        <menu.icon strokeWidth={1.6} className={`w-[18px] h-[18px] shrink-0 transition-all ${menu.isActive ? 'text-emerald-700' : 'text-slate-500'}`} />
+                      )}
                       {isSidebarOpen && <span className="truncate font-normal">{menu.label}</span>}
                     </div>
                     {isSidebarOpen && menu.badge && (
@@ -562,17 +626,54 @@ export default function MainSidebar({
           )}
         </div>
 
-        <div className={`p-4 flex flex-col items-center ${isSidebarOpen ? 'justify-between' : 'justify-center'} text-[11px] text-slate-400 font-normal bg-[#f0f4f9] gap-3`}>
-          {isSidebarOpen && (
+        <div className={`p-3.5 flex flex-col items-center ${isSidebarOpen ? 'justify-between' : 'justify-center'} text-[11px] text-slate-400 font-normal bg-[#f0f4f9] gap-2.5`}>
+          {isSidebarOpen ? (
+            <div className="w-full bg-white rounded-2xl p-3 border border-slate-200/80 shadow-xs flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
+                    <Key className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    {/* <span className="text-[12px] font-medium text-slate-800 leading-tight truncate">
+                      {savedCode ? `Kode: ${savedCode}` : 'Kode Akses'}
+                    </span> */}
+                    <span className="text-[10px] text-slate-400 truncate mt-0.5">
+                      {remainingTimeStr ? `Masa Aktif: ${remainingTimeStr}` : 'Akses Pustaka'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-1.5 pt-1.5 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={handleChangeCode}
+                  className="py-1.5 px-2 rounded-lg text-[11px] font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex items-center justify-center gap-1 cursor-pointer"
+                  title="Ganti dengan kode akses lain"
+                >
+                  <RefreshCw className="w-3 h-3 text-slate-500" />
+                  <span>Ubah Kode</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRemoveCode}
+                  className="py-1.5 px-2 rounded-lg text-[11px] font-medium bg-rose-50 hover:bg-rose-100 text-rose-600 transition flex items-center justify-center gap-1 cursor-pointer"
+                  title="Hapus kode dan kunci aplikasi"
+                >
+                  <Trash2 className="w-3 h-3 text-rose-500" />
+                  <span>Hapus Kode</span>
+                </button>
+              </div>
+            </div>
+          ) : (
             <button
-              onClick={() => !isPremium && setIsAccessModalOpen(true)}
-              className={`w-full py-2 px-3 rounded-xl flex items-center justify-center gap-2 transition-colors font-normal ${isPremium
-                ? 'bg-amber-100/50 text-amber-700 cursor-default'
-                : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm'
-                }`}
+              type="button"
+              onClick={handleChangeCode}
+              className="p-2.5 rounded-xl bg-white border border-slate-200/80 hover:bg-slate-50 text-slate-700 transition shadow-xs cursor-pointer"
+              title={`Kode Akses: ${savedCode || 'Klik untuk ubah/kelola'}`}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m2 2 20 20" /><path d="M10 10 2.5 2.5" /><path d="m14 14 7.5 7.5" /><path d="M10 14v4a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h2" /></svg>
-              {isPremium ? 'Premium Aktif' : 'Buka Akses Premium'}
+              <Key className="w-4 h-4 text-emerald-700" />
             </button>
           )}
 
@@ -588,11 +689,19 @@ export default function MainSidebar({
 
       <AccessCodeModal
         isOpen={isAccessModalOpen}
-        onClose={() => setIsAccessModalOpen(false)}
-        unclosable={!isPremium}
-        onSuccess={() => {
-          setIsPremium(true);
-          window.location.reload(); // Reload untuk menerapkan fitur premium di seluruh app
+        onClose={() => {
+          if (!isAccessModalUnclosable) {
+            setIsAccessModalOpen(false);
+          }
+        }}
+        unclosable={isAccessModalUnclosable}
+        reason={accessModalReason}
+        onSuccess={(newCode) => {
+          setHasAccess(true);
+          setSavedCode(newCode);
+          setIsAccessModalUnclosable(false);
+          setIsAccessModalOpen(false);
+          window.location.reload();
         }}
       />
     </>

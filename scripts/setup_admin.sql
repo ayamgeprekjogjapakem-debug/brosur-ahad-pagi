@@ -116,18 +116,41 @@ CREATE POLICY "Allow public read blocked_ips" ON public.blocked_ips FOR SELECT U
 CREATE TABLE IF NOT EXISTS public.access_codes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     code TEXT NOT NULL UNIQUE,
+    notes TEXT,
     description TEXT,
     is_active BOOLEAN NOT NULL DEFAULT true,
     has_ai_access BOOLEAN NOT NULL DEFAULT false,
+    allowed_features JSONB DEFAULT '["bap","quran","kalender","tersimpan"]'::jsonb,
+    expires_in_seconds BIGINT DEFAULT NULL,
+    ai_daily_limit INTEGER DEFAULT 20,
+    ai_reset_hour INTEGER DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Tambahkan kolom jika tabel sudah ada (untuk update)
+-- Tambahkan kolom jika tabel sudah ada (untuk update tabel lama)
 DO $$ 
 BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='access_codes' AND column_name='notes') THEN 
+        ALTER TABLE public.access_codes ADD COLUMN notes TEXT; 
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='access_codes' AND column_name='description') THEN 
+        ALTER TABLE public.access_codes ADD COLUMN description TEXT; 
+    END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='access_codes' AND column_name='has_ai_access') THEN 
         ALTER TABLE public.access_codes ADD COLUMN has_ai_access BOOLEAN NOT NULL DEFAULT false; 
     END IF; 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='access_codes' AND column_name='allowed_features') THEN 
+        ALTER TABLE public.access_codes ADD COLUMN allowed_features JSONB DEFAULT '["bap","quran","kalender","tersimpan"]'::jsonb; 
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='access_codes' AND column_name='expires_in_seconds') THEN 
+        ALTER TABLE public.access_codes ADD COLUMN expires_in_seconds BIGINT DEFAULT NULL; 
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='access_codes' AND column_name='ai_daily_limit') THEN 
+        ALTER TABLE public.access_codes ADD COLUMN ai_daily_limit INTEGER DEFAULT 20; 
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='access_codes' AND column_name='ai_reset_hour') THEN 
+        ALTER TABLE public.access_codes ADD COLUMN ai_reset_hour INTEGER DEFAULT 0; 
+    END IF;
 END $$;
 
 -- Enable RLS untuk access_codes

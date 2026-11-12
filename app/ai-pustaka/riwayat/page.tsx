@@ -8,6 +8,7 @@ import {
   Search, Sparkles, MessageSquare, Trash2, ExternalLink
 } from 'lucide-react';
 import MainSidebar from '@/app/components/MainSidebar';
+import { checkIsAccessExpired, clearLocalAccessCache, verifyAccessCodeOnline } from '@/utils/accessCodeHelper';
 
 export default function AiRiwayatPage() {
   const router = useRouter();
@@ -23,13 +24,21 @@ export default function AiRiwayatPage() {
   const ITEMS_PER_PAGE = 8;
 
   useEffect(() => {
-    // 0. Cek kode akses: jika belum punya kode, redirect ke /ai-pustaka agar modal muncul
+    // 0. Cek kode akses & kedaluwarsa: jika belum punya kode atau sudah kedaluwarsa, redirect ke /ai-pustaka agar modal muncul
     if (typeof window !== 'undefined') {
+      const isExpired = checkIsAccessExpired();
       const code = localStorage.getItem('mta_premium_access');
-      if (!code || code === 'allowed') {
+      if (isExpired || !code || code === 'allowed') {
+        clearLocalAccessCache();
         router.push('/ai-pustaka');
         return;
       }
+      verifyAccessCodeOnline().then((result) => {
+        if (!result.valid) {
+          clearLocalAccessCache();
+          router.push('/ai-pustaka');
+        }
+      });
     }
 
     // 1. Muat Riwayat Pencarian dari LocalStorage

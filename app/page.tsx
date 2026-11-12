@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   Search, BookOpen, Bookmark,
@@ -14,6 +15,7 @@ import { motion } from 'framer-motion';
 import MainSidebar from '@/app/components/MainSidebar';
 import HeaderUserDropdown from '@/app/components/HeaderUserDropdown';
 import AccessCodeModal from '@/app/components/AccessCodeModal';
+import { checkIsAccessExpired, clearLocalAccessCache, verifyAccessCodeOnline } from '@/utils/accessCodeHelper';
 import { buildHighlightSpans } from '@/utils/searchHelper';
 
 const HighlightText = ({ text, highlight }: { text: string; highlight: string | string[] }) => {
@@ -134,9 +136,13 @@ export default function MakkahPortal() {
       setSavedItems(parsedSaved);
     }
 
+    const isExpired = checkIsAccessExpired();
     const premiumCode = localStorage.getItem('mta_premium_access');
-    if (premiumCode && premiumCode !== 'allowed') {
+    if (!isExpired && premiumCode && premiumCode !== 'allowed') {
       setHasPremiumAccess(true);
+      verifyAccessCodeOnline().then((result) => {
+        setHasPremiumAccess(result.valid);
+      });
     } else {
       setHasPremiumAccess(false);
     }
@@ -412,8 +418,8 @@ export default function MakkahPortal() {
                   }}
                   className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-white hover:bg-emerald-50/70 border border-slate-200 hover:border-emerald-300 text-slate-700 hover:text-emerald-900 rounded-2xl text-sm font-normal shadow-2xs transition cursor-pointer group"
                 >
-                  <span className="w-6 h-6 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
-                    <Sparkles className="w-3.5 h-3.5" />
+                  <span className="w-6 h-6 rounded-lg bg-emerald-50 border border-emerald-200/80 flex items-center justify-center p-0.5 shadow-2xs group-hover:scale-105 transition-transform shrink-0">
+                    <Image src="/images/logo_asma.png" alt="Logo Asma'" width={18} height={18} className="object-contain" />
                   </span>
                   <span>Tanya Asma' (Asisten Majlis Tafsir Al Qur'an)</span>
                   <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 group-hover:translate-x-0.5 transition-all" />
@@ -514,8 +520,8 @@ export default function MakkahPortal() {
               {!isShowingSaved && searchQuery && (
                 <div className="bg-gradient-to-r from-emerald-50/90 via-white to-slate-50 border border-emerald-200/90 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-                      <Sparkles className="w-5 h-5" />
+                    <div className="w-9 h-9 rounded-xl bg-white border border-emerald-200/90 flex items-center justify-center shrink-0 p-1.5 shadow-2xs">
+                      <Image src="/images/logo_asma.png" alt="Logo Asma'" width={24} height={24} className="object-contain" />
                     </div>
                     <div>
                       <p className="text-xs sm:text-sm font-bold text-slate-800">
@@ -530,8 +536,9 @@ export default function MakkahPortal() {
                     type="button"
                     onClick={() => {
                       const aiPrompt = `Jelaskan dalil dan kesimpulan materi tentang ${searchQuery}`;
+                      const isExpired = checkIsAccessExpired();
                       const hasCode = typeof window !== 'undefined' && localStorage.getItem('mta_premium_access');
-                      if (!hasCode || hasCode === 'allowed') {
+                      if (isExpired || !hasCode || hasCode === 'allowed') {
                         setPendingAiQuery(aiPrompt);
                         setIsAccessModalOpen(true);
                       } else {
@@ -540,7 +547,7 @@ export default function MakkahPortal() {
                     }}
                     className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs shrink-0 cursor-pointer"
                   >
-                    <Sparkles className="w-3.5 h-3.5 text-amber-200" />
+                    <Image src="/images/logo_asma_white.png" alt="Logo Asma'" width={16} height={16} className="object-contain shrink-0" />
                     <span>Tanya AI Pustaka</span>
                   </button>
                 </div>

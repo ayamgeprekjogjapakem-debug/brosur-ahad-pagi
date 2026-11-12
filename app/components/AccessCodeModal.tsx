@@ -9,9 +9,10 @@ interface AccessCodeModalProps {
   onClose: () => void;
   onSuccess: (code: string) => void;
   unclosable?: boolean;
+  reason?: 'expired' | 'required' | string;
 }
 
-export default function AccessCodeModal({ isOpen, onClose, onSuccess, unclosable = false }: AccessCodeModalProps) {
+export default function AccessCodeModal({ isOpen, onClose, onSuccess, unclosable = false, reason }: AccessCodeModalProps) {
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -51,6 +52,17 @@ export default function AccessCodeModal({ isOpen, onClose, onSuccess, unclosable
         if (data.allowed_features) {
           localStorage.setItem('mta_premium_features', JSON.stringify(data.allowed_features));
         }
+
+        // Simpan durasi kedaluwarsa (dalam detik)
+        if (data.expires_in_seconds && data.expires_in_seconds > 0) {
+          const expiresAt = Date.now() + (data.expires_in_seconds * 1000);
+          localStorage.setItem('mta_premium_expires_at', expiresAt.toString());
+          localStorage.setItem('mta_premium_expires_in_seconds', data.expires_in_seconds.toString());
+        } else {
+          localStorage.removeItem('mta_premium_expires_at');
+          localStorage.removeItem('mta_premium_expires_in_seconds');
+        }
+
         setTimeout(() => {
           onSuccess(data.code);
           onClose();
@@ -98,17 +110,27 @@ export default function AccessCodeModal({ isOpen, onClose, onSuccess, unclosable
               </div>
               
               <div className="pt-12 p-8">
-                <h2 className="text-xl font-bold text-zinc-900 mb-1.5">Buka Akses</h2>
+                <h2 className="text-xl font-bold text-zinc-900 mb-1.5">
+                  {reason === 'expired' 
+                    ? 'Masa Aktif Kedaluwarsa' 
+                    : reason === 'deleted' 
+                      ? 'Kode Akses Tidak Berlaku' 
+                      : 'Masukkan Kode Akses'}
+                </h2>
                 <p className="text-zinc-500 text-sm mb-6 leading-relaxed">
-                  Masukkan kode akses yang Anda miliki untuk membuka seluruh fitur premium dan konten eksklusif.
+                  {reason === 'expired' 
+                    ? 'Masa aktif kode akses Anda sebelumnya telah kedaluwarsa. Silakan masukkan kode akses kembali untuk melanjutkan.'
+                    : reason === 'deleted'
+                      ? 'Kode akses Anda telah dinonaktifkan atau dihapus dari database server. Silakan masukkan kode akses yang valid untuk melanjutkan.'
+                      : 'Masukkan kode akses resmi untuk melanjutkan ke seluruh layanan dan materi Pustaka MTA.'}
                 </p>
 
                 {success ? (
                   <div className="bg-emerald-50 text-emerald-700 p-4 rounded-2xl flex items-center gap-3 border border-emerald-100">
                     <CheckCircle2 className="w-6 h-6 shrink-0" />
                     <div>
-                      <p className="font-bold">Akses Berhasil Dibuka!</p>
-                      <p className="text-sm opacity-90">Memuat fitur premium...</p>
+                      <p className="font-bold">Kode Akses Terverifikasi!</p>
+                      <p className="text-sm opacity-90">Memuat akses Pustaka...</p>
                     </div>
                   </div>
                 ) : (

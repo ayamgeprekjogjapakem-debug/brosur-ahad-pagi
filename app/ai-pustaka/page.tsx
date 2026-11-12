@@ -15,6 +15,8 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import MainSidebar from '@/app/components/MainSidebar';
 import AccessCodeModal from '@/app/components/AccessCodeModal';
+import AiSplashScreen from '@/app/components/AiSplashScreen';
+import { checkIsAccessExpired, clearLocalAccessCache, verifyAccessCodeOnline } from '@/utils/accessCodeHelper';
 
 type ChatMessage = {
   role: string;
@@ -114,11 +116,23 @@ export default function AiPustakaPage() {
     }
   ];
 
-  // Ref untuk auto-scroll ke bawah saat loading/pesan baru
+  // Ref untuk auto-scroll ke bawah saat loading/pesan baru & ref container scroll
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const chatScrollContainerRef = React.useRef<HTMLDivElement>(null);
 
   const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
     messagesEndRef.current?.scrollIntoView({ behavior });
+  };
+
+  // Format judul sesi cerdas yang mencerminkan inti pertanyaan pengguna
+  const generateSmartSessionTitle = (queryText: string): string => {
+    if (!queryText || !queryText.trim()) return 'Percakapan Baru';
+    let clean = queryText.trim().replace(/\s+/g, ' ');
+    // Bersihkan sapaan & kata awalan umum
+    clean = clean.replace(/^(assalamu'alaikum(\s+ustadz)?|assalamualaikum|ustadz|mohon tanya|mau tanya|tolong carikan|tolong jelaskan|carikan dalil|apa dalil|bagaimana hukum|apakah boleh|jelaskan tentang)\s+/gi, '').trim();
+    if (!clean) clean = queryText.trim();
+    clean = clean.charAt(0).toUpperCase() + clean.slice(1);
+    return clean.length > 34 ? clean.substring(0, 34) + '...' : clean;
   };
 
   // Fungsi untuk memuat "Chat Terbaru" & "Chat Terpopuler" dari Database Supabase
@@ -180,15 +194,22 @@ export default function AiPustakaPage() {
   };
 
   useEffect(() => {
-    // 1. Cek kode akses: jika belum punya kode atau masih kode dummy 'allowed', wajibkan modal kode
+    // 1. Cek kode akses: jika belum punya kode, kedaluwarsa, atau masih dummy 'allowed', wajibkan modal kode
     if (typeof window !== 'undefined') {
+      const isExpired = checkIsAccessExpired();
       const code = localStorage.getItem('mta_premium_access');
-      if (!code || code === 'allowed') {
-        localStorage.removeItem('mta_premium_access');
-        localStorage.removeItem('mta_premium_features');
+      if (isExpired || !code || code === 'allowed') {
+        clearLocalAccessCache();
         setIsAccessModalOpen(true);
       } else {
-        setIsAccessModalOpen(false);
+        verifyAccessCodeOnline().then((result) => {
+          if (!result.valid) {
+            clearLocalAccessCache();
+            setIsAccessModalOpen(true);
+          } else {
+            setIsAccessModalOpen(false);
+          }
+        });
       }
     }
 
@@ -204,15 +225,19 @@ export default function AiPustakaPage() {
       if (slugParam) {
         loadSessionBySlugFromDb(decodeURIComponent(slugParam));
       } else if (q) {
-        setSimInput(decodeURIComponent(q));
+        const decodedQ = decodeURIComponent(q);
+        setSimInput(decodedQ);
+        const smartTitle = generateSmartSessionTitle(decodedQ);
+        setSessions(prev => {
+          const next = prev.map((s, idx) => (idx === 0 && s.title === 'Percakapan Baru'
+            ? { ...s, title: smartTitle }
+            : s
+          ));
+          persistToBrowserCache(next);
+          return next;
+        });
       }
     }
-
-    // 4. Animasi Gerbang AI (AI Portal Gate) saat pertama kali masuk halaman
-    const gateTimer = setTimeout(() => {
-      setShowAiGate(false);
-    }, 1550);
-    return () => clearTimeout(gateTimer);
   }, []);
 
   const containsArabic = (text: string) => {
@@ -298,6 +323,10 @@ export default function AiPustakaPage() {
     persistToBrowserCache(updated);
     setEditingIndex(null);
     syncSlugToUrl(undefined);
+    setHeroTypingCharCount(0);
+    setTimeout(() => {
+      chatScrollContainerRef.current?.scrollTo({ top: 0, behavior: 'instant' });
+    }, 40);
   };
 
   const handleDeleteSession = (id: string) => {
@@ -396,8 +425,14 @@ export default function AiPustakaPage() {
   };
 
   useEffect(() => {
-    scrollToBottom();
-  }, [activeSession.messages, isSimulating, typingCharCount]);
+    // Hanya scroll ke bawah jika ada percakapan aktif atau sedang simulasi balasan
+    if (isSimulating !== 'idle' || activeSession.messages.length > 1) {
+      scrollToBottom();
+    } else {
+      // Saat awal masuk atau sesi baru, fokus selalu terkunci di ATAS halaman
+      chatScrollContainerRef.current?.scrollTo({ top: 0, behavior: 'instant' });
+    }
+  }, [activeSession.id, activeSession.messages.length, isSimulating, typingCharCount, showAiGate]);
 
   // Siklus tahap berpikir (Agentic Thinking Steps) & penghitung detik saat AI bekerja
   useEffect(() => {
@@ -441,14 +476,18 @@ export default function AiPustakaPage() {
     return () => clearTimeout(timer);
   }, [typingMessageIndex, typingCharCount, activeSession.messages]);
 
-  // Efek mengetik (Typewriter) hero greeting "Assalamu'alaikum, Ustadz" di canvas awal
+  // Efek mengetik (Typewriter) hero greeting "Assalamu'alaikum, Ustadz" di canvas awal setelah splash screen selesai
   useEffect(() => {
+    if (showAiGate) {
+      setHeroTypingCharCount(0);
+      return;
+    }
     if (heroTypingCharCount >= fullGreetingText.length) return;
     const timer = setTimeout(() => {
       setHeroTypingCharCount((prev) => prev + 1);
     }, 45);
     return () => clearTimeout(timer);
-  }, [heroTypingCharCount, fullGreetingText.length]);
+  }, [showAiGate, heroTypingCharCount, fullGreetingText.length]);
 
   // Helper untuk Copy Teks ke Clipboard
   const handleCopyText = (text: string, index: number) => {
@@ -506,7 +545,7 @@ export default function AiPustakaPage() {
           messages: messagesToSend,
           dbSessionId: activeSession.dbSessionId,
           sessionSlug: activeSession.slug,
-          sessionTitle: latestUserMsg.substring(0, 42) + (latestUserMsg.length > 42 ? '...' : ''),
+          sessionTitle: generateSmartSessionTitle(latestUserMsg),
           wordCount: 500
         }),
       });
@@ -577,8 +616,8 @@ export default function AiPustakaPage() {
     const newMessages = [...messagesBefore, updatedUserMsg];
 
     let updatedTitle = activeSession.title;
-    if (index === 1 || activeSession.messages.length <= 2) {
-      updatedTitle = newText.substring(0, 32) + (newText.length > 32 ? '...' : '');
+    if (index === 1 || activeSession.messages.length <= 2 || activeSession.title === 'Percakapan Baru') {
+      updatedTitle = generateSmartSessionTitle(newText);
     }
 
     const nextSessions = sessions.map(s =>
@@ -606,7 +645,7 @@ export default function AiPustakaPage() {
     setTypingMessageIndex(null);
 
     const newMessages = [...activeSession.messages, { role: 'user', content: promptText }];
-    const updatedTitle = promptText.substring(0, 34) + (promptText.length > 34 ? '...' : '');
+    const updatedTitle = generateSmartSessionTitle(promptText);
 
     const nextSessions = sessions.map(s =>
       s.id === activeSession.id
@@ -635,70 +674,14 @@ export default function AiPustakaPage() {
     <div className="flex h-screen bg-[#fafaf9] font-sans selection:bg-emerald-200 overflow-hidden">
       <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet" />
 
-      {/* ANIMASI GERBANG AI (AI PORTAL GATE) SAAT PERTAMA KALI MASUK /ai-pustaka */}
-      <AnimatePresence>
-        {showAiGate && (
-          <motion.div
-            key="ai-portal-gate-overlay"
-            initial={{ opacity: 1 }}
-            exit={{ opacity: 0, scale: 1.06, filter: 'blur(12px)' }}
-            transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-            onClick={() => setShowAiGate(false)}
-            className="fixed inset-0 z-[120] flex flex-col items-center justify-center bg-gradient-to-br from-slate-950 via-emerald-950 to-teal-950 text-white overflow-hidden select-none cursor-pointer"
-          >
-            {/* Lapisan Cincin Cahaya Portal */}
-            <motion.div
-              initial={{ scale: 0.5, opacity: 0 }}
-              animate={{ scale: [0.8, 1.35, 1.8], opacity: [0.4, 0.25, 0] }}
-              transition={{ duration: 1.6, ease: 'easeOut' }}
-              className="absolute w-[340px] h-[340px] sm:w-[480px] sm:h-[480px] rounded-full border border-emerald-400/30 pointer-events-none"
-            />
-            <motion.div
-              initial={{ scale: 0.6, opacity: 0 }}
-              animate={{ scale: [0.7, 1.15, 1.45], opacity: [0.5, 0.3, 0] }}
-              transition={{ duration: 1.5, delay: 0.15, ease: 'easeOut' }}
-              className="absolute w-[260px] h-[260px] sm:w-[360px] sm:h-[360px] rounded-full border border-teal-300/40 pointer-events-none"
-            />
-
-            {/* Pendaran Cahaya Inti Gerbang */}
-            <div className="absolute w-72 h-72 rounded-full bg-emerald-500/20 blur-3xl pointer-events-none" />
-
-            {/* Ikon & Tipografi Gerbang AI */}
-            <motion.div
-              initial={{ y: 18, scale: 0.88, opacity: 0 }}
-              animate={{ y: 0, scale: 1, opacity: 1 }}
-              transition={{ duration: 0.5, ease: 'easeOut' }}
-              className="relative z-10 flex flex-col items-center text-center px-6 space-y-4"
-            >
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 via-teal-500 to-emerald-700 flex items-center justify-center shadow-2xl shadow-emerald-500/40 ring-1 ring-white/30">
-                <img src="/images/logo_asma_white.png" alt="" />
-              </div>
-
-              <div className="space-y-1.5">
-                <p className="text-[11px] uppercase tracking-[0.28em] text-emerald-300/90 font-normal">
-                  Memasuki Gerbang Telaah Digital
-                </p>
-                <h1 className="text-2xl sm:text-3xl font-normal tracking-tight text-white">
-                  Asma' (Asisten Majlis Tafsir Al Qur'an)
-                </h1>
-                <p className="text-xs sm:text-sm text-emerald-100/75 font-normal max-w-md">
-                  Menghubungkan khazanah Brosur Ahad Pagi (1995–2026) & 16.800+ indeks matan hadits...
-                </p>
-              </div>
-
-              {/* Garis cahaya pembuka gerbang */}
-              <div className="w-48 h-1 rounded-full bg-white/10 overflow-hidden mt-2">
-                <motion.div
-                  initial={{ x: '-100%' }}
-                  animate={{ x: '100%' }}
-                  transition={{ duration: 1.15, ease: 'easeInOut' }}
-                  className="w-full h-full bg-gradient-to-r from-transparent via-emerald-300 to-transparent"
-                />
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* ANIMASI GERBANG AI (AI SPLASH SCREEN) SAAT PERTAMA KALI MASUK /ai-pustaka */}
+      <AiSplashScreen
+        show={showAiGate}
+        onClose={() => {
+          setShowAiGate(false);
+          chatScrollContainerRef.current?.scrollTo({ top: 0, behavior: 'instant' });
+        }}
+      />
 
       {/* SINGLE UNIFIED SIDEBAR (Portal + Chat Saya, Chat Terbaru, Chat Terpopuler) */}
       <MainSidebar
@@ -740,7 +723,9 @@ export default function AiPustakaPage() {
             <div className="h-5 w-px bg-slate-200 hidden sm:block mx-1" />
 
             <div className="flex items-center gap-2.5 truncate">
-
+              <div className="w-7 h-7 rounded-lg bg-emerald-50 border border-emerald-200/80 p-1 flex items-center justify-center shrink-0 shadow-2xs">
+                <Image src="/images/logo_asma.png" alt="Logo Asma'" width={20} height={20} className="object-contain" />
+              </div>
               <span className="font-normal text-[15px] text-slate-900 truncate">
                 {activeSession.title}
               </span>
@@ -796,48 +781,69 @@ export default function AiPustakaPage() {
         <div className="flex-1 flex flex-col h-full relative bg-white min-w-0 overflow-hidden">
 
           {/* Thread Percakapan dengan Padding Bawah Profesional (pb-48 sm:pb-52) */}
-          <div className="flex-1 overflow-y-auto px-4 sm:px-6 pt-6 space-y-6 pb-48 sm:pb-52">
+          <div ref={chatScrollContainerRef} className="flex-1 overflow-y-auto px-4 sm:px-6 pt-6 space-y-6 pb-48 sm:pb-52">
             <div className="max-w-3xl mx-auto space-y-7">
 
-              {/* GEMINI-STYLE AI ENTRANCE HERO (Clean Canvas dengan Animasi Typing: Assalamu'alaikum, Ustadz) */}
+              {/* GEMINI-STYLE AI ENTRANCE HERO (Clean Canvas dengan Animasi Fade dari Atas & Typing) */}
               {activeSession.messages.length <= 1 && isSimulating === 'idle' && (
                 <motion.div
-                  initial={{ opacity: 0, y: 16 }}
+                  key={`ai-entrance-hero-${activeSession.id}`}
+                  initial={{ opacity: 0, y: -36 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.45, ease: 'easeOut' }}
+                  transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
                   className="pt-4 pb-4 space-y-7"
                 >
                   {/* Clean Canvas Greeting dengan Animasi Typing (Centered + Logo Asma') */}
                   <div className="text-center flex flex-col items-center justify-center space-y-3.5 py-4">
-                    {/* Logo Asma' */}
-                    <div className="relative group">
-                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl  flex items-center justify-center transition-transform hover:scale-120">
+                    {/* Logo Asma' - Meluncur & Fade Anggun dari Atas Setelah Splash Screen */}
+                    <motion.div
+                      initial={{ opacity: 0, y: -30, scale: 0.88 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      transition={{ duration: 0.75, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
+                      className="relative group"
+                    >
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center transition-transform hover:scale-105 drop-shadow-md">
                         <Image
                           src="/images/logo_asma.png"
                           alt="Logo Asma'"
-                          width={72}
-                          height={72}
-                          className="w-full h-full object-contain"
+                          width={76}
+                          height={76}
+                          className="w-full h-full object-contain filter drop-shadow-md"
                           priority
                         />
                       </div>
-                    </div>
+                    </motion.div>
 
-                    <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-normal border border-emerald-200/60 shadow-2xs">
-
+                    <motion.div
+                      initial={{ opacity: 0, y: -18 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                      className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-normal border border-emerald-200/60 shadow-2xs"
+                    >
+                      <Image src="/images/logo_asma.png" alt="Logo Asma'" width={14} height={14} className="object-contain shrink-0" />
                       <span>Asma' (Asisten Majlis Tafsir Al Qur'an)</span>
-                    </div>
+                    </motion.div>
 
-                    <h2 className="text-2xl sm:text-3xl md:text-4xl font-normal tracking-tight text-slate-800 flex items-center justify-center gap-1">
+                    <motion.h2
+                      initial={{ opacity: 0, y: -14 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                      className="text-2xl sm:text-3xl md:text-4xl font-normal tracking-tight text-slate-800 flex items-center justify-center gap-1"
+                    >
                       <span>{fullGreetingText.slice(0, heroTypingCharCount)}</span>
                       {heroTypingCharCount < fullGreetingText.length && (
                         <span className="w-2.5 h-7 bg-emerald-600 animate-pulse inline-block ml-0.5 rounded-sm" />
                       )}
-                    </h2>
+                    </motion.h2>
 
-                    <p className="text-slate-500 text-sm sm:text-base font-normal max-w-xl leading-relaxed text-center mx-auto">
+                    <motion.p
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.38, ease: [0.16, 1, 0.3, 1] }}
+                      className="text-slate-500 text-sm sm:text-base font-normal max-w-xl leading-relaxed text-center mx-auto"
+                    >
                       Silakan ajukan pertanyaan seputar Materi Brosur, dalil ibadah, atau materi kajian Brosur Ahad Pagi.
-                    </p>
+                    </motion.p>
                   </div>
 
                   {/* Grid 4 Kartu Saran Topik Cepat Clean & Minimalis */}
@@ -858,7 +864,7 @@ export default function AiPustakaPage() {
                             <span className="text-[11px] font-normal uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 group-hover:bg-emerald-100/70 group-hover:text-emerald-800 transition-colors">
                               {item.badge}
                             </span>
-                            <Sparkles className="w-3.5 h-3.5 text-slate-300 group-hover:text-emerald-600 transition-colors" />
+                            <Image src="/images/logo_asma.png" alt="Logo Asma'" width={14} height={14} className="object-contain opacity-50 group-hover:opacity-100 transition-opacity" />
                           </div>
                           <div>
                             <h3 className="text-[14.5px] font-normal text-slate-800 group-hover:text-emerald-900 transition-colors">
@@ -1037,7 +1043,7 @@ export default function AiPustakaPage() {
                           {typingMessageIndex === i && (
                             <div className="flex items-center justify-between gap-2 mt-2 py-1.5 px-3 rounded-xl bg-emerald-50/80 border border-emerald-200/70 text-xs text-emerald-800">
                               <span className="flex items-center gap-1.5 font-semibold">
-                                <Sparkles className="w-3.5 h-3.5 text-emerald-600 animate-spin" />
+                                <Image src="/images/logo_asma.png" alt="Logo Asma'" width={14} height={14} className="object-contain animate-spin" />
                                 <span>Mengetik penjelasan dalil...</span>
                               </span>
                               <button
@@ -1210,8 +1216,8 @@ export default function AiPustakaPage() {
                   const newMessages = [...activeSession.messages, { role: 'user', content: userMsg }];
 
                   let updatedTitle = activeSession.title;
-                  if (activeSession.messages.length === 1) {
-                    updatedTitle = userMsg.substring(0, 32) + (userMsg.length > 32 ? '...' : '');
+                  if (activeSession.title === 'Percakapan Baru' || activeSession.messages.length <= 1) {
+                    updatedTitle = generateSmartSessionTitle(userMsg);
                   }
 
                   // Simpan ke Cache Browser Seketika
