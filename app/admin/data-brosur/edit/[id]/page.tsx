@@ -4,7 +4,7 @@ import React, { useEffect, useState, use } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { 
   Loader2, ArrowLeft, Save, FolderArchive, Sparkles, 
-  Calendar, Type, Link as LinkIcon, CheckCircle2, ArrowUpRight, Trash2
+  Calendar, Type, Link as LinkIcon, CheckCircle2, ArrowUpRight, Trash2, ChevronDown
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -14,6 +14,7 @@ export default function AdminEditBrosurPage({ params }: { params: Promise<{ id: 
   const resolvedParams = use(params);
   const id = resolvedParams.id;
 
+  const currentYear = new Date().getFullYear();
   const [judul, setJudul] = useState('');
   const [tahun, setTahun] = useState('');
   const [slug, setSlug] = useState('');
@@ -21,6 +22,13 @@ export default function AdminEditBrosurPage({ params }: { params: Promise<{ id: 
   const [folderId, setFolderId] = useState('');
 
   const [folders, setFolders] = useState<any[]>([]);
+  const [availableYears, setAvailableYears] = useState<number[]>(() => {
+    const list: number[] = [];
+    for (let y = currentYear + 1; y >= 1995; y--) {
+      list.push(y);
+    }
+    return list;
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -38,7 +46,63 @@ export default function AdminEditBrosurPage({ params }: { params: Promise<{ id: 
         .order('name');
       if (folderData) setFolders(folderData);
 
-      // 2. Fetch Brosur Data
+      // 2. Fetch Available Years
+      try {
+        let allYears = new Set<number>();
+        let from = 0;
+        const step = 1000;
+        let hasMore = true;
+
+        while (hasMore) {
+          const { data: yData, error: yErr } = await supabase
+            .from('brosur')
+            .select('tahun')
+            .not('tahun', 'is', null)
+            .range(from, from + step - 1);
+
+          if (yErr || !yData || yData.length === 0) {
+            hasMore = false;
+          } else {
+            yData.forEach((d: any) => {
+              if (d.tahun) allYears.add(d.tahun);
+            });
+            if (yData.length < step) {
+              hasMore = false;
+            } else {
+              from += step;
+            }
+          }
+        }
+
+        try {
+          const { data: customYearsSetting } = await supabase
+            .from('system_settings')
+            .select('value')
+            .eq('key', 'custom_years')
+            .single();
+
+          if (customYearsSetting?.value) {
+            const parsed = JSON.parse(customYearsSetting.value);
+            if (Array.isArray(parsed)) {
+              parsed.forEach((y: any) => {
+                const num = parseInt(y, 10);
+                if (!isNaN(num)) allYears.add(num);
+              });
+            }
+          }
+        } catch (e) {}
+
+        const nowYear = new Date().getFullYear();
+        allYears.add(nowYear);
+        allYears.add(nowYear + 1);
+
+        const sorted = Array.from(allYears).sort((a, b) => b - a);
+        setAvailableYears(sorted);
+      } catch (err) {
+        console.error('Error fetching years in edit form:', err);
+      }
+
+      // 3. Fetch Brosur Data
       const { data, error } = await supabase
         .from('brosur')
         .select('*')
@@ -49,7 +113,14 @@ export default function AdminEditBrosurPage({ params }: { params: Promise<{ id: 
         setErrorMsg('Data brosur tidak ditemukan atau telah dihapus.');
       } else {
         setJudul(data.judul || '');
-        setTahun(data.tahun?.toString() || '');
+        const loadedTahun = data.tahun?.toString() || '';
+        setTahun(loadedTahun);
+        if (loadedTahun) {
+          const numTahun = parseInt(loadedTahun, 10);
+          if (!isNaN(numTahun)) {
+            setAvailableYears(prev => Array.from(new Set([...prev, numTahun])).sort((a, b) => b - a));
+          }
+        }
         setSlug(data.slug || '');
         setKonten(data.konten || '');
         setFolderId(data.folder_id || '');
@@ -182,14 +253,24 @@ export default function AdminEditBrosurPage({ params }: { params: Promise<{ id: 
               <Calendar size={13} className="text-zinc-400" />
               <span>Tahun Terbit</span>
             </label>
-            <input
-              type="number"
-              required
-              value={tahun}
-              onChange={(e) => setTahun(e.target.value)}
-              placeholder="2026"
-              className="w-full bg-[#FAFAFA] border border-zinc-200/80 rounded-xl px-3.5 py-2.5 text-xs text-zinc-900 outline-none focus:bg-white focus:border-emerald-500 transition font-medium"
-            />
+            <div className="relative">
+              <select
+                value={tahun}
+                onChange={(e) => setTahun(e.target.value)}
+                required
+                className="w-full bg-[#FAFAFA] border border-zinc-200/80 rounded-xl px-3.5 py-2.5 text-xs text-zinc-900 outline-none focus:bg-white focus:border-emerald-500 transition appearance-none cursor-pointer font-medium"
+              >
+                <option value="" disabled>-- Pilih Tahun --</option>
+                {availableYears.map(y => (
+                  <option key={y} value={y.toString()}>
+                    Tahun {y}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400">
+                <ChevronDown size={14} />
+              </div>
+            </div>
           </div>
 
           {/* Master Koleksi / Kategori */}
@@ -210,6 +291,9 @@ export default function AdminEditBrosurPage({ params }: { params: Promise<{ id: 
                   <option key={f.id} value={f.id}>{f.name}</option>
                 ))}
               </select>
+              <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400">
+                <ChevronDown size={14} />
+              </div>
             </div>
           </div>
 

@@ -74,13 +74,31 @@ export default function LoginPage() {
     }
 
     if (data?.user) {
+      let userRole = data.user.user_metadata?.role;
+      
       const { data: profile } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', data.user.id)
-        .single();
+        .maybeSingle();
 
-      if (profile?.role === 'super-admin') {
+      if (profile?.role) {
+        userRole = profile.role;
+      } else if (data.user.email) {
+        const { data: profileByEmail } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('email', data.user.email)
+          .maybeSingle();
+        if (profileByEmail?.role) userRole = profileByEmail.role;
+      }
+
+      const masterSuperAdminEmails = ['admin@brosurmta.com', 'r.wariyanto@gmail.com', 'test_admin@brosur.id'];
+      if (data.user.email && masterSuperAdminEmails.includes(data.user.email)) {
+        userRole = 'super-admin';
+      }
+
+      if (userRole === 'super-admin') {
         router.push('/dashboard');
       } else {
         router.push('/admin');

@@ -2,19 +2,28 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Loader2, ArrowLeft, Save, FolderArchive, Sparkles, Calendar, Type, Link as LinkIcon, CheckCircle2 } from 'lucide-react';
+import { Loader2, ArrowLeft, Save, FolderArchive, Sparkles, Calendar, Type, Link as LinkIcon, CheckCircle2, ChevronDown, BellRing } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import RichTextEditor from '@/app/admin/components/RichTextEditor';
 
 function CreateBrosurForm() {
+  const currentYear = new Date().getFullYear();
   const [judul, setJudul] = useState('');
-  const [tahun, setTahun] = useState(new Date().getFullYear().toString());
+  const [tahun, setTahun] = useState(currentYear.toString());
   const [slug, setSlug] = useState('');
   const [konten, setKonten] = useState('');
   const [folderId, setFolderId] = useState('');
+  const [sendPushNotif, setSendPushNotif] = useState(true);
   
   const [folders, setFolders] = useState<any[]>([]);
+  const [availableYears, setAvailableYears] = useState<number[]>(() => {
+    const list: number[] = [];
+    for (let y = currentYear + 1; y >= 1995; y--) {
+      list.push(y);
+    }
+    return list;
+  });
   const [loading, setLoading] = useState(false);
   const [parsingLoading, setParsingLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -24,6 +33,81 @@ function CreateBrosurForm() {
   const supabase = createClient();
   const searchParams = useSearchParams();
   const pdfFile = searchParams?.get('pdf');
+  const qTahun = searchParams?.get('tahun');
+  const qFolder = searchParams?.get('folder');
+
+  // Pre-fill tahun dari URL search params jika ada
+  useEffect(() => {
+    if (qTahun && /^\d{4}$/.test(qTahun)) {
+      setTahun(qTahun);
+    }
+  }, [qTahun]);
+
+  // Load Daftar Kategori Tahun Terbit (dari brosur + system_settings)
+  useEffect(() => {
+    const fetchYears = async () => {
+      try {
+        let allYears = new Set<number>();
+        let from = 0;
+        const step = 1000;
+        let hasMore = true;
+
+        while (hasMore) {
+          const { data, error } = await supabase
+            .from('brosur')
+            .select('tahun')
+            .not('tahun', 'is', null)
+            .range(from, from + step - 1);
+
+          if (error || !data || data.length === 0) {
+            hasMore = false;
+          } else {
+            data.forEach((d: any) => {
+              if (d.tahun) allYears.add(d.tahun);
+            });
+            if (data.length < step) {
+              hasMore = false;
+            } else {
+              from += step;
+            }
+          }
+        }
+
+        try {
+          const { data: customYearsSetting } = await supabase
+            .from('system_settings')
+            .select('value')
+            .eq('key', 'custom_years')
+            .single();
+
+          if (customYearsSetting?.value) {
+            const parsed = JSON.parse(customYearsSetting.value);
+            if (Array.isArray(parsed)) {
+              parsed.forEach((y: any) => {
+                const num = parseInt(y, 10);
+                if (!isNaN(num)) allYears.add(num);
+              });
+            }
+          }
+        } catch (e) {}
+
+        const nowYear = new Date().getFullYear();
+        allYears.add(nowYear);
+        allYears.add(nowYear + 1);
+
+        if (qTahun && /^\d{4}$/.test(qTahun)) {
+          allYears.add(parseInt(qTahun, 10));
+        }
+
+        const sorted = Array.from(allYears).sort((a, b) => b - a);
+        setAvailableYears(sorted);
+      } catch (err) {
+        console.error('Error fetching years in new form:', err);
+      }
+    };
+
+    fetchYears();
+  }, [supabase, qTahun]);
 
   // Load Folder Kategori
   useEffect(() => {
@@ -31,11 +115,15 @@ function CreateBrosurForm() {
       const { data } = await supabase.from('folders').select('id, name').order('name');
       if (data && data.length > 0) {
         setFolders(data);
-        setFolderId(data[0].id);
+        if (qFolder && data.some((f: any) => f.id === qFolder)) {
+          setFolderId(qFolder);
+        } else {
+          setFolderId(data[0].id);
+        }
       }
     };
     fetchFolders();
-  }, [supabase]);
+  }, [supabase, qFolder]);
 
   // Handle PDF Parsing jika datang dari upload PDF
   useEffect(() => {
@@ -92,7 +180,7 @@ function CreateBrosurForm() {
     }
   };
 
-  const handleTahunChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleTahunChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
     const val = e.target.value;
     setTahun(val);
     
@@ -128,6 +216,27 @@ function CreateBrosurForm() {
       setErrorMsg(`Gagal menyimpan brosur: ${error.message}`);
       setLoading(false);
     } else {
+      // Kirim Push Notifikasi otomatis ke Flutter jika dicentang
+      if (sendPushNotif) {
+        try {
+          await fetch('/api/notifications/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              targetType: 'topic',
+              target: 'semua_pengguna',
+              title: `📖 Brosur Baru: ${judul.trim()}`,
+              body: `Telah terbit edisi tahun ${tahun}. Ketuk untuk membaca materi brosur.`,
+              screen: 'detail_brosur',
+              slug: slug.trim(),
+              itemId: id,
+            }),
+          });
+        } catch (notifErr) {
+          console.warn('Gagal memicu push notification:', notifErr);
+        }
+      }
+
       router.push(`/admin/data-brosur?success=created&title=${encodeURIComponent(judul.trim())}`);
     }
   };
@@ -200,14 +309,24 @@ function CreateBrosurForm() {
               <Calendar size={13} className="text-zinc-400" />
               <span>Tahun Terbit</span>
             </label>
-            <input
-              type="number"
-              required
-              value={tahun}
-              onChange={handleTahunChange}
-              placeholder="2026"
-              className="w-full bg-[#FAFAFA] border border-zinc-200/80 rounded-xl px-3.5 py-2.5 text-xs text-zinc-900 outline-none focus:bg-white focus:border-emerald-500 transition font-medium"
-            />
+            <div className="relative">
+              <select
+                value={tahun}
+                onChange={handleTahunChange}
+                required
+                className="w-full bg-[#FAFAFA] border border-zinc-200/80 rounded-xl px-3.5 py-2.5 text-xs text-zinc-900 outline-none focus:bg-white focus:border-emerald-500 transition appearance-none cursor-pointer font-medium"
+              >
+                <option value="" disabled>-- Pilih Tahun --</option>
+                {availableYears.map(y => (
+                  <option key={y} value={y.toString()}>
+                    Tahun {y}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400">
+                <ChevronDown size={14} />
+              </div>
+            </div>
           </div>
 
           {/* Master Koleksi / Kategori */}
@@ -228,6 +347,9 @@ function CreateBrosurForm() {
                   <option key={f.id} value={f.id}>{f.name}</option>
                 ))}
               </select>
+              <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400">
+                <ChevronDown size={14} />
+              </div>
             </div>
           </div>
 
@@ -294,6 +416,26 @@ function CreateBrosurForm() {
             onChange={(content) => setKonten(content)}
             placeholder="Tulis materi brosur, matan ayat hadits, dan terjemahan di sini..."
           />
+        </div>
+
+        {/* Checkbox Kirim Push Notifikasi ke Flutter */}
+        <div className="flex items-start gap-3 p-4 bg-emerald-50/70 border border-emerald-100/90 rounded-2xl transition-all">
+          <input
+            type="checkbox"
+            id="sendPushNotif"
+            checked={sendPushNotif}
+            onChange={(e) => setSendPushNotif(e.target.checked)}
+            className="mt-0.5 w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"
+          />
+          <label htmlFor="sendPushNotif" className="text-xs text-zinc-700 cursor-pointer select-none">
+            <span className="font-bold text-emerald-950 flex items-center gap-1.5">
+              <BellRing size={13} className="text-emerald-600" />
+              Kirim Notifikasi Otomatis ke Aplikasi Jamaah (Flutter)
+            </span>
+            <span className="text-zinc-500 text-[11.5px] mt-0.5 block leading-relaxed">
+              Otomatis kirim push notifikasi &quot;Brosur Baru&quot; ke smartphone jamaah. Notifikasi dapat diklik langsung membuka halaman detail brosur ini dan otomatis dinonaktifkan setelah dibaca.
+            </span>
+          </label>
         </div>
 
         {/* Bottom Action Button */}

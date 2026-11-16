@@ -23,9 +23,11 @@ export async function POST(req: Request) {
     }
 
     const allowed: string[] = Array.isArray(data.allowed_features) ? [...data.allowed_features] : [];
-    if (data.has_ai_access && !allowed.includes('ai-pustaka')) {
-      allowed.push('ai-pustaka');
-    }
+    // AI aktif HANYA jika data.has_ai_access bernilai true DAN fitur 'ai-pustaka' diizinkan
+    const hasAiAccess = data.has_ai_access === true && (allowed.length === 0 || allowed.includes('ai-pustaka'));
+    const finalAllowed = hasAiAccess
+      ? (allowed.includes('ai-pustaka') ? allowed : [...allowed, 'ai-pustaka'])
+      : allowed.filter(f => f !== 'ai-pustaka');
 
     const expiresInSeconds = typeof data.expires_in_seconds === 'number' && data.expires_in_seconds > 0 
       ? data.expires_in_seconds 
@@ -42,7 +44,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ 
       valid: true, 
       code: data.code,
-      allowed_features: allowed,
+      has_ai_access: hasAiAccess,
+      allowed_features: finalAllowed,
       expires_in_seconds: expiresInSeconds || null,
       ai_daily_limit: aiDailyLimit,
       ai_reset_hour: aiResetHour,

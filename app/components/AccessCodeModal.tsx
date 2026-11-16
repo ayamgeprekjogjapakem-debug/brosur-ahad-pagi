@@ -52,6 +52,9 @@ export default function AccessCodeModal({ isOpen, onClose, onSuccess, unclosable
         if (data.allowed_features) {
           localStorage.setItem('mta_premium_features', JSON.stringify(data.allowed_features));
         }
+        if (data.has_ai_access !== undefined) {
+          localStorage.setItem('mta_has_ai_access', data.has_ai_access ? 'true' : 'false');
+        }
 
         // Simpan durasi kedaluwarsa (dalam detik)
         if (data.expires_in_seconds && data.expires_in_seconds > 0) {

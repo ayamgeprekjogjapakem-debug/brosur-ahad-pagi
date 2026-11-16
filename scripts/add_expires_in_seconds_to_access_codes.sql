@@ -24,6 +24,17 @@ ADD COLUMN IF NOT EXISTS description TEXT;
 ALTER TABLE public.access_codes 
 ADD COLUMN IF NOT EXISTS has_ai_access BOOLEAN NOT NULL DEFAULT false;
 
+-- 5. Tambah kolom kuota AI harian & jam reset
+ALTER TABLE public.access_codes 
+ADD COLUMN IF NOT EXISTS ai_daily_limit INTEGER DEFAULT 20;
+
+ALTER TABLE public.access_codes 
+ADD COLUMN IF NOT EXISTS ai_reset_hour INTEGER DEFAULT 0;
+
+-- 6. Muat ulang schema cache PostgREST agar kolom langsung aktif
+NOTIFY pgrst, 'reload schema';
+
+
 -- 5. Beri komentar penjelasan kolom
 COMMENT ON COLUMN public.access_codes.expires_in_seconds IS 'Masa berlaku kode akses dalam satuan detik (seconds). NULL atau 0 berarti permanen / tanpa batas waktu.';
 COMMENT ON COLUMN public.access_codes.allowed_features IS 'Array JSON fitur yang diizinkan (bap, quran, kalender, tersimpan, hadist, perawi, ai-pustaka).';

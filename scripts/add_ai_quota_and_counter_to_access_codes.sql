@@ -154,3 +154,7 @@ BEGIN
 END;
 $$;
 
+-- Muat ulang schema cache PostgREST agar kolom langsung terbaca di API
+NOTIFY pgrst, 'reload schema';
+
+

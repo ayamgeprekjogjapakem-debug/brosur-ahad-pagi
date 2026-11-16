@@ -206,6 +206,9 @@ export default function AiPustakaPage() {
           if (!result.valid) {
             clearLocalAccessCache();
             setIsAccessModalOpen(true);
+          } else if (result.data?.has_ai_access === false) {
+            alert('Akses Ditolak: Kode akses Anda saat ini tidak memiliki izin untuk fitur Asisten AI (Asma\').');
+            router.push('/');
           } else {
             setIsAccessModalOpen(false);
           }

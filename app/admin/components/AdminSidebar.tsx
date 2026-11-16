@@ -1,17 +1,18 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { 
   LayoutDashboard, Database, BookOpen, Calendar, Bell,
   User, UserCog, LogOut, Sparkles, X, ScrollText, Library,
-  KeyRound, Shield, CheckCircle2, ShieldAlert, BellRing, Megaphone, MessageSquare
+  KeyRound, Shield, CheckCircle2, ShieldAlert, BellRing, Megaphone, MessageSquare,
+  FolderArchive, ChevronDown, ChevronRight, FileText, Plus
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 
-export default function AdminSidebar() {
+function AdminSidebarInner() {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -19,8 +20,13 @@ export default function AdminSidebar() {
   const [isMinimized, setIsMinimized] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<{ email?: string; name?: string; role?: string } | null>(null);
+
+  // State dropdown kelompok Data Brosur di sidebar
+  const [isBrosurDropdownOpen, setIsBrosurDropdownOpen] = useState(true);
+
   const supabase = createClient();
 
+  // Fetch Current User Profile
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
@@ -44,6 +50,13 @@ export default function AdminSidebar() {
     };
     fetchCurrentUser();
   }, [supabase]);
+
+  // Otomatis buka dropdown jika sedang berada di rute /admin/data-brosur
+  useEffect(() => {
+    if (pathname.startsWith('/admin/data-brosur')) {
+      setIsBrosurDropdownOpen(true);
+    }
+  }, [pathname]);
 
   useEffect(() => {
     const saved = localStorage.getItem('admin_sidebar_minimized');
@@ -92,7 +105,7 @@ export default function AdminSidebar() {
     {
       label: 'KONTEN DAKWAH',
       items: [
-        { name: 'Data Brosur', href: '/admin/data-brosur', icon: Database },
+        { name: 'Data Brosur', href: '/admin/data-brosur', icon: Database, hasDropdown: true },
         { name: 'Data Quran', href: '/admin/data-quran', icon: BookOpen },
         { name: 'Hadist Brosur', href: '/admin/hadist', icon: ScrollText },
         { name: 'Hadist 9 Imam', href: '/admin/hadist-9-imam', icon: Library },
@@ -110,7 +123,7 @@ export default function AdminSidebar() {
     {
       label: 'PENGATURAN & AKSES',
       items: [
-        { name: 'Kode Akses', href: '/admin/kode-akses', icon: KeyRound },
+        { name: 'Pengaturan Kode Akses', href: '/admin/kode-akses', icon: KeyRound, badge: 'Akses' },
         { name: 'Akun Saya', href: '/admin/akun', icon: User },
         { name: 'Manajemen Akun', href: '/admin/management-akun', icon: UserCog },
         ...(currentUser?.role === 'super-admin' 
@@ -163,7 +176,7 @@ export default function AdminSidebar() {
           {/* Close button on mobile */}
           <button
             onClick={() => setIsMobileOpen(false)}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-600 hover:bg-zinc-200/50 md:hidden transition"
+            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-600 hover:bg-zinc-200/50 md:hidden transition cursor-pointer"
           >
             <X size={16} />
           </button>
@@ -190,43 +203,131 @@ export default function AdminSidebar() {
                 {group.items.map((item) => {
                   const isActive = item.href === '/admin' 
                     ? pathname === '/admin' 
-                    : pathname === item.href || pathname.startsWith(`${item.href}/`);
+                    : pathname === item.href || 
+                      pathname.startsWith(`${item.href}/`) ||
+                      (item.href === '/admin/kode-akses' && pathname.startsWith('/admin/access-codes'));
                   const Icon = item.icon;
                   const badge = (item as any).badge;
+                  const hasDropdown = (item as any).hasDropdown;
 
                   return (
-                    <Link 
-                      key={item.name} 
-                      href={item.href}
-                      title={isMinimized && !isMobileOpen ? item.name : undefined}
-                      className={`w-full flex items-center ${
-                        isMinimized && !isMobileOpen ? 'justify-center px-0 h-10' : 'gap-3 px-3 py-2'
-                      } rounded-xl text-xs sm:text-sm font-medium transition-all duration-150 ${
-                        isActive 
-                          ? 'bg-emerald-50 text-emerald-800 font-semibold shadow-2xs' 
-                          : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100/80'
-                      }`}
-                    >
-                      <Icon 
-                        size={17} 
-                        strokeWidth={isActive ? 2.2 : 1.8} 
-                        className={`shrink-0 transition-colors ${
-                          isActive ? 'text-emerald-600' : 'text-zinc-400 group-hover:text-zinc-600'
-                        }`} 
-                      />
-                      {(!isMinimized || isMobileOpen) && (
-                        <>
-                          <span className="truncate">{item.name}</span>
-                          {badge ? (
-                            <span className="ml-auto px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200/60 shrink-0">
-                              {badge}
-                            </span>
-                          ) : isActive ? (
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 ml-auto shrink-0" />
-                          ) : null}
-                        </>
+                    <div key={item.name} className="space-y-0.5">
+                      <div className="flex items-center">
+                        <Link 
+                          href={item.href}
+                          onClick={() => {
+                            if (hasDropdown) {
+                              setIsBrosurDropdownOpen(true);
+                            }
+                          }}
+                          title={isMinimized && !isMobileOpen ? item.name : undefined}
+                          className={`flex-1 flex items-center ${
+                            isMinimized && !isMobileOpen ? 'justify-center px-0 h-10' : 'gap-3 px-3 py-2'
+                          } rounded-xl text-xs sm:text-sm font-medium transition-all duration-150 ${
+                            isActive 
+                              ? 'bg-emerald-50 text-emerald-800 font-semibold shadow-2xs' 
+                              : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100/80'
+                          }`}
+                        >
+                          <Icon 
+                            size={17} 
+                            strokeWidth={isActive ? 2.2 : 1.8} 
+                            className={`shrink-0 transition-colors ${
+                              isActive ? 'text-emerald-600' : 'text-zinc-400 group-hover:text-zinc-600'
+                            }`} 
+                          />
+                          {(!isMinimized || isMobileOpen) && (
+                            <>
+                              <span className="truncate">{item.name}</span>
+                              {badge ? (
+                                <span className="ml-auto px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200/60 shrink-0">
+                                  {badge}
+                                </span>
+                              ) : isActive && !hasDropdown ? (
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 ml-auto shrink-0" />
+                              ) : null}
+                            </>
+                          )}
+                        </Link>
+
+                        {/* Tombol Toggle Dropdown Khusus Kelompok Data Brosur */}
+                        {hasDropdown && (!isMinimized || isMobileOpen) && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setIsBrosurDropdownOpen(!isBrosurDropdownOpen);
+                            }}
+                            className="p-2 ml-0.5 rounded-xl text-zinc-400 hover:text-zinc-700 hover:bg-zinc-200/60 transition cursor-pointer"
+                            title={isBrosurDropdownOpen ? 'Tutup Menu Brosur' : 'Buka Menu Brosur'}
+                          >
+                            {isBrosurDropdownOpen ? (
+                              <ChevronDown size={14} className="text-zinc-500" />
+                            ) : (
+                              <ChevronRight size={14} className="text-zinc-400" />
+                            )}
+                          </button>
+                        )}
+                      </div>
+
+                      {/* DROPDOWN SUBMENU DATA BROSUR (Slug Pages: Semua Brosur, Koleksi, Tahun, Tambah) */}
+                      {hasDropdown && isBrosurDropdownOpen && (!isMinimized || isMobileOpen) && (
+                        <div className="ml-3 pl-2.5 border-l-2 border-emerald-200/60 my-1 space-y-0.5">
+                          <Link
+                            href="/admin/data-brosur"
+                            onClick={() => { if (isMobileOpen) setIsMobileOpen(false); }}
+                            className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition ${
+                              pathname === '/admin/data-brosur'
+                                ? 'bg-emerald-100/80 text-emerald-900 font-bold'
+                                : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100'
+                            }`}
+                          >
+                            <FileText size={13} className={pathname === '/admin/data-brosur' ? 'text-emerald-700' : 'text-zinc-400'} />
+                            <span>Semua Brosur</span>
+                          </Link>
+
+                          <Link
+                            href="/admin/data-brosur/koleksi"
+                            onClick={() => { if (isMobileOpen) setIsMobileOpen(false); }}
+                            className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition ${
+                              pathname.includes('/data-brosur/koleksi')
+                                ? 'bg-emerald-100/80 text-emerald-900 font-bold'
+                                : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100'
+                            }`}
+                          >
+                            <FolderArchive size={13} className={pathname.includes('/data-brosur/koleksi') ? 'text-emerald-700' : 'text-zinc-400'} />
+                            <span>Koleksi Tematik</span>
+                          </Link>
+
+                          <Link
+                            href="/admin/data-brosur/tahun"
+                            onClick={() => { if (isMobileOpen) setIsMobileOpen(false); }}
+                            className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition ${
+                              pathname.includes('/data-brosur/tahun')
+                                ? 'bg-emerald-100/80 text-emerald-900 font-bold'
+                                : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100'
+                            }`}
+                          >
+                            <Calendar size={13} className={pathname.includes('/data-brosur/tahun') ? 'text-emerald-700' : 'text-zinc-400'} />
+                            <span>Kategori Tahun</span>
+                          </Link>
+
+                          <Link
+                            href="/admin/data-brosur/new"
+                            onClick={() => { if (isMobileOpen) setIsMobileOpen(false); }}
+                            className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition ${
+                              pathname === '/admin/data-brosur/new'
+                                ? 'bg-emerald-100/80 text-emerald-900 font-bold'
+                                : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100'
+                            }`}
+                          >
+                            <Plus size={13} className={pathname === '/admin/data-brosur/new' ? 'text-emerald-700' : 'text-zinc-400'} />
+                            <span>Tambah Brosur</span>
+                          </Link>
+                        </div>
                       )}
-                    </Link>
+                    </div>
                   );
                 })}
               </div>
@@ -301,5 +402,15 @@ export default function AdminSidebar() {
         </div>
       </aside>
     </>
+  );
+}
+
+export default function AdminSidebar() {
+  return (
+    <Suspense fallback={
+      <aside className="hidden md:block w-64 bg-[#FAFAFA] h-screen" />
+    }>
+      <AdminSidebarInner />
+    </Suspense>
   );
 }

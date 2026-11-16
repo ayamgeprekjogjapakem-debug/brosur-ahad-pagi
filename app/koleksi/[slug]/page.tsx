@@ -1,62 +1,136 @@
 import React from 'react';
 import { createClient } from '@/utils/supabase/server';
-import { FolderArchive } from 'lucide-react';
+import { FolderArchive, ArrowLeft, BookOpen, ScrollText, Calendar, Search, EyeOff } from 'lucide-react';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
+import KoleksiDetailClient from './KoleksiDetailClient';
 
-export default async function FolderPage({ 
-  params
+export const dynamic = 'force-dynamic';
+
+export async function generateMetadata({ 
+  params 
 }: { 
-  params: Promise<{ slug: string }>
+  params: Promise<{ slug: string }> 
 }) {
   const resolvedParams = await params;
   const slug = resolvedParams.slug;
-  
   const supabase = await createClient();
-  
+
+  const { data: folder } = await supabase
+    .from('folders')
+    .select('name, description')
+    .eq('slug', slug)
+    .maybeSingle();
+
+  if (!folder) {
+    return {
+      title: 'Koleksi Tidak Ditemukan | Pustaka MTA',
+    };
+  }
+
+  return {
+    title: `Koleksi: ${folder.name} | Pustaka MTA`,
+    description: folder.description || `Kumpulan arsip brosur tematik ${folder.name} Majlis Tafsir Al-Qur'an.`,
+  };
+}
+
+export default async function KoleksiSlugPage({ 
+  params 
+}: { 
+  params: Promise<{ slug: string }> 
+}) {
+  const resolvedParams = await params;
+  const slug = resolvedParams.slug;
+  const supabase = await createClient();
+
   // Ambil detail Folder
   const { data: folder } = await supabase
     .from('folders')
-    .select('id, name')
+    .select('id, name, slug, description')
     .eq('slug', slug)
-    .single();
-    
+    .maybeSingle();
+
   if (!folder) {
     return (
-      <div className="min-h-screen bg-[#fafafa] [#0a0a0a] flex flex-col items-center justify-center p-8 text-center">
-        <FolderArchive size={48} className="text-zinc-300 mb-6" />
-        <h1 className="text-3xl font-extrabold mb-4">Folder Tidak Ditemukan</h1>
-        <p className="text-zinc-500 mb-8 max-w-md">Kategori yang Anda cari mungkin sudah dihapus atau tautan tidak valid.</p>
-        <Link href="/" className="bg-accent text-white px-6 py-3 rounded-xl font-bold hover:bg-accent/90 transition-colors">
-          Kembali ke Beranda
+      <div className="min-h-screen bg-[#fafaf9] flex flex-col items-center justify-center p-8 text-center font-sans">
+        <div className="w-16 h-16 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mb-6 shadow-sm">
+          <FolderArchive size={32} />
+        </div>
+        <h1 className="text-2xl font-bold text-slate-800 mb-2">Koleksi Tidak Ditemukan</h1>
+        <p className="text-slate-500 mb-6 max-w-md text-sm">
+          Koleksi yang Anda cari mungkin telah dihapus atau tautannya tidak valid.
+        </p>
+        <Link 
+          href="/bap" 
+          className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-medium text-sm transition-colors shadow-sm flex items-center gap-2"
+        >
+          <ArrowLeft size={16} />
+          Kembali ke Arsip Brosur
         </Link>
       </div>
     );
   }
 
-  // Ambil Brosur TERBARU dalam folder ini
-  const { data: newestBrosur } = await supabase
-    .from('brosur')
-    .select('slug')
-    .eq('folder_id', folder.id)
-    .order('tahun', { ascending: false })
-    .limit(1)
-    .single();
-    
-  // Jika ada brosur, LANGSUNG lempar ke halaman bacanya (karena sudah pakai sidebar)
-  if (newestBrosur) {
-    redirect(`/${newestBrosur.slug}`);
+  // Periksa apakah koleksi ini sedang dinonaktifkan oleh admin
+  const { data: settingData } = await supabase
+    .from('system_settings')
+    .select('value')
+    .eq('key', 'disabled_folders')
+    .maybeSingle();
+
+  let isDisabled = false;
+  if (settingData?.value) {
+    try {
+      const disabledList = JSON.parse(settingData.value);
+      if (Array.isArray(disabledList)) {
+        isDisabled = disabledList.includes(slug) || disabledList.includes(folder.id);
+      }
+    } catch (e) {}
   }
 
-  // Jika folder kosong
+  if (isDisabled) {
+    return (
+      <div className="min-h-screen bg-[#fafaf9] flex flex-col items-center justify-center p-8 text-center font-sans">
+        <div className="w-16 h-16 rounded-2xl bg-zinc-100 text-zinc-500 flex items-center justify-center mb-6 shadow-sm border border-zinc-200/80">
+          <EyeOff size={32} />
+        </div>
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 border border-rose-200/80 text-rose-700 text-xs font-semibold mb-3">
+          Status: Dinonaktifkan
+        </div>
+        <h1 className="text-2xl font-bold text-slate-800 mb-2">Koleksi Sedang Dinonaktifkan</h1>
+        <p className="text-slate-500 mb-6 max-w-md text-sm leading-relaxed">
+          Koleksi &quot;{folder.name}&quot; saat ini sedang dinonaktifkan oleh administrator dan disembunyikan dari publik.
+        </p>
+        <div className="flex items-center gap-3">
+          <Link 
+            href="/koleksi" 
+            className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-5 py-2.5 rounded-xl font-medium text-sm transition-colors shadow-xs"
+          >
+            Lihat Koleksi Lainnya
+          </Link>
+          <Link 
+            href="/bap" 
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-medium text-sm transition-colors shadow-sm flex items-center gap-2"
+          >
+            <ArrowLeft size={16} />
+            Ke Arsip Brosur
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Ambil daftar brosur dalam koleksi ini
+  const { data: brosurList } = await supabase
+    .from('brosur')
+    .select('id, judul, slug, tahun, created_at')
+    .eq('folder_id', folder.id)
+    .order('tahun', { ascending: false })
+    .order('judul', { ascending: true });
+
   return (
-    <div className="min-h-screen bg-[#fafafa] [#0a0a0a] flex flex-col items-center justify-center p-8 text-center">
-      <FolderArchive size={48} className="text-zinc-300 mb-6" />
-      <h1 className="text-3xl font-extrabold mb-4">{folder.name} Masih Kosong</h1>
-      <p className="text-zinc-500 mb-8 max-w-md">Belum ada brosur apa pun di dalam koleksi ini.</p>
-      <Link href="/" className="bg-accent text-white px-6 py-3 rounded-xl font-bold hover:bg-accent/90 transition-colors">
-        Kembali ke Beranda
-      </Link>
-    </div>
+    <KoleksiDetailClient 
+      folder={folder} 
+      initialBrosurList={brosurList || []} 
+    />
   );
 }

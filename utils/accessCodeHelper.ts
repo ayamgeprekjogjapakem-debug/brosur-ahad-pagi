@@ -56,6 +56,28 @@ export function clearLocalAccessCache(): void {
   localStorage.removeItem('mta_premium_expires_in_seconds');
   localStorage.removeItem('mta_ai_daily_limit');
   localStorage.removeItem('mta_ai_reset_hour');
+  localStorage.removeItem('mta_has_ai_access');
+}
+
+export function isUserAiAccessGranted(): boolean {
+  if (typeof window === 'undefined') return false;
+  if (checkIsAccessExpired()) return false;
+  const code = localStorage.getItem('mta_premium_access');
+  if (!code || code === 'allowed') return false;
+  const hasAi = localStorage.getItem('mta_has_ai_access');
+  if (hasAi === 'false') return false;
+  const featuresStr = localStorage.getItem('mta_premium_features');
+  if (featuresStr) {
+    try {
+      const feats = JSON.parse(featuresStr);
+      if (Array.isArray(feats) && !feats.includes('ai-pustaka')) {
+        return false;
+      }
+    } catch {
+      return false;
+    }
+  }
+  return hasAi === 'true';
 }
 
 export function formatRemainingTime(seconds: number | null): string {
@@ -112,6 +134,10 @@ export async function verifyAccessCodeOnline(): Promise<{
       // Cocokkan dan perbarui cache dengan data terkini dari server
       if (data.allowed_features) {
         localStorage.setItem('mta_premium_features', JSON.stringify(data.allowed_features));
+      }
+
+      if (data.has_ai_access !== undefined) {
+        localStorage.setItem('mta_has_ai_access', data.has_ai_access ? 'true' : 'false');
       }
 
       if (data.ai_daily_limit !== undefined && data.ai_daily_limit !== null) {

@@ -1,13 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Search, Bookmark, BookOpen, ScrollText, Users, X, Menu, CalendarDays, BrainCircuit, Settings, BookMarked, Sparkles, Plus, MessageSquare, ArrowLeft, Trash2, Clock, Flame, Key, RefreshCw } from 'lucide-react';
+import { Search, Bookmark, BookOpen, ScrollText, Users, X, Menu, CalendarDays, BrainCircuit, Settings, BookMarked, Sparkles, Plus, MessageSquare, ArrowLeft, Trash2, Clock, Flame, Key, RefreshCw, FolderArchive, ChevronDown, ChevronRight } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import AccessCodeModal from './AccessCodeModal';
-import { checkIsAccessExpired, clearLocalAccessCache, getAccessRemainingSeconds, formatRemainingTime, verifyAccessCodeOnline } from '@/utils/accessCodeHelper';
+import { checkIsAccessExpired, clearLocalAccessCache, getAccessRemainingSeconds, formatRemainingTime, verifyAccessCodeOnline, isUserAiAccessGranted } from '@/utils/accessCodeHelper';
+import { createClient } from '@/utils/supabase/client';
 
 
 export default function MainSidebar({
@@ -42,13 +43,52 @@ export default function MainSidebar({
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [hasAccess, setHasAccess] = useState(true);
+  const [hasAiFeature, setHasAiFeature] = useState(false);
   const [savedCode, setSavedCode] = useState<string>('');
   const [remainingTimeStr, setRemainingTimeStr] = useState<string>('');
   const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
   const [accessModalReason, setAccessModalReason] = useState<'required' | 'expired' | 'deleted'>('required');
   const [isAccessModalUnclosable, setIsAccessModalUnclosable] = useState(false);
+  const [folders, setFolders] = useState<{ id: string; name: string; slug: string }[]>([]);
+  const [isFoldersOpen, setIsFoldersOpen] = useState(true);
+  const [isLoadingFolders, setIsLoadingFolders] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchFolders = async () => {
+      try {
+        setIsLoadingFolders(true);
+        const supabase = createClient();
+        const [{ data: folderData }, { data: settingData }] = await Promise.all([
+          supabase.from('folders').select('id, name, slug').order('name', { ascending: true }),
+          supabase.from('system_settings').select('value').eq('key', 'disabled_folders').maybeSingle(),
+        ]);
+
+        let disabledList: string[] = [];
+        if (settingData?.value) {
+          try {
+            const parsed = JSON.parse(settingData.value);
+            if (Array.isArray(parsed)) disabledList = parsed;
+          } catch (e) {}
+        }
+
+        if (isMounted && folderData) {
+          const visible = folderData.filter(
+            (f) => !disabledList.includes(f.slug) && !disabledList.includes(f.id)
+          );
+          setFolders(visible);
+        }
+      } catch (err) {
+        console.error('Gagal mengambil data koleksi untuk sidebar:', err);
+      } finally {
+        if (isMounted) setIsLoadingFolders(false);
+      }
+    };
+    fetchFolders();
+    return () => { isMounted = false; };
+  }, []);
 
   React.useEffect(() => {
     const handleResize = () => {
@@ -72,6 +112,8 @@ export default function MainSidebar({
 
     // Cek status kode akses yang valid & verifikasi ke database server di setiap kunjungan/route
     if (typeof window !== 'undefined') {
+      setHasAiFeature(isUserAiAccessGranted());
+
       // Abaikan route dashboard/admin
       if (pathname?.startsWith('/dashboard') || pathname?.startsWith('/admin')) {
         return;
@@ -82,6 +124,7 @@ export default function MainSidebar({
       if (isLocalExpired || !localCode || localCode === 'allowed') {
         clearLocalAccessCache();
         setHasAccess(false);
+        setHasAiFeature(false);
         setSavedCode('');
         setRemainingTimeStr('');
         setAccessModalReason(isLocalExpired ? 'expired' : 'required');
@@ -95,6 +138,7 @@ export default function MainSidebar({
         if (!result.valid) {
           clearLocalAccessCache();
           setHasAccess(false);
+          setHasAiFeature(false);
           setSavedCode('');
           setRemainingTimeStr('');
           setAccessModalReason(result.reason === 'expired' ? 'expired' : (result.reason === 'deleted' ? 'deleted' : 'required'));
@@ -102,6 +146,7 @@ export default function MainSidebar({
           setIsAccessModalOpen(true);
         } else {
           setHasAccess(true);
+          setHasAiFeature(isUserAiAccessGranted());
           setSavedCode(result.code || localCode);
           const remSecs = getAccessRemainingSeconds();
           setRemainingTimeStr(formatRemainingTime(remSecs));
@@ -237,7 +282,7 @@ export default function MainSidebar({
       isActive: pathname.startsWith('/ai-pustaka'),
       badge: 'AI'
     },
-  ];
+  ].filter(menu => menu.id !== 'ai-pustaka' || hasAiFeature);
 
   return (
     <>
@@ -575,6 +620,91 @@ export default function MainSidebar({
                   </Link>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* KOLEKSI TEMATIK (Dari admin/data-brosur/koleksi) */}
+          {isSidebarOpen && !aiMode && (
+            <div>
+              <div className="flex items-center justify-between px-4 mb-1.5">
+                <Link
+                  href="/koleksi"
+                  className="text-[11.5px] font-normal text-slate-400 hover:text-slate-600 uppercase tracking-wider flex items-center gap-1.5 transition-colors"
+                  title="Lihat semua koleksi tematik"
+                >
+                  <span>Koleksi Tematik</span>
+                  {folders.length > 0 && (
+                    <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-200/80 text-slate-600 font-normal">
+                      {folders.length}
+                    </span>
+                  )}
+                </Link>
+                {folders.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setIsFoldersOpen(prev => !prev)}
+                    className="text-slate-400 hover:text-slate-600 p-0.5 rounded transition cursor-pointer"
+                    title={isFoldersOpen ? 'Tutup Koleksi' : 'Buka Koleksi'}
+                  >
+                    {isFoldersOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                  </button>
+                )}
+              </div>
+
+              {isFoldersOpen && (
+                <div className="space-y-0.5">
+                  {isLoadingFolders && folders.length === 0 ? (
+                    <p className="text-[13px] text-slate-400 px-4 py-1.5 font-normal">Memuat koleksi...</p>
+                  ) : folders.length === 0 ? (
+                    <p className="text-[13px] text-slate-400 px-4 py-1.5 font-normal">Belum ada koleksi.</p>
+                  ) : (
+                    folders.map((f) => {
+                      const isFolderActive = pathname === `/koleksi/${f.slug}` || pathname.startsWith(`/koleksi/${f.slug}/`);
+                      return (
+                        <Link
+                          key={f.id}
+                          href={`/koleksi/${f.slug}`}
+                          onClick={() => {
+                            if (window.innerWidth < 1024) setIsSidebarOpen(false);
+                          }}
+                          className={`relative w-full flex items-center justify-between px-4 py-2 rounded-xl text-[13.5px] transition-colors font-normal ${
+                            isFolderActive
+                              ? 'text-emerald-900 bg-emerald-100/75 font-medium'
+                              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+                          }`}
+                          title={f.name}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <FolderArchive
+                              strokeWidth={1.6}
+                              className={`w-4 h-4 shrink-0 transition-colors ${
+                                isFolderActive ? 'text-emerald-700' : 'text-slate-400'
+                              }`}
+                            />
+                            <span className="truncate">{f.name}</span>
+                          </div>
+                        </Link>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {!isSidebarOpen && !aiMode && folders.length > 0 && (
+            <div className="pt-1">
+              <Link
+                href="/koleksi"
+                className={`relative w-full flex items-center justify-center p-3 rounded-xl text-[14.5px] transition-colors ${
+                  pathname?.startsWith('/koleksi')
+                    ? 'text-emerald-900 bg-emerald-100/75'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+                }`}
+                title="Koleksi Tematik"
+              >
+                <FolderArchive strokeWidth={1.6} className={`w-[18px] h-[18px] shrink-0 ${pathname?.startsWith('/koleksi') ? 'text-emerald-700' : 'text-slate-500'}`} />
+              </Link>
             </div>
           )}
 

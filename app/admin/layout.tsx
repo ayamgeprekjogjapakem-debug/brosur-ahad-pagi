@@ -17,14 +17,30 @@ export default async function AdminLayout({
     redirect('/login');
   }
 
-  // Fetch user profile from Supabase
-  const { data: profile } = await supabase
+  // Fetch user profile from Supabase (by ID or Email fallback)
+  let { data: profile } = await supabase
     .from('profiles')
     .select('role, is_active')
     .eq('id', user.id)
-    .single();
+    .maybeSingle();
 
-  const isPermitted = profile?.is_active && (profile.role === 'admin' || profile.role === 'super-admin');
+  if (!profile && user.email) {
+    const { data: profileByEmail } = await supabase
+      .from('profiles')
+      .select('role, is_active')
+      .eq('email', user.email)
+      .maybeSingle();
+    profile = profileByEmail;
+  }
+
+  // Fallback jika user adalah master admin atau super-admin via metadata
+  const userMetaRole = user.user_metadata?.role;
+  const masterEmails = ['admin@brosurmta.com', 'r.wariyanto@gmail.com', 'brosurmta@gmail.com', 'test_admin@brosur.id'];
+  const isMasterEmail = !!(user.email && masterEmails.includes(user.email));
+  const effectiveRole = profile?.role || userMetaRole || (isMasterEmail ? 'super-admin' : 'user');
+  const effectiveActive = isMasterEmail || (profile ? profile.is_active !== false : true);
+
+  const isPermitted = effectiveActive && (effectiveRole === 'admin' || effectiveRole === 'super-admin');
 
   if (!isPermitted) {
     return (
@@ -63,7 +79,7 @@ export default async function AdminLayout({
       
       {/* Canvas Area Bersih / Seamless Gemini style */}
       <div className="flex-1 w-full h-full overflow-hidden flex flex-col min-w-0 bg-white">
-        <AdminHeader email={user.email} role={profile.role} />
+        <AdminHeader email={user.email} role={effectiveRole} />
         <main className="flex-1 overflow-x-hidden flex flex-col custom-scrollbar p-4 sm:p-6 md:p-8 lg:p-10 overflow-y-auto">
           {children}
         </main>

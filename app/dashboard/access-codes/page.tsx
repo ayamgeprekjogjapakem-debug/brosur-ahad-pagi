@@ -27,6 +27,28 @@ const AVAILABLE_FEATURES = [
   { id: 'ai-pustaka', label: 'AI Pustaka', default: false },
 ];
 
+export const MIGRATION_SQL = `-- Skrip Migrasi Kolom Kuota AI & Masa Berlaku untuk access_codes:
+ALTER TABLE public.access_codes ADD COLUMN IF NOT EXISTS expires_in_seconds BIGINT DEFAULT NULL;
+ALTER TABLE public.access_codes ADD COLUMN IF NOT EXISTS allowed_features JSONB DEFAULT '["bap","quran","kalender","tersimpan"]'::jsonb;
+ALTER TABLE public.access_codes ADD COLUMN IF NOT EXISTS notes TEXT;
+ALTER TABLE public.access_codes ADD COLUMN IF NOT EXISTS description TEXT;
+ALTER TABLE public.access_codes ADD COLUMN IF NOT EXISTS has_ai_access BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE public.access_codes ADD COLUMN IF NOT EXISTS ai_daily_limit INTEGER DEFAULT 20;
+ALTER TABLE public.access_codes ADD COLUMN IF NOT EXISTS ai_reset_hour INTEGER DEFAULT 0;
+
+CREATE TABLE IF NOT EXISTS public.access_code_ai_usage (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    code TEXT NOT NULL,
+    usage_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    question_count INTEGER NOT NULL DEFAULT 1,
+    last_used_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(code, usage_date)
+);
+
+CREATE INDEX IF NOT EXISTS idx_access_code_ai_usage_code_date ON public.access_code_ai_usage(code, usage_date);
+ALTER TABLE public.access_code_ai_usage DISABLE ROW LEVEL SECURITY;
+`;
+
 export default function AccessCodesPage() {
   const [codes, setCodes] = useState<AccessCode[]>([]);
   const [loading, setLoading] = useState(true);
@@ -84,6 +106,11 @@ export default function AccessCodesPage() {
     setLoading(false);
   };
 
+  const copyMigrationSql = () => {
+    navigator.clipboard.writeText(MIGRATION_SQL);
+    alert('SQL Migrasi Supabase berhasil disalin ke clipboard!\n\nSilakan buka Supabase Dashboard > SQL Editor, tempel (paste), dan jalankan (Run) skrip tersebut.');
+  };
+
   const handleCreateCode = async () => {
     setGenerating(true);
     let finalCode = customCodeInput.trim().toUpperCase();
@@ -106,7 +133,7 @@ export default function AccessCodesPage() {
     const hasAiAccess = defaultFeatures.includes('ai-pustaka');
     const noteText = newCodeNotes.trim() || 'Reguler Akses';
 
-    const fullPayload: any = { 
+    const payloadToInsert: Record<string, any> = { 
       code: finalCode, 
       is_active: true,
       notes: noteText,
@@ -118,51 +145,64 @@ export default function AccessCodesPage() {
       ai_reset_hour: newAiResetHour
     };
 
-    const { data, error } = await supabase
-      .from('access_codes')
-      .insert([fullPayload])
-      .select();
+    let insertedRow: any = null;
+    let lastError: any = null;
+    const strippedColumns: string[] = [];
 
-    if (!error && data) {
-      setCodes([data[0], ...codes]);
-      setCustomCodeInput('');
-      setNewCodeNotes('');
-      setCustomDurationSeconds('');
-    } else {
-      console.error('Error generating code:', error);
+    // Loop auto-pruning jika database Supabase belum memiliki kolom tertentu
+    for (let attempt = 0; attempt < 8; attempt++) {
+      const { data, error } = await supabase
+        .from('access_codes')
+        .insert([payloadToInsert])
+        .select();
+
+      if (!error && data && data.length > 0) {
+        insertedRow = data[0];
+        lastError = null;
+        break;
+      }
+
+      lastError = error;
+      const msg = error?.message || '';
 
       // Cek duplicate key error
-      if (error?.code === '23505' || error?.message?.toLowerCase().includes('duplicate') || error?.message?.toLowerCase().includes('unique')) {
+      if (error?.code === '23505' || msg.toLowerCase().includes('duplicate') || msg.toLowerCase().includes('unique')) {
         alert(`Kode akses "${finalCode}" sudah pernah terdaftar di database. Silakan gunakan kode lain.`);
         setGenerating(false);
         return;
       }
 
-      // Fallback jika database belum memiliki kolom baru
-      const fallbackPayload: any = {
-        code: finalCode,
-        is_active: true,
-        description: noteText,
-        has_ai_access: hasAiAccess,
-      };
-      if (noteText) fallbackPayload.notes = noteText;
-      if (finalSeconds) fallbackPayload.expires_in_seconds = finalSeconds;
-      if (newAiDailyLimit !== undefined) fallbackPayload.ai_daily_limit = newAiDailyLimit;
-      if (newAiResetHour !== undefined) fallbackPayload.ai_reset_hour = newAiResetHour;
+      // Deteksi kolom yang tidak ditemukan di schema cache Supabase
+      const match = msg.match(/Could not find the '([^']+)' column of 'access_codes' in the schema cache/i);
+      if (match && match[1]) {
+        const missingCol = match[1];
+        strippedColumns.push(missingCol);
+        delete payloadToInsert[missingCol];
+        continue;
+      }
 
-      const fallbackRes = await supabase.from('access_codes').insert([fallbackPayload]).select();
-      if (!fallbackRes.error && fallbackRes.data) {
-        setCodes([fallbackRes.data[0], ...codes]);
-        setCustomCodeInput('');
-        setNewCodeNotes('');
-        setCustomDurationSeconds('');
-        alert('Kode berhasil dibuat dengan fallback sederhana.');
-      } else {
+      break;
+    }
+
+    if (insertedRow) {
+      setCodes([insertedRow, ...codes]);
+      setCustomCodeInput('');
+      setNewCodeNotes('');
+      setCustomDurationSeconds('');
+      
+      if (strippedColumns.length > 0) {
         alert(
-          `Gagal membuat kode: ${error?.message || fallbackRes.error?.message || 'Database error'}.\n\n` +
-          `Silakan buka Supabase SQL Editor dan jalankan skrip di file: scripts/add_expires_in_seconds_to_access_codes.sql`
+          `Kode "${finalCode}" BERHASIL DIBUAT!\n\n` +
+          `Catatan: Kolom [${strippedColumns.join(', ')}] belum ada di tabel Supabase access_codes.\n` +
+          `Kode berhasil disimpan dengan kolom dasar. Untuk mengaktifkan fitur kuota AI harian & masa aktif, silakan klik tombol "Salin SQL Migrasi" di pojok atas dan jalankan di SQL Editor Supabase.`
         );
       }
+    } else {
+      console.error('Error generating code:', lastError);
+      alert(
+        `Gagal membuat kode: ${lastError?.message || 'Database error'}.\n\n` +
+        `Silakan klik tombol "Salin SQL Migrasi Supabase" di pojok atas, lalu jalankan di Supabase SQL Editor.`
+      );
     }
     setGenerating(false);
   };
@@ -222,7 +262,7 @@ export default function AccessCodesPage() {
     setSavingEdit(true);
 
     const hasAiAccess = editFeatures.includes('ai-pustaka');
-    const updatePayload: any = { 
+    const updatePayload: Record<string, any> = { 
       allowed_features: editFeatures,
       has_ai_access: hasAiAccess,
       expires_in_seconds: editExpiresInSeconds,
@@ -230,12 +270,35 @@ export default function AccessCodesPage() {
       ai_reset_hour: editAiResetHour,
     };
 
-    const { error } = await supabase
-      .from('access_codes')
-      .update(updatePayload)
-      .eq('id', editingCode.id);
+    let updateSuccess = false;
+    let lastUpdateError: any = null;
+    const omittedColumns: string[] = [];
 
-    if (!error) {
+    for (let attempt = 0; attempt < 8; attempt++) {
+      const { error } = await supabase
+        .from('access_codes')
+        .update(updatePayload)
+        .eq('id', editingCode.id);
+
+      if (!error) {
+        updateSuccess = true;
+        lastUpdateError = null;
+        break;
+      }
+
+      lastUpdateError = error;
+      const msg = error?.message || '';
+      const match = msg.match(/Could not find the '([^']+)' column of 'access_codes' in the schema cache/i);
+      if (match && match[1]) {
+        const missingCol = match[1];
+        omittedColumns.push(missingCol);
+        delete updatePayload[missingCol];
+        continue;
+      }
+      break;
+    }
+
+    if (updateSuccess) {
       setCodes(codes.map(c => c.id === editingCode.id ? { 
         ...c, 
         allowed_features: editFeatures,
@@ -245,8 +308,11 @@ export default function AccessCodesPage() {
         ai_reset_hour: editAiResetHour,
       } : c));
       setEditingCode(null);
+      if (omittedColumns.length > 0) {
+        alert(`Perubahan disimpan! (Kolom [${omittedColumns.join(', ')}] dilewati karena belum ada di database Supabase).`);
+      }
     } else {
-      alert('Gagal menyimpan pengaturan fitur, masa aktif, & kuota AI: ' + error.message);
+      alert('Gagal menyimpan pengaturan fitur, masa aktif, & kuota AI: ' + (lastUpdateError?.message || 'Error'));
     }
     setSavingEdit(false);
   };
@@ -265,6 +331,16 @@ export default function AccessCodesPage() {
             Access Codes
           </h1>
           <p className="text-zinc-500 mt-1">Kelola kode akses, masa berlaku cache, dan izin fitur untuk setiap kode.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={copyMigrationSql}
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition shadow-2xs cursor-pointer"
+            title="Salin skrip SQL untuk menambahkan kolom kuota & masa aktif di Supabase"
+          >
+            <Copy className="w-3.5 h-3.5 text-emerald-600" />
+            Salin SQL Migrasi Supabase
+          </button>
         </div>
       </div>
 

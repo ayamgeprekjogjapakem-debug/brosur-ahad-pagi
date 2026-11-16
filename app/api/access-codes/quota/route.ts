@@ -36,13 +36,25 @@ export async function POST(req: Request) {
     }
 
     // 2. Fallback: Lakukan pengecekan manual langsung ke tabel access_codes
-    const { data: codeData, error: codeError } = await supabase
+    let codeData: any = null;
+    const { data: rawCodeData, error: codeError } = await supabase
       .from('access_codes')
-      .select('code, is_active, ai_daily_limit, ai_reset_hour')
+      .select('*')
       .eq('code', cleanCode)
       .maybeSingle();
 
-    if (codeError || !codeData) {
+    if (!codeError && rawCodeData) {
+      codeData = rawCodeData;
+    } else {
+      const { data: fallbackCodeData } = await supabase
+        .from('access_codes')
+        .select('code, is_active')
+        .eq('code', cleanCode)
+        .maybeSingle();
+      codeData = fallbackCodeData;
+    }
+
+    if (!codeData) {
       return NextResponse.json(
         { allowed: false, error: 'Kode akses tidak ditemukan' }, 
         { status: 404, headers: corsHeaders }
