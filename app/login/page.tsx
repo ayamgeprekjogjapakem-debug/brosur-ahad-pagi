@@ -93,7 +93,7 @@ export default function LoginPage() {
         if (profileByEmail?.role) userRole = profileByEmail.role;
       }
 
-      const masterSuperAdminEmails = ['admin@brosurmta.com', 'r.wariyanto@gmail.com', 'test_admin@brosur.id'];
+      const masterSuperAdminEmails = ['admin@brosurmta.com', 'r.wariyanto@gmail.com', 'test_admin@brosur.id', 'brosurmta@gmail.com'];
       if (data.user.email && masterSuperAdminEmails.includes(data.user.email)) {
         userRole = 'super-admin';
       }

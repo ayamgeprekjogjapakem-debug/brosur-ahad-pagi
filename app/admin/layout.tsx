@@ -37,7 +37,7 @@ export default async function AdminLayout({
   const userMetaRole = user.user_metadata?.role;
   const masterEmails = ['admin@brosurmta.com', 'r.wariyanto@gmail.com', 'brosurmta@gmail.com', 'test_admin@brosur.id'];
   const isMasterEmail = !!(user.email && masterEmails.includes(user.email));
-  const effectiveRole = profile?.role || userMetaRole || (isMasterEmail ? 'super-admin' : 'user');
+  const effectiveRole = isMasterEmail ? 'super-admin' : (profile?.role || userMetaRole || 'user');
   const effectiveActive = isMasterEmail || (profile ? profile.is_active !== false : true);
 
   const isPermitted = effectiveActive && (effectiveRole === 'admin' || effectiveRole === 'super-admin');

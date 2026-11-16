@@ -37,7 +37,7 @@ export default async function DashboardLayout({
   const userMetaRole = user.user_metadata?.role;
   const masterEmails = ['admin@brosurmta.com', 'r.wariyanto@gmail.com', 'test_admin@brosur.id', 'brosurmta@gmail.com'];
   const isMasterEmail = !!(user.email && masterEmails.includes(user.email));
-  const effectiveRole = profile?.role || userMetaRole || (isMasterEmail ? 'super-admin' : 'user');
+  const effectiveRole = isMasterEmail ? 'super-admin' : (profile?.role || userMetaRole || 'user');
   // Anggap aktif jika is_active bernilai true atau null (belum diset), hanya false jika secara eksplisit dimatikan
   const effectiveActive = isMasterEmail || (profile ? profile.is_active !== false : true);
 
