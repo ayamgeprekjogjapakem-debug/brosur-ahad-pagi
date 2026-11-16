@@ -34,6 +34,7 @@ export default async function DashboardLayout({
     profile = profileByEmail;
   }
 
+  const userMetaRole = user.user_metadata?.role;
   const masterEmails = ['admin@brosurmta.com', 'r.wariyanto@gmail.com', 'test_admin@brosur.id', 'brosurmta@gmail.com'];
   const isMasterEmail = !!(user.email && masterEmails.includes(user.email));
   const effectiveRole = profile?.role || userMetaRole || (isMasterEmail ? 'super-admin' : 'user');
@@ -82,7 +83,7 @@ export default async function DashboardLayout({
     <div className="h-screen max-h-screen overflow-hidden bg-[#fafafa] text-slate-800 flex flex-col md:flex-row font-sans selection:bg-emerald-100 selection:text-emerald-900 antialiased select-none">
       <DashboardSidebar />
       <div className="flex-1 w-full h-full overflow-hidden flex flex-col min-w-0 bg-[#fafafa] relative">
-        <DashboardHeader email={user.email} role={profile.role} />
+        <DashboardHeader email={user.email} role={profile?.role || effectiveRole} />
         <MainContentWrapper>
           {children}
         </MainContentWrapper>
