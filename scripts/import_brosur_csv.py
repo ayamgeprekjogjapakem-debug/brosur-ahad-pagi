@@ -4,7 +4,10 @@ import sys
 import json
 import urllib.request
 import urllib.error
+import ssl
 import time
+
+ssl_ctx = ssl._create_unverified_context()
 
 csv.field_size_limit(sys.maxsize)
 
@@ -58,7 +61,7 @@ def main():
         retry = 0
         while retry < 3:
             try:
-                with urllib.request.urlopen(req, timeout=30) as resp:
+                with urllib.request.urlopen(req, timeout=30, context=ssl_ctx) as resp:
                     if resp.status in (200, 201):
                         success_count += len(batch)
                         percent = (success_count / total) * 100

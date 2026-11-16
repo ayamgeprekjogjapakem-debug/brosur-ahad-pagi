@@ -865,3 +865,56 @@ BEGIN
 END $$;
 
 NOTIFY pgrst, 'reload schema';
+
+
+
+-- ==============================================================================
+-- 1. BUKA IZIN RLS (ROW LEVEL SECURITY) PADA SELURUH TABEL DATA
+-- ==============================================================================
+ALTER TABLE public.brosur DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.folders DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.brosur_chunks DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.quran_surah DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.quran_ayat DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.quran_sync_logs DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.access_codes DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.access_code_ai_usage DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.profiles DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.app_settings DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.system_settings DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.allowed_versions DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.kelompok_hadist DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.master_rawi DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.hadist_brosur DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.hadist_chm DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.hadist_chm_chunks DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.pengumuman DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.masukan DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.folders_hadist DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.konsultasi_hadits DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.leave_requests DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.materi_kajian DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.pencarian_populer DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.push_notification_logs DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.search_intent_cache DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ai_knowledge_rules DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ai_simulator_sessions DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ai_query_logs DISABLE ROW LEVEL SECURITY;
+
+-- ==============================================================================
+-- 2. BERIKAN HAK AKSES PENUH (GRANT) KE ROLE ANON & AUTHENTICATED
+-- ==============================================================================
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO anon, authenticated, service_role;
+
+-- Hak akses otomatis untuk tabel/sequence baru ke depannya
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON ROUTINES TO anon, authenticated, service_role;
+
+-- ==============================================================================
+-- 3. REFRESH CACHE SKEMA POSTGREST AGAR PERUBAHAN LANGSUNG AKTIF
+-- ==============================================================================
+NOTIFY pgrst, 'reload schema';
