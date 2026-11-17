@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { Key, Plus, Trash2, CheckCircle2, XCircle, Loader2, Copy, Edit2, X, Save, Search, Clock, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatAccessCode } from '@/utils/accessCodeHelper';
 
 interface AccessCode {
   id: string;
@@ -115,7 +116,20 @@ export default function AccessCodesPage() {
     setGenerating(true);
     let finalCode = customCodeInput.trim().toUpperCase();
     if (!finalCode) {
-      finalCode = 'MTA-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+      // Selalu generate format pola XXX-XXXXXX (contoh: MTA-XXXXXX)
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let rand = '';
+      for (let i = 0; i < 6; i++) {
+        rand += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      finalCode = `MTA-${rand}`;
+    } else {
+      finalCode = formatAccessCode(finalCode);
+      if (!finalCode.includes('-') || finalCode.length < 5) {
+        alert('Format kode akses harus berpola XXX-XXXXXX dan mengandung tanda strip (-), contoh: MTA-123456');
+        setGenerating(false);
+        return;
+      }
     }
     
     // Default features
@@ -359,10 +373,11 @@ export default function AccessCodesPage() {
             </label>
             <input
               type="text"
-              placeholder="Kosong = Acak"
+              placeholder="Kosong = Acak (cth: MTA-XXXXXX)"
               value={customCodeInput}
-              onChange={(e) => setCustomCodeInput(e.target.value.toUpperCase())}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 text-sm font-mono uppercase bg-zinc-50/50 focus:bg-white transition"
+              onChange={(e) => setCustomCodeInput(formatAccessCode(e.target.value))}
+              maxLength={13}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 text-sm font-mono tracking-wider uppercase bg-zinc-50/50 focus:bg-white transition"
             />
           </div>
 

@@ -2,6 +2,16 @@
  * Helper untuk validasi dan manajemen kedaluwarsa kode akses (access code cache).
  */
 
+export function formatAccessCode(value: string): string {
+  // Hanya izinkan huruf dan angka, ubah ke uppercase
+  const cleaned = value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (cleaned.length <= 3) {
+    return cleaned;
+  }
+  // Format menjadi XXX-XXXXXX (selalu ada strip '-' setelah 3 karakter pertama)
+  return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 12)}`;
+}
+
 export function checkIsAccessExpired(): boolean {
   if (typeof window === 'undefined') return false;
 

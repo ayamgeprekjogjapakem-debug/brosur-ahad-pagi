@@ -9,14 +9,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Kode tidak boleh kosong' }, { status: 400 });
     }
 
+    const rawCode = String(code).trim().toUpperCase();
+    const cleanChars = rawCode.replace(/[^A-Z0-9]/g, '');
+    const hyphenated = cleanChars.length > 3 ? `${cleanChars.slice(0, 3)}-${cleanChars.slice(3)}` : cleanChars;
+
     const supabase = await createClient();
 
     const { data, error } = await supabase
       .from('access_codes')
       .select('*')
-      .eq('code', code)
+      .or(`code.ilike.${rawCode},code.ilike.${hyphenated},code.ilike.${cleanChars}`)
       .eq('is_active', true)
-      .single();
+      .limit(1)
+      .maybeSingle();
 
     if (error || !data) {
       return NextResponse.json({ valid: false, error: 'Kode akses tidak valid atau sudah nonaktif' }, { status: 404 });

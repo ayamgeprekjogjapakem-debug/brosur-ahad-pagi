@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Key, X, Loader2, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatAccessCode } from '@/utils/accessCodeHelper';
 
 interface AccessCodeModalProps {
   isOpen: boolean;
@@ -142,9 +143,10 @@ export default function AccessCodeModal({ isOpen, onClose, onSuccess, unclosable
                       <input
                         type="text"
                         value={code}
-                        onChange={(e) => setCode(e.target.value.toUpperCase())}
-                        placeholder="Masukkan Kode (cth: MTA-XXXX)"
-                        className="w-full px-4 py-3.5 bg-zinc-50/50 border border-zinc-200 rounded-xl font-mono text-center text-lg font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:bg-white transition-all uppercase"
+                        onChange={(e) => setCode(formatAccessCode(e.target.value))}
+                        placeholder="Masukkan Kode (cth: MTA-XXXXXX)"
+                        maxLength={13}
+                        className="w-full px-4 py-3.5 bg-zinc-50/50 border border-zinc-200 rounded-xl font-mono text-center text-lg font-bold tracking-wider text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:bg-white transition-all uppercase"
                       />
                     </div>
                     {error && (
