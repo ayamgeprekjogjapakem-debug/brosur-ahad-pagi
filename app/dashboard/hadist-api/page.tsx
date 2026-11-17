@@ -214,7 +214,7 @@ export default function HadistApiImportPage() {
       for (let i = 0; i < payload.length; i += chunkSize) {
         const batch = payload.slice(i, i + chunkSize);
         
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://gbdvcwjdttcjirrsgwsj.supabase.co';
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://supabase.brosurmta.my.id';
         const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_Mpf4AtQtblWyhe2KTWjrrA_vfAV0SBQ';
         
         const res = await fetch(`${supabaseUrl}/rest/v1/master_hadist_api`, {
