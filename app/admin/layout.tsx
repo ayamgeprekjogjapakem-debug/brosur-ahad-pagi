@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
+import { resolveServerUserAccess } from '@/utils/supabase/authRoleServer';
 import AdminSidebar from './components/AdminSidebar';
 import AdminHeader from './components/AdminHeader';
 import AiChatWidget from '../components/AiChatWidget';
@@ -17,30 +18,15 @@ export default async function AdminLayout({
     redirect('/login');
   }
 
-  // Fetch user profile from Supabase (by ID or Email fallback)
-  let { data: profile } = await supabase
-    .from('profiles')
-    .select('role, is_active')
-    .eq('id', user.id)
-    .maybeSingle();
+  const { role, isActive } = await resolveServerUserAccess(user);
 
-  if (!profile && user.email) {
-    const { data: profileByEmail } = await supabase
-      .from('profiles')
-      .select('role, is_active')
-      .eq('email', user.email)
-      .maybeSingle();
-    profile = profileByEmail;
+  // Role superadmin aktif diarahkan ke konsol /dashboard
+  if (isActive && role === 'superadmin') {
+    redirect('/dashboard');
   }
 
-  // Fallback jika user adalah master admin atau super-admin via metadata
-  const userMetaRole = user.user_metadata?.role;
-  const masterEmails = ['admin@brosurmta.com', 'r.wariyanto@gmail.com', 'brosurmta@gmail.com', 'test_admin@brosur.id'];
-  const isMasterEmail = !!(user.email && masterEmails.includes(user.email));
-  const effectiveRole = isMasterEmail ? 'super-admin' : (profile?.role || userMetaRole || 'user');
-  const effectiveActive = isMasterEmail || (profile ? profile.is_active !== false : true);
-
-  const isPermitted = effectiveActive && (effectiveRole === 'admin' || effectiveRole === 'super-admin');
+  // Halaman /admin HANYA untuk role admin yang aktif
+  const isPermitted = isActive && role === 'admin';
 
   if (!isPermitted) {
     return (
@@ -48,7 +34,7 @@ export default async function AdminLayout({
         <div className="bg-zinc-50 p-10 rounded-3xl max-w-md border border-zinc-100">
           <h1 className="text-2xl font-bold mb-3 text-red-500">Akses Ditolak</h1>
           <p className="text-zinc-500 text-sm mb-6 leading-relaxed">
-            Anda tidak memiliki izin untuk mengakses Dashboard Admin, atau akun Anda belum diaktifkan oleh Super Admin.
+            Halaman <strong>/admin</strong> khusus untuk role <strong>Admin</strong> yang aktif. Anda tidak memiliki izin atau akun Anda belum diaktifkan oleh Super Admin.
           </p>
           <form action={async () => {
             'use server';
@@ -56,8 +42,8 @@ export default async function AdminLayout({
             await supabaseClient.auth.signOut();
             redirect('/login');
           }}>
-            <button type="submit" className="w-full bg-emerald-600 text-white px-5 py-3 rounded-xl font-medium text-sm hover:bg-emerald-700 transition">
-              Keluar & Kembali ke Login
+            <button type="submit" className="w-full bg-emerald-600 text-white px-5 py-3 rounded-xl font-medium text-sm hover:bg-emerald-700 transition cursor-pointer">
+              Keluar &amp; Kembali ke Login
             </button>
           </form>
         </div>
@@ -76,10 +62,10 @@ export default async function AdminLayout({
     <div className="h-screen max-h-screen overflow-hidden bg-white text-zinc-800 flex flex-row font-sans selection:bg-emerald-100 selection:text-emerald-900 antialiased">
       {/* Sidebar Clean Tanpa Garis Pembatas Keras */}
       <AdminSidebar />
-      
+
       {/* Canvas Area Bersih / Seamless Gemini style */}
       <div className="flex-1 w-full h-full overflow-hidden flex flex-col min-w-0 bg-white">
-        <AdminHeader email={user.email} role={effectiveRole} />
+        <AdminHeader email={user.email} role="admin" />
         <main className="flex-1 overflow-x-hidden flex flex-col custom-scrollbar p-4 sm:p-6 md:p-8 lg:p-10 overflow-y-auto">
           {children}
         </main>

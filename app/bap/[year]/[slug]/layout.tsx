@@ -1,11 +1,12 @@
 import React, { Suspense } from 'react';
 import CollectionSidebar from './CollectionSidebar';
 import { createClient } from '@/utils/supabase/server';
+import { findBrosurBySlugAndYear } from '@/utils/brosurLookup';
 import { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ year: string; slug: string }> }): Promise<Metadata> {
   const resolvedParams = await params;
   return {
     title: `Brosur ${decodeURIComponent(resolvedParams.slug)}`,
@@ -17,20 +18,16 @@ export default async function SlugLayout({
   params
 }: {
   children: React.ReactNode;
-  params: Promise<{ slug: string }>;
+  params: Promise<{ year: string; slug: string }>;
 }) {
   const resolvedParams = await params;
-  const slug = decodeURIComponent(resolvedParams.slug);
   const supabase = await createClient();
-  
-  const searchSlug = slug.replace('BAP-(Brosur-Ahad-Pagi)-', '').trim();
-  
-  const { data: brosur } = await supabase
-    .from('brosur')
-    .select('slug, folder_id')
-    .ilike('slug', `%${searchSlug}%`)
-    .limit(1)
-    .maybeSingle();
+
+  const brosur = await findBrosurBySlugAndYear(
+    resolvedParams.slug,
+    resolvedParams.year,
+    'slug, folder_id'
+  );
 
   let brosurList: any[] = [];
   let folderSlug = '';

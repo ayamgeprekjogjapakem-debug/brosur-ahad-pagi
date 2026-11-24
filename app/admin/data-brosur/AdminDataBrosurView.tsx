@@ -395,7 +395,62 @@ export default function AdminDataBrosurView({ initialTab = 'brosur' }: AdminData
     const from = (currentPage - 1) * itemsPerPage;
     const to = from + itemsPerPage - 1;
 
-    const { data, count, error } = await query.range(from, to);
+    let { data, count, error } = await query.range(from, to);
+
+    // Fallback jika relasi PostgREST hadist_brosur <-> brosur belum ada di schema cache
+    if (error && (error.message?.includes('relationship') || error.code === 'PGRST200')) {
+      let fallbackQuery = supabase
+        .from('brosur')
+        .select('id, judul, tahun, slug, created_at, folder_id, folders(name)', { count: 'exact' });
+
+      if (sortBy === 'terbaru') {
+        fallbackQuery = fallbackQuery.order('created_at', { ascending: false, nullsFirst: false });
+      } else if (sortBy === 'tahun_desc') {
+        fallbackQuery = fallbackQuery.order('tahun', { ascending: false }).order('judul', { ascending: true });
+      } else if (sortBy === 'tahun_asc') {
+        fallbackQuery = fallbackQuery.order('tahun', { ascending: true }).order('judul', { ascending: true });
+      } else if (sortBy === 'judul_asc') {
+        fallbackQuery = fallbackQuery.order('judul', { ascending: true });
+      } else if (sortBy === 'judul_desc') {
+        fallbackQuery = fallbackQuery.order('judul', { ascending: false });
+      }
+
+      if (searchTerm.trim()) {
+        fallbackQuery = fallbackQuery.ilike('judul', `%${searchTerm.trim()}%`);
+      }
+
+      if (filterFolder) {
+        if (filterFolder === 'none') {
+          fallbackQuery = fallbackQuery.is('folder_id', null);
+        } else {
+          fallbackQuery = fallbackQuery.eq('folder_id', filterFolder);
+        }
+      }
+
+      if (filterTahun) {
+        fallbackQuery = fallbackQuery.eq('tahun', filterTahun);
+      }
+
+      if (filterParsing === 'sudah') {
+        const parsedIds = Array.from(parsingStats.parsedBrosurIds);
+        if (parsedIds.length > 0) {
+          fallbackQuery = fallbackQuery.in('id', parsedIds);
+        } else {
+          fallbackQuery = fallbackQuery.eq('id', '__no_parsed__');
+        }
+      }
+
+      const fbRes = await fallbackQuery.range(from, to);
+      data = fbRes.data
+        ? fbRes.data.map((b: any) => ({
+            ...b,
+            hadist_brosur: parsingStats.parsedBrosurIds.has(b.id) ? [{ id: 'parsed' }] : [],
+          }))
+        : null;
+      count = fbRes.count;
+      error = fbRes.error;
+    }
+
     if (!error && data) {
       let filteredData = data;
       if (filterParsing === 'belum' && parsingStats.parsedBrosurIds.size > 150) {

@@ -7,6 +7,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
+import { getHomePathForRole, isMasterSuperAdminEmail, normalizeRole } from '@/utils/authRoles';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -17,38 +18,49 @@ export default function LoginPage() {
 
   const supabase = createClient();
 
+  const resolveClientRole = async (user: any) => {
+    if (isMasterSuperAdminEmail(user?.email)) {
+      return 'superadmin' as const;
+    }
+
+    let rawRole: unknown = user?.user_metadata?.role;
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (profile?.role) {
+      rawRole = profile.role;
+    } else if (user?.email) {
+      const { data: profileByEmail } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('email', user.email)
+        .maybeSingle();
+      if (profileByEmail?.role) rawRole = profileByEmail.role;
+    }
+
+    return normalizeRole(rawRole);
+  };
+
   useEffect(() => {
     const checkActiveSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .single();
-
-        if (profile?.role === 'super-admin') {
-          router.replace('/dashboard');
-        } else {
-          router.replace('/admin');
-        }
+        const role = await resolveClientRole(session.user);
+        const target = getHomePathForRole(role);
+        if (target) router.replace(target);
       }
     };
     checkActiveSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .single();
-
-        if (profile?.role === 'super-admin') {
-          router.replace('/dashboard');
-        } else {
-          router.replace('/admin');
-        }
+        const role = await resolveClientRole(session.user);
+        const target = getHomePathForRole(role);
+        if (target) router.replace(target);
       }
     });
 
@@ -74,37 +86,17 @@ export default function LoginPage() {
     }
 
     if (data?.user) {
-      let userRole = data.user.user_metadata?.role;
-      
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', data.user.id)
-        .maybeSingle();
-
-      if (profile?.role) {
-        userRole = profile.role;
-      } else if (data.user.email) {
-        const { data: profileByEmail } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('email', data.user.email)
-          .maybeSingle();
-        if (profileByEmail?.role) userRole = profileByEmail.role;
-      }
-
-      const masterSuperAdminEmails = ['admin@brosurmta.com', 'r.wariyanto@gmail.com', 'test_admin@brosur.id', 'brosurmta@gmail.com'];
-      if (data.user.email && masterSuperAdminEmails.includes(data.user.email)) {
-        userRole = 'super-admin';
-      }
-
-      if (userRole === 'super-admin') {
-        router.push('/dashboard');
+      const role = await resolveClientRole(data.user);
+      const target = getHomePathForRole(role);
+      if (target) {
+        router.push(target);
       } else {
-        router.push('/admin');
+        setError('Akun Anda tidak memiliki role Admin maupun Super Admin.');
+        await supabase.auth.signOut();
+        setIsLoading(false);
       }
     } else {
-      router.push('/admin');
+      setIsLoading(false);
     }
   };
 

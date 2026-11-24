@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
+import { resolveServerUserAccess } from '@/utils/supabase/authRoleServer';
 import DashboardSidebar from './components/DashboardSidebar';
 import DashboardHeader from './components/DashboardHeader';
 import AiChatWidget from '../components/AiChatWidget';
@@ -18,36 +19,15 @@ export default async function DashboardLayout({
     redirect('/login');
   }
 
-  // Fetch user profile from Supabase (by ID or Email fallback)
-  let { data: profile } = await supabase
-    .from('profiles')
-    .select('role, is_active')
-    .eq('id', user.id)
-    .maybeSingle();
+  const { role, isActive } = await resolveServerUserAccess(user);
 
-  if (!profile && user.email) {
-    const { data: profileByEmail } = await supabase
-      .from('profiles')
-      .select('role, is_active')
-      .eq('email', user.email)
-      .maybeSingle();
-    profile = profileByEmail;
-  }
-
-  const userMetaRole = user.user_metadata?.role;
-  const masterEmails = ['admin@brosurmta.com', 'r.wariyanto@gmail.com', 'test_admin@brosur.id', 'brosurmta@gmail.com'];
-  const isMasterEmail = !!(user.email && masterEmails.includes(user.email));
-  const effectiveRole = isMasterEmail ? 'super-admin' : (profile?.role || userMetaRole || 'user');
-  // Anggap aktif jika is_active bernilai true atau null (belum diset), hanya false jika secara eksplisit dimatikan
-  const effectiveActive = isMasterEmail || (profile ? profile.is_active !== false : true);
-
-  // Role non-super-admin (admin atau user) dialihkan ke /admin
-  if (effectiveRole !== 'super-admin') {
+  // Role admin aktif dialihkan ke konsol /admin
+  if (isActive && role === 'admin') {
     redirect('/admin');
   }
 
-  // Hanya super-admin aktif yang diizinkan mengakses /dashboard
-  const isAuthorized = effectiveActive && effectiveRole === 'super-admin';
+  // Halaman /dashboard HANYA untuk role superadmin yang aktif
+  const isAuthorized = isActive && role === 'superadmin';
 
   if (!isAuthorized) {
     return (
@@ -55,7 +35,7 @@ export default async function DashboardLayout({
         <div className="bg-white dark:bg-zinc-900 p-10 rounded-3xl border border-black/5 dark:border-white/10 shadow-2xl max-w-md">
           <h1 className="text-3xl font-extrabold mb-4 text-red-500">Khusus Super Admin</h1>
           <p className="text-zinc-500 dark:text-zinc-400 mb-8 text-sm leading-relaxed">
-            Halaman ini berada di bawah otoritas penuh Super Admin. Akun Anda tidak memiliki izin untuk mengakses konsol ini.
+            Halaman <strong>/dashboard</strong> khusus untuk role <strong>Super Admin</strong> yang aktif. Akun Anda tidak memiliki izin untuk mengakses konsol ini.
           </p>
           <form action={async () => {
             'use server';
@@ -63,8 +43,8 @@ export default async function DashboardLayout({
             await supabaseClient.auth.signOut();
             redirect('/login');
           }}>
-            <button type="submit" className="w-full bg-accent text-white px-6 py-3.5 rounded-xl font-bold hover:bg-accent/90 transition-colors">
-              Keluar & Kembali ke Login
+            <button type="submit" className="w-full bg-emerald-600 text-white px-6 py-3.5 rounded-xl font-bold hover:bg-emerald-700 transition-colors cursor-pointer">
+              Keluar &amp; Kembali ke Login
             </button>
           </form>
         </div>
@@ -83,7 +63,7 @@ export default async function DashboardLayout({
     <div className="h-screen max-h-screen overflow-hidden bg-[#fafafa] text-slate-800 flex flex-col md:flex-row font-sans selection:bg-emerald-100 selection:text-emerald-900 antialiased select-none">
       <DashboardSidebar />
       <div className="flex-1 w-full h-full overflow-hidden flex flex-col min-w-0 bg-[#fafafa] relative">
-        <DashboardHeader email={user.email} role={profile?.role || effectiveRole} />
+        <DashboardHeader email={user.email} role="superadmin" />
         <MainContentWrapper>
           {children}
         </MainContentWrapper>
@@ -92,4 +72,3 @@ export default async function DashboardLayout({
     </div>
   );
 }
-

@@ -5,24 +5,15 @@ import HighlightClient from './HighlightClient';
 import SettingsPopover from './SettingsPopover';
 import HeaderBar from './HeaderBar';
 import { createClient } from '@/utils/supabase/server';
+import { findBrosurBySlugAndYear } from '@/utils/brosurLookup';
 
 export const dynamic = 'force-dynamic';
 
 import { Metadata } from 'next';
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ year: string; slug: string }> }): Promise<Metadata> {
   const resolvedParams = await params;
-  const slug = decodeURIComponent(resolvedParams.slug);
-  const searchSlug = slug.replace('BAP-(Brosur-Ahad-Pagi)-', '').trim();
-  const cleanSearch = searchSlug.replace(/^BAP-\(Brosur-Ahad-Pagi\)-/i, '').replace(/^\d{4}\d{2}\d{2}-/i, '');
-  
-  const supabase = await createClient();
-  const { data: brosur } = await supabase
-    .from('brosur')
-    .select('judul, slug')
-    .or(`slug.ilike.%${searchSlug}%,slug.ilike.%${cleanSearch}%`)
-    .limit(1)
-    .maybeSingle();
+  const brosur = await findBrosurBySlugAndYear(resolvedParams.slug, resolvedParams.year, 'judul, slug');
 
   if (!brosur) {
     return {
@@ -40,21 +31,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     },
   };
 }
-export default async function BrosurPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function BrosurPage({ params }: { params: Promise<{ year: string; slug: string }> }) {
   const resolvedParams = await params;
   const slug = decodeURIComponent(resolvedParams.slug);
   const supabase = await createClient();
-  
-  // Buat pola pencarian slug yang fleksibel (mendukung format tanggal-judul, nama file, maupun slug raw)
-  const searchSlug = slug.replace(/^BAP-\(Brosur-Ahad-Pagi\)-/i, '').trim();
-  const cleanSearch = searchSlug.replace(/^\d{4}\d{2}\d{2}-/i, '');
-  
-  const { data: brosur } = await supabase
-    .from('brosur')
-    .select('*')
-    .or(`slug.ilike.%${searchSlug}%,slug.ilike.%${cleanSearch}%,id.eq.${slug}`)
-    .limit(1)
-    .maybeSingle();
+
+  const brosur = await findBrosurBySlugAndYear(resolvedParams.slug, resolvedParams.year, '*');
 
   let brosurList: any[] = [];
   let folderSlug = '';
@@ -65,7 +47,6 @@ export default async function BrosurPage({ params }: { params: Promise<{ slug: s
     
   console.log("URL DIBUKA:", resolvedParams.slug);
   console.log("DECODED SLUG:", slug);
-  console.log("SEARCH STRING:", searchSlug);
   console.log("HASIL DB:", brosur ? "KETEMU: " + brosur.judul : "TIDAK KETEMU");
   
   if (!brosur) {
@@ -79,7 +60,7 @@ export default async function BrosurPage({ params }: { params: Promise<{ slug: s
           <p className="text-red-500 font-bold mb-2">DEBUG INFO:</p>
           <p><strong>Target URL:</strong> {resolvedParams.slug}</p>
           <p><strong>Decoded URL:</strong> {slug}</p>
-          <p><strong>Fuzzy Search:</strong> %{searchSlug}%</p>
+          <p><strong>Tahun:</strong> {resolvedParams.year}</p>
           <p className="mt-4 font-bold">Contoh Slug yang ada di Database (Top 5):</p>
           <ul className="list-disc pl-5 mt-2">
             {allBrosurs?.map(b => (
