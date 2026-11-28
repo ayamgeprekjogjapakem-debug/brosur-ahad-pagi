@@ -28,7 +28,7 @@ const AVAILABLE_FEATURES = [
   { id: 'ai-pustaka', label: 'AI Pustaka', default: false },
 ];
 
-export const MIGRATION_SQL = `-- Skrip Migrasi Kolom Kuota AI & Masa Berlaku untuk access_codes:
+const MIGRATION_SQL = `-- Skrip Migrasi Kolom Kuota AI & Masa Berlaku untuk access_codes:
 ALTER TABLE public.access_codes ADD COLUMN IF NOT EXISTS expires_in_seconds BIGINT DEFAULT NULL;
 ALTER TABLE public.access_codes ADD COLUMN IF NOT EXISTS allowed_features JSONB DEFAULT '["bap","quran","kalender","tersimpan"]'::jsonb;
 ALTER TABLE public.access_codes ADD COLUMN IF NOT EXISTS notes TEXT;

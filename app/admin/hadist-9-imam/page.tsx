@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-export const NINE_BOOKS = [
+const NINE_BOOKS = [
   { key: 'H1', slug: 'shahih-bukhari', label: 'Shahih Bukhari', short: 'Bukhari', bookNo: 1, compiler: 'Imam Bukhari (194 - 256 H)', totalHadist: '7.008' },
   { key: 'H2', slug: 'shahih-muslim', label: 'Shahih Muslim', short: 'Muslim', bookNo: 2, compiler: 'Imam Muslim (204 - 261 H)', totalHadist: '5.362' },
   { key: 'H3', slug: 'sunan-abu-daud', label: 'Sunan Abu Daud', short: 'Abu Daud', bookNo: 3, compiler: 'Imam Abu Daud (202 - 275 H)', totalHadist: '4.590' },

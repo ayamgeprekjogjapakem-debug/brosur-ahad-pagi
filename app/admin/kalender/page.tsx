@@ -56,7 +56,7 @@ const METHODS = [
   { value: 11, label: 'MUIS Singapura' },
 ];
 
-export function getPasaran(dateStr: string) {
+function getPasaran(dateStr: string) {
   const [d, m, y] = dateStr.split('-');
   const date = new Date(Date.UTC(parseInt(y), parseInt(m) - 1, parseInt(d), 12, 0, 0));
   const diffDays = Math.floor(date.getTime() / 86400000);

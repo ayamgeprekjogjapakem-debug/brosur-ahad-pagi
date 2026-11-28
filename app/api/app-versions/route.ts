@@ -1,7 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 
-export interface VersionInfo {
+interface VersionInfo {
   version: string;
   codename: string;
   historical_significance: string;
@@ -10,7 +10,7 @@ export interface VersionInfo {
   is_latest?: boolean;
 }
 
-export const APP_VERSIONS: Record<string, VersionInfo> = {
+const APP_VERSIONS: Record<string, VersionInfo> = {
   '1.0.0': {
     version: '1.0.0',
     codename: 'Makkah',

@@ -108,6 +108,8 @@ export async function GET(request: NextRequest) {
     const tahunAkhir = searchParams.get('tahun_akhir');
     const includeBrosur = searchParams.get('include_brosur') === '1' || searchParams.get('include_brosur') === 'true';
     const summaryOnly = searchParams.get('summary_only') === '1';
+    const limitParam = searchParams.get('limit');
+    const requestedLimit = limitParam ? Math.max(1, parseInt(limitParam, 10) || 0) : 0;
 
     const supabase = createAdminClient();
 
@@ -161,13 +163,65 @@ export async function GET(request: NextRequest) {
 
     let resolvedBrosurId: string | null = null;
     if (brosurId && brosurId !== 'all') {
-      // Izinkan filter dengan ID maupun slug brosur
+      // Izinkan filter dengan ID maupun slug brosur (quote nilai agar tanda kurung/koma aman di PostgREST)
+      const safeVal = `"${brosurId.replace(/"/g, '\\"')}"`;
       const { data: bMatch } = await supabase
         .from('brosur')
         .select('id')
-        .or(`id.eq.${brosurId},slug.eq.${brosurId}`)
+        .or(`id.eq.${safeVal},slug.eq.${safeVal}`)
         .maybeSingle();
       resolvedBrosurId = bMatch?.id || brosurId;
+    }
+
+    // Fast-path jika hanya meminta limit kecil tanpa pencarian (misal cek total di Flutter ?limit=1)
+    if (
+      requestedLimit > 0 &&
+      !search &&
+      !resolvedBrosurId &&
+      !kelompokId &&
+      !rawiKitab &&
+      !statusHadist &&
+      !sumberJenis &&
+      !tahun &&
+      !tahunMulai &&
+      !tahunAkhir
+    ) {
+      const { data: limitedRows, count: totalCount, error: limErr } = await supabase
+        .from('hadist_brosur')
+        .select(
+          `
+          id,
+          kelompok_id,
+          brosur_id,
+          kutipan_arab,
+          terjemahan,
+          perawi_sumber,
+          rawi_kitab,
+          juz,
+          halaman,
+          no_hadist,
+          rawi_teratas,
+          status_hadist,
+          catatan,
+          created_at
+        `,
+          { count: 'exact' }
+        )
+        .order('created_at', { ascending: false })
+        .limit(requestedLimit);
+
+      if (limErr) {
+        return NextResponse.json({ error: limErr.message }, { status: 500 });
+      }
+
+      return NextResponse.json(
+        {
+          items: limitedRows || [],
+          total: totalCount ?? (limitedRows?.length || 0),
+          count: totalCount ?? (limitedRows?.length || 0),
+        },
+        { headers: { 'Cache-Control': 'no-store' } }
+      );
     }
 
     let yearBrosurIdSet: Set<string> | null = null;
@@ -703,8 +757,12 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    const finalItems = requestedLimit > 0 ? sortedData.slice(0, requestedLimit) : sortedData;
+
     return NextResponse.json({ 
-      items: sortedData, 
+      items: finalItems,
+      total: sortedData.length,
+      count: sortedData.length,
       suggestions: (request as any)._aiSuggestions || [],
       ai_data: (request as any)._aiData || null,
       ai_status: (request as any)._aiStatus || 'inactive',

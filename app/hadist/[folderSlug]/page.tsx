@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import HadistSidebar, { BabInfo } from '../components/HadistSidebar';
 import HeaderUserDropdown from '@/app/components/HeaderUserDropdown';
 import { createClient } from '@/utils/supabase/client';
-import { NINE_BOOKS } from '../page';
+import { NINE_BOOKS } from '../constants';
 
 const ITEMS_PER_PAGE = 25;
 

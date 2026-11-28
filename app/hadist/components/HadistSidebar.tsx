@@ -6,7 +6,7 @@ import {
   BookOpen, Search, X, ChevronDown, ChevronRight, Clock, 
   Bookmark, Check
 } from 'lucide-react';
-import { NINE_BOOKS } from '../page';
+import { NINE_BOOKS } from '../constants';
 
 export interface BabInfo {
   kitabNo: number;
